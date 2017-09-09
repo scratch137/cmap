@@ -5,6 +5,9 @@
 
   $Id: argus_io.cpp,v 1.2 2014/06/04 18:51:10 harris Exp $
 */
+
+//test comment
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
