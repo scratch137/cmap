@@ -395,8 +395,8 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		    }
     		    if (NWIFBOX > 0){
     		    	for (i=0; i<NRX; i++) {
-    		    		flashData.atten[i] = wifPar.atten[i];
-    		    		flashData.sb[i] = wifPar.sb[i];
+    		    		flashData.Iatten[i] = wifPar.Iatten[i];
+    		    		flashData.Qatten[i] = wifPar.Qatten[i];
     		    	}
     		    }
     		  } else {

@@ -161,11 +161,12 @@ struct calSysParams {
 };
 
 struct warmIFparams {
-	float psv[2];       // power supply voltage monitor for interface boards
-	float totPow[16];   // total power reading for each IF channel
-	float cardTemp[16]; // card temperature
-	char atten[16];     // attenuation for each IF channel
-	char sb[16];        // sideband state for each IF channel (0 = LSB, 1 = USB)
+	float psv[2];       // power supply voltage monitor points
+	float ItotPow[20];   // total power reading for each IF channel
+	float QtotPow[20];   // total power reading for each IF channel
+	float cardTemp[20]; // card temperature
+	char Iatten[20];     // 2*quad-I attenuation for each IF channel
+	char Qatten[20];     // 2*quad-Q attenuation for each IF channel
 };
 
 /*********************************************************************/

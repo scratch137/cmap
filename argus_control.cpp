@@ -858,7 +858,7 @@ void Correlator::execArgusCIFPwrCtrl(return_type status, argument_type arg)
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusWIFCtrl(return_type status, argument_type arg)
+/*void Correlator::execArgusWIFCtrl(return_type status, argument_type arg)
 {
   static const char *usage =
 	"\r\n"
@@ -909,7 +909,7 @@ void Correlator::execArgusWIFCtrl(return_type status, argument_type arg)
     longHelp(status, usage, &Correlator::execArgusWIFCtrl);
   }
 }
-
+*/
 /**
   \brief Read and display Argus monitor points.
 
@@ -1089,7 +1089,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    		  } else {
 	    			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
 	              }
-	    	  } else if (!strcasecmp(state, "wif")) {
+	    	 /* } else if (!strcasecmp(state, "wif")) {
       			  OSTimeDly(CMDDELAY);
 	    	      rtn = argus_readWIF();         // update total power and temperature in status table
 	    	      rtn += argus_readWIFpsADCs();  // update power supply voltage in status table
@@ -1129,6 +1129,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	    		  wifPar.totPow[13], wifPar.atten[13], wifPar.sb[13], wifPar.cardTemp[13],
 	    	    		  wifPar.totPow[14], wifPar.atten[14], wifPar.sb[14], wifPar.cardTemp[14],
 	    	    		  wifPar.totPow[15], wifPar.atten[15], wifPar.sb[15], wifPar.cardTemp[15]);
+	    	    		  */
 	    	  } else if (!strcasecmp(state, "cryo")) {
 	    		  OSTimeDly(CMDDELAY);
 	    		  rtn = argus_readThermADCs();
@@ -1175,29 +1176,28 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  "          1               2               3               4\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          5               6               7               8\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          9               10              11              12\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          13              14              15              16\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "          17              18              19              20\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
-
-	      			  "A: %2d, %2d, %2d, %2d,   %2d, %2d, %2d, %2d\r\n"
-	      			  "S: %2d, %2d, %2d, %2d,   %2d, %2d, %2d, %2d\r\n"
-	      			  "A: %2d, %2d, %2d, %2d,   %2d, %2d, %2d, %2d\r\n"
-	      			  "S: %2d, %2d, %2d, %2d,   %2d, %2d, %2d, %2d\r\n\r\n",
-
+	      			  "VM: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
 	      			  statusOK,
 	      			  flashData.LNAsets[0], flashData.LNAsets[1], flashData.LNAsets[6], flashData.LNAsets[7],
 	      			  flashData.LNAsets[12], flashData.LNAsets[13], flashData.LNAsets[18], flashData.LNAsets[19],
@@ -1205,6 +1205,8 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  flashData.LNAsets[14], flashData.LNAsets[15], flashData.LNAsets[20], flashData.LNAsets[21],
 	      			  flashData.LNAsets[4], flashData.LNAsets[5], flashData.LNAsets[10], flashData.LNAsets[11],
 	      			  flashData.LNAsets[16], flashData.LNAsets[17], flashData.LNAsets[22], flashData.LNAsets[23],
+	      			  (float)flashData.Iatten[0]/2., (float)flashData.Qatten[0]/2., (float)flashData.Iatten[1]/2., (float)flashData.Qatten[1]/2.,
+	      			  (float)flashData.Iatten[2]/2., (float)flashData.Qatten[2]/2., (float)flashData.Iatten[3]/2., (float)flashData.Qatten[3]/2.,
 
 	      			  flashData.LNAsets[24], flashData.LNAsets[25], flashData.LNAsets[30], flashData.LNAsets[31],
 	      			  flashData.LNAsets[36], flashData.LNAsets[37], flashData.LNAsets[42], flashData.LNAsets[43],
@@ -1212,6 +1214,8 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  flashData.LNAsets[38], flashData.LNAsets[39], flashData.LNAsets[44], flashData.LNAsets[45],
 	      			  flashData.LNAsets[28], flashData.LNAsets[29], flashData.LNAsets[34], flashData.LNAsets[35],
 	      			  flashData.LNAsets[40], flashData.LNAsets[41], flashData.LNAsets[46], flashData.LNAsets[47],
+	      			  (float)flashData.Iatten[4]/2., (float)flashData.Qatten[4]/2., (float)flashData.Iatten[5]/2., (float)flashData.Qatten[5]/2.,
+	      			  (float)flashData.Iatten[6]/2., (float)flashData.Qatten[6]/2., (float)flashData.Iatten[7]/2., (float)flashData.Qatten[7]/2.,
 			  
 	      			  flashData.LNAsets[48], flashData.LNAsets[49], flashData.LNAsets[54], flashData.LNAsets[55],
 	      			  flashData.LNAsets[60], flashData.LNAsets[61], flashData.LNAsets[66], flashData.LNAsets[67],
@@ -1219,6 +1223,8 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  flashData.LNAsets[62], flashData.LNAsets[63], flashData.LNAsets[68], flashData.LNAsets[69],
 	      			  flashData.LNAsets[52], flashData.LNAsets[53], flashData.LNAsets[58], flashData.LNAsets[59],
 	      			  flashData.LNAsets[64], flashData.LNAsets[65], flashData.LNAsets[70], flashData.LNAsets[71],
+	      			  (float)flashData.Iatten[8]/2., (float)flashData.Qatten[8]/2., (float)flashData.Iatten[9]/2., (float)flashData.Qatten[9]/2.,
+	      			  (float)flashData.Iatten[10]/2., (float)flashData.Qatten[10]/2., (float)flashData.Iatten[11]/2., (float)flashData.Qatten[11]/2.,
 			  
 	      			  flashData.LNAsets[72], flashData.LNAsets[73], flashData.LNAsets[78], flashData.LNAsets[79],
 	      			  flashData.LNAsets[84], flashData.LNAsets[85], flashData.LNAsets[90], flashData.LNAsets[91],
@@ -1226,6 +1232,8 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  flashData.LNAsets[86], flashData.LNAsets[87], flashData.LNAsets[92], flashData.LNAsets[93],
 	      			  flashData.LNAsets[76], flashData.LNAsets[77], flashData.LNAsets[82], flashData.LNAsets[83],
 	      			  flashData.LNAsets[88], flashData.LNAsets[89], flashData.LNAsets[94], flashData.LNAsets[95],
+	      			  (float)flashData.Iatten[12]/2., (float)flashData.Qatten[12]/2., (float)flashData.Iatten[13]/2., (float)flashData.Qatten[13]/2.,
+	      			  (float)flashData.Iatten[14]/2., (float)flashData.Qatten[14]/2., (float)flashData.Iatten[15]/2., (float)flashData.Qatten[15]/2.,
 
 	      			  flashData.LNAsets[96], flashData.LNAsets[97], flashData.LNAsets[98], flashData.LNAsets[99],
 	      			  flashData.LNAsets[100], flashData.LNAsets[101], flashData.LNAsets[102], flashData.LNAsets[103],
@@ -1233,15 +1241,9 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  flashData.LNAsets[108], flashData.LNAsets[109], flashData.LNAsets[110], flashData.LNAsets[111],
 	      			  flashData.LNAsets[112], flashData.LNAsets[113], flashData.LNAsets[114], flashData.LNAsets[115],
 	      			  flashData.LNAsets[116], flashData.LNAsets[117], flashData.LNAsets[118], flashData.LNAsets[119],
+	      			  (float)flashData.Iatten[16]/2., (float)flashData.Qatten[16]/2., (float)flashData.Iatten[17]/2., (float)flashData.Qatten[17]/2.,
+	      			  (float)flashData.Iatten[18]/2., (float)flashData.Qatten[18]/2., (float)flashData.Iatten[19]/2., (float)flashData.Qatten[19]/2.);
 
-	      			  flashData.atten[0], flashData.atten[1], flashData.atten[2], flashData.atten[3],
-	      			  flashData.atten[4], flashData.atten[5], flashData.atten[6], flashData.atten[7],
-	      			  flashData.sb[0], flashData.sb[1], flashData.sb[2], flashData.sb[3],
-	      			  flashData.sb[4], flashData.sb[5], flashData.sb[6], flashData.sb[7],
-	      			  flashData.atten[8], flashData.atten[9], flashData.atten[10], flashData.atten[11],
-	      			  flashData.atten[12], flashData.atten[13], flashData.atten[14], flashData.atten[15],
-	      			  flashData.sb[8], flashData.sb[9], flashData.sb[10], flashData.sb[11],
-	      			  flashData.sb[12], flashData.sb[13], flashData.sb[14], flashData.sb[15]);
 
 	      } else if (!strcasecmp(state, "vane")) {
 	    	OSTimeDly(CMDDELAY);

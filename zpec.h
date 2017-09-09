@@ -79,14 +79,13 @@ typedef enum zpec_hw_t_enum {
 /** Flash memory configuration parameters (8K maximum). */
 typedef struct flash_struct {
   unsigned long signature;  /**< Unique bit-pattern to verify validity. */
-  unsigned short serialNo,  /**< Zpectrometer serial number. */
+  unsigned short serialNo,  /**< Micro's serial number. */
 		         valid;     /**< Structure validity flag. */
   zpec_hw_t      hw;        /**< Hardware variant. */
   float          gvdiv;     /**< Gate voltage divider ratio. */
-  float          LNAsets[96]; /**< 6 values for each of 16 pixels. */
-  char	         atten[16]; /**< receiver attenuations. */
-  char           sb[16];    /**< receiver sideband setting. */
-  float          yigFit[2]; /**< yig tuning linear fit parmeters: slope and intercept. */
+  float          LNAsets[120]; /**< 2*3 values for each of 20 pixels. */
+  char	         Iatten[20]; /**< receiver quad-I attenuations. */
+  char	         Qatten[20]; /**< receiver quad-Q attenuations. */
 } flash_t;
 
 extern void zpec_readFlash(flash_t *flashData);
