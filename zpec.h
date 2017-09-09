@@ -83,7 +83,7 @@ typedef struct flash_struct {
 		         valid;     /**< Structure validity flag. */
   zpec_hw_t      hw;        /**< Hardware variant. */
   float          gvdiv;     /**< Gate voltage divider ratio. */
-  float          LNAsets[120]; /**< 2*3 values for each of 20 pixels. */
+  float          LNAsets[80]; /**< 2*2 values for each of 20 pixels. */
   char	         Iatten[20]; /**< receiver quad-I attenuations. */
   char	         Qatten[20]; /**< receiver quad-Q attenuations. */
 } flash_t;

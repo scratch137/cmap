@@ -199,7 +199,6 @@ struct warmIFparams wifPar = {
 		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99},
 		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99},
 		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99},
-		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99},
 		{64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64},
 		{64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}
 };
@@ -1345,7 +1344,7 @@ int argus_readThermADCs(void)
 */
 int argus_LNApresets(const flash_t *flash)
 {
-// Storage for Arugus is is g1, g2, d1, d2, m1, m2, g3, g4 ... m31, m32
+// Storage for Argus is is g1, g2, d1, d2, m1, m2, g3, g4 ... m31, m32
 	// Data written in control.cpp, approx line 405
 	short i, j, k;
 	int rtn = 0;
@@ -1358,22 +1357,18 @@ int argus_LNApresets(const flash_t *flash)
 	i2cBusBusy = 1;
 	busLockCtr += 1;
 
-	k = 2*NSTAGES + NMIX;
+	k = 2*NSTAGES;
 	for (i=0; i<NRX; i++) {
 		for (j=0; j<NSTAGES; j++){  // set drains first, then gates
 			rtn += argus_setLNAbias("d", i, j, flash->LNAsets[i*k+j+NSTAGES], 1);
 			rtn += argus_setLNAbias("g", i, j, flash->LNAsets[i*k+j], 1);
 		}
-		if (NMIX > 0) {  // set mixers
-			for (j=0; j<NMIX; j++){
-				rtn += argus_setLNAbias("m", i, j, flash->LNAsets[i*k+j+NSTAGES+NMIX], 1);
-			}
-		}
 	}
 	if (NWIFBOX > 0) {
 		for (i=0; i<NRX; i++) {
-			rtn += argus_setWIFswitches("a", i, flash->atten[i], 1);
-			rtn += argus_setWIFswitches("s", i, flash->sb[i], 1);
+			////// NEEDS WORK HERE ???? ///////////
+			rtn += argus_setWIFswitches("a", i, flash->Iatten[i], 1);
+			rtn += argus_setWIFswitches("a", i, flash->Qatten[i], 1);
 		}
 	}
 
@@ -1465,12 +1460,14 @@ int argus_readWIF(void)
 		I2CStat = I2CSEND1;     // trigger ADC conversion
 		OSTimeDly(1); // wait 50 ms to ensure ADC conversion complete (slow converters)
 		I2CREAD2;				// read ADC buffer
-		if (I2CStat == 0) {                         // write result to structure
+		if (I2CStat == 0) {  // write result to structure
+			/*  NEEDS WORK HERE ??????
 			wifPar.totPow[m] = (float)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
 			wifPar.totPow[m] = wifPar.totPow[m] * 5./65536.;  // scale output
 		} else {
 			wifPar.totPow[m] = 99.;
 		}
+		*/
 		// Read thermometer chip on power control board
 		short int rawtemp;
 		address = 0x4f;
@@ -1515,7 +1512,7 @@ int argus_readWIF(void)
   \param busy set to 0 to release I2C bus, 1 to retain (for loops)
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
-int argus_setWIFswitches(char *inp, int m, char val, unsigned char busyOverride)
+/*int argus_setWIFswitches(char *inp, int m, char val, unsigned char busyOverride)
 {
 	int I2CStat;
 	int chassis; // warm IF chassis number
@@ -1533,11 +1530,7 @@ int argus_setWIFswitches(char *inp, int m, char val, unsigned char busyOverride)
 	busLockCtr += 1;
 
 	// check that values are within limits, provisionally store to memory, establish which IF chassis
-	if (strcmp(inp, "s") == 0) {
-		if (val > 1) val = 1;
-		if (val < 0) val = 0;
-		wifPar.sb[m] = val;
-	} else if (strcmp(inp, "a") == 0) {
+	if (strcmp(inp, "a") == 0) {
 		if (val > MAXATTEN) val = MAXATTEN;
 		if (val < 0)  val = 0;
 		wifPar.atten[m] = val;
@@ -1572,7 +1565,7 @@ int argus_setWIFswitches(char *inp, int m, char val, unsigned char busyOverride)
 
 	return I2CStat;
 }
-
+*/
 
 /********************************************************************/
 /**
@@ -2174,10 +2167,12 @@ int argus_ifCheck(void)
 
 	// loop over channels, check for low power and no response from det system
 	for (i=0; i<16; i++) {
+/*  NEEDS WORK HERE ??????????
+
 		if ( (wifPar.totPow[i] < lims[i]) || (wifPar.totPow[i]) > MAXIFPWRDETV) ret |= mask;
 		mask <<= 1;
 	}
-
+*/
 	return ret;
 }
 
