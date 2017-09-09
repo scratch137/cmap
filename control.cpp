@@ -367,9 +367,9 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		  else if (strcasecmp(keywd, "gvdiv") == 0) // check for out of range values in argus_init
     		    flashData.gvdiv = (float)value;
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
-    		    // Move LNA bias settings to flashData; storage is g, d, m  (matches argus_LNApresets)
+    		    // Move LNA bias settings to flashData; storage is g, d  (matches argus_LNApresets)
     		    short i, j, k;
-    		    k = 2*NSTAGES + NMIX;
+    		    k = 2*NSTAGES;
     		    for (i=0; i<NRX; i++) {
     		      for (j=0; j<NSTAGES; j++){
     		    	  if (rxPar[i].LNAsets[j+NSTAGES] >= VDMIN && rxPar[i].LNAsets[j+NSTAGES] <= VDMAX) {
@@ -383,22 +383,11 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		    		  flashData.LNAsets[i*k+j] = VGSTART;
     		    	  }
     		      }
-    		      if (NMIX > 0) {
-    		    	  for (j=0; j<NMIX; j++){
-    		    		  if (rxPar[i].LNAsets[j+NSTAGES+NMIX] >= VMMIN && rxPar[i].LNAsets[j+NSTAGES+NMIX] <= VMMAX){
-    		    			  flashData.LNAsets[i*k+j+NSTAGES+NMIX] = rxPar[i].LNAsets[j+NSTAGES+NMIX];
-    		    		  } else {
-    		    			  flashData.LNAsets[i*k+j+NSTAGES+NMIX] = VMSTART;
-    		    		  }
-    		    	  }
-    		      }
     		    }
-    		    if (NWIFBOX > 0){
-    		    	for (i=0; i<NRX; i++) {
-    		    		flashData.Iatten[i] = wifPar.Iatten[i];
-    		    		flashData.Qatten[i] = wifPar.Qatten[i];
-    		    	}
-    		    }
+    		  	for (i=0; i<NRX; i++) {
+    		   		flashData.Iatten[i] = wifPar.Iatten[i];
+    		   		flashData.Qatten[i] = wifPar.Qatten[i];
+    		   	}
     		  } else {
     	            // no valid selection, quit
     		    longHelp(status, usage, &Correlator::execFlash);
