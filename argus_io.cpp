@@ -1675,7 +1675,6 @@ int argus_closeSubbusC(void)
 */
 int readCalSysADC(int ch)
 {
-	if (NMUBOX < 1) return -1;  //return if no muBox in system
 	if (ch < 0 || ch > 7) return -10;  //return if invalid channel number
 	int I2CStat = 0;
 

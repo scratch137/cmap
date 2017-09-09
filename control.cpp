@@ -345,8 +345,6 @@ void Correlator::execFlash(return_type status, argument_type arg)
   "  Key = SERIALNO  CPU serial number (unsigned short).\r\n"
   "  Key = HWTYPE    Hardware subtype (0 = GBT, 1 = RLT, 2 = POW, 3 = ARG).\r\n"
   "  Key = GVDIV     Gate voltage divider ratio (0 < GVDIV <=1) for LNAs\r\n"
-  "  Key = YIGSLOPE  Linear fit slope parameter for YIG filter\r\n"
-  "  Key = YIGINT    Linear fit intercept parameter for YIG filter\r\n"
   "  Key = SETS      Keep current LNA bias settings as preset for LNAs \r\n";
 
   if (!arg.help) {
@@ -368,10 +366,6 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		  else if (strcasecmp(keywd, "hwtype") == 0) flashData.hw = (zpec_hw_t)value;
     		  else if (strcasecmp(keywd, "gvdiv") == 0) // check for out of range values in argus_init
     		    flashData.gvdiv = (float)value;
-    		  else if (strcasecmp(keywd, "yigslope") == 0) // YIG tuning slope
-    		    flashData.yigFit[0] = (float)value;
-    		  else if (strcasecmp(keywd, "yigint") == 0) // YIG tuning intercept
-    		    flashData.yigFit[1] = (float)value;
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
     		    // Move LNA bias settings to flashData; storage is g, d, m  (matches argus_LNApresets)
     		    short i, j, k;
@@ -449,8 +443,6 @@ void Correlator::execFlash(return_type status, argument_type arg)
 			  	  	  );
   		  len += sprintf(status+len,
   				  "  Gate voltage divisor %f\r\n", flashData.gvdiv);
-  		  len += sprintf(status+len,
-  				  "  YIG fit slope %f, int %f\r\n", flashData.yigFit[0], flashData.yigFit[1]);
   	  } else {
   		  siprintf(status, "%sUser flash area invalid (or uninitialized).\r\n",
   				  statusERR);

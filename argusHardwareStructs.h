@@ -46,7 +46,6 @@ AH 2014.07.01
 #define NBIASC 5    // number of bias cards (should get from length of address vector, really)
 #define NMIX 0      // number of mixers in each receiver
 #define NWIFBOX 0   // number of warm IF chassis; set to zero if none
-#define NMUBOX 0    // number of muBoxes for YIG; set to zero if none
 
 // Software limits for bias settings
 #define VDGMAX 1.7    // Max drain-gate voltage [V]
@@ -88,7 +87,6 @@ AH 2014.07.01
 #define MAXCOLDT 40.   // Maximum nom 20K temperature [K]
 #define MAXINTT  80.   // Maximum nom 77K temperature [K]
 #define MAXELEXT 60.   // Maximum warm electronics temperature [C]
-#define MAXYIGT  80.   // Maximum YIG temperature [C]
 
 //Warm IF limits
 #define MAXATTEN 31  // max attenuation, 5-bit, 1 dB/step, including 0
@@ -150,14 +148,6 @@ struct biasCardParams {
 struct cryostatParams { 
   float cryoTemps[6];     // cryostat temperatures
   float auxInputs[2];     // aux inputs
-};
-
-struct muBoxParams {
-	float adcv[8];        // adc voltages
-	float pdetVmax;       // maximum voltage
-    unsigned int setval;  // tune word for YIG driver
-    float slope, intercept; // slope and intercept for linear approx.
-    float freq;           // requested LO frequency
 };
 
 struct calSysParams {
