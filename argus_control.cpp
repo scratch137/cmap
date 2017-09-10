@@ -540,9 +540,9 @@ void Correlator::execArgusAtten(return_type status, argument_type arg)
     	if (m > 0 && m <= NRX){
     		// convert from user's 1-base to code's 0-base
     		OSTimeDly(CMDDELAY);
-    		int rtn = argus_setWIFswitches("a", m-1, a, 0);
+    		/* int rtn = argus_setWIFswitches("a", m-1, a, 0); /// NEEDS WORK ????
    			sprintf(status, "%sargus_setWIFswitches(a, %d, %d, 0) returned status %d.\r\n",
-    					(rtn==0 ? statusOK : statusERR), m, a, rtn);
+    					(rtn==0 ? statusOK : statusERR), m, a, rtn); */
     	} else {
     		sprintf(status, "%sReceiver number out of range\r\n", statusERR);
     	}
@@ -587,9 +587,9 @@ void Correlator::execArgusSB(return_type status, argument_type arg)
     	if (m > 0 && m <= NRX){
     		// convert from user's 1-base to code's 0-base
     		OSTimeDly(CMDDELAY);
-    		int rtn = argus_setWIFswitches("s", m-1, s, 0);
+    		/* int rtn = argus_setWIFswitches("s", m-1, s, 0); // NEEDS WORK ???
    			sprintf(status, "%sargus_setWIFswitches(s, %d, %d, 0) returned status %d.\r\n",
-    					(rtn==0 ? statusOK : statusERR), m, s, rtn);
+    					(rtn==0 ? statusOK : statusERR), m, s, rtn); */
     	} else {
     		sprintf(status, "%sReceiver number out of range\r\n", statusERR);
     	}
@@ -1018,23 +1018,23 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	      			  "         1               2               3               4\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
+	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n"
 	    	      			  "         5               6               7               8\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n"
 	    	      			  "         9               10              11              12\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
+	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n"
 	    	      			  "         13              14              15              16\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
+	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n"
 	    	      			  "         17              18              19              20\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n",
+	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n",
 
 	    	      			  statusOK,
 
@@ -1042,40 +1042,40 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	      			  d2, rxPar[2].LNAsets[0], d2, rxPar[2].LNAsets[1], d2, rxPar[3].LNAsets[0], d2, rxPar[3].LNAsets[1],
 	    	      			  d1, rxPar[0].LNAsets[2], d1, rxPar[0].LNAsets[3], d1, rxPar[1].LNAsets[2], d1, rxPar[1].LNAsets[3],
 	    	      			  d1, rxPar[2].LNAsets[2], d1, rxPar[2].LNAsets[3], d1, rxPar[3].LNAsets[2], d1, rxPar[3].LNAsets[3],
-	    	      			  (float)wifPar.Iatten[0]/2., (float)wifPar.Qatten[0]/2., (float)wifPar.Iatten[1]/2., (float)wifPar.Qatten[1]/2.,
-	    	      			  (float)wifPar.Iatten[2]/2., (float)wifPar.Qatten[2]/2., (float)wifPar.Iatten[3]/2., (float)wifPar.Qatten[3]/2.,
+	    	      			  (float)wifPar.atten[0]/2., (float)wifPar.atten[0+NRX]/2., (float)wifPar.atten[1]/2., (float)wifPar.atten[1+NRX]/2.,
+	    	      			  (float)wifPar.atten[2]/2., (float)wifPar.atten[2+NRX]/2., (float)wifPar.atten[3]/2., (float)wifPar.atten[3+NRX]/2.,
 
 	    	      			  d2, rxPar[4].LNAsets[0], d2, rxPar[4].LNAsets[1], d2, rxPar[5].LNAsets[0], d2, rxPar[5].LNAsets[1],
 	    	      			  d2, rxPar[6].LNAsets[0], d2, rxPar[6].LNAsets[1], d2, rxPar[7].LNAsets[0], d2, rxPar[7].LNAsets[1],
 	    	      			  d1, rxPar[4].LNAsets[2], d1, rxPar[4].LNAsets[3], d1, rxPar[5].LNAsets[2], d1, rxPar[5].LNAsets[3],
 	    	      			  d1, rxPar[6].LNAsets[2], d1, rxPar[6].LNAsets[3], d1, rxPar[7].LNAsets[2], d1, rxPar[7].LNAsets[3],
-	    	      			  (float)wifPar.Iatten[4]/2., (float)wifPar.Qatten[4]/2., (float)wifPar.Iatten[5]/2., (float)wifPar.Qatten[5]/2.,
-	    	      			  (float)wifPar.Iatten[6]/2., (float)wifPar.Qatten[6]/2., (float)wifPar.Iatten[7]/2., (float)wifPar.Qatten[7]/2.,
+	    	      			  (float)wifPar.atten[4]/2., (float)wifPar.atten[4+NRX]/2., (float)wifPar.atten[5]/2., (float)wifPar.atten[5+NRX]/2.,
+	    	      			  (float)wifPar.atten[6]/2., (float)wifPar.atten[6+NRX]/2., (float)wifPar.atten[7]/2., (float)wifPar.atten[7+NRX]/2.,
 
 	    	      			  d2, rxPar[8].LNAsets[0], d2, rxPar[8].LNAsets[1], d2, rxPar[9].LNAsets[0], d2, rxPar[9].LNAsets[1],
 	    	      			  d2, rxPar[10].LNAsets[0], d2, rxPar[10].LNAsets[1], d2, rxPar[11].LNAsets[0], d2, rxPar[11].LNAsets[1],
 	    	      			  d1, rxPar[8].LNAsets[2], d1, rxPar[8].LNAsets[3], d1, rxPar[9].LNAsets[2], d1, rxPar[9].LNAsets[3],
 	    	      			  d1, rxPar[10].LNAsets[2], d1, rxPar[10].LNAsets[3], d1, rxPar[11].LNAsets[2], d1, rxPar[11].LNAsets[3],
-	    	      			  (float)wifPar.Iatten[8]/2., (float)wifPar.Qatten[8]/2., (float)wifPar.Iatten[9]/2., (float)wifPar.Qatten[9]/2.,
-	    	      			  (float)wifPar.Iatten[10]/2., (float)wifPar.Qatten[10]/2., (float)wifPar.Iatten[11]/2., (float)wifPar.Qatten[11]/2.,
+	    	      			  (float)wifPar.atten[8]/2., (float)wifPar.atten[8+NRX]/2., (float)wifPar.atten[9]/2., (float)wifPar.atten[9+NRX]/2.,
+	    	      			  (float)wifPar.atten[10]/2., (float)wifPar.atten[10+NRX]/2., (float)wifPar.atten[11]/2., (float)wifPar.atten[11+NRX]/2.,
 
 	    	      			  d2, rxPar[12].LNAsets[0], d2, rxPar[12].LNAsets[1], d2, rxPar[13].LNAsets[0], d2, rxPar[13].LNAsets[1],
 	    	      			  d2, rxPar[14].LNAsets[0], d2, rxPar[14].LNAsets[1], d2, rxPar[15].LNAsets[0], d2, rxPar[15].LNAsets[1],
 	    	      			  d1, rxPar[12].LNAsets[2], d1, rxPar[12].LNAsets[3], d1, rxPar[13].LNAsets[2], d1, rxPar[13].LNAsets[3],
 	    	      			  d1, rxPar[14].LNAsets[2], d1, rxPar[14].LNAsets[3], d1, rxPar[15].LNAsets[2], d1, rxPar[15].LNAsets[3],
-	    	      			  (float)wifPar.Iatten[12]/2., (float)wifPar.Qatten[12]/2., (float)wifPar.Iatten[13]/2., (float)wifPar.Qatten[13]/2.,
-	    	      			  (float)wifPar.Iatten[14]/2., (float)wifPar.Qatten[14]/2., (float)wifPar.Iatten[15]/2., (float)wifPar.Qatten[15]/2.,
+	    	      			  (float)wifPar.atten[12]/2., (float)wifPar.atten[12+NRX]/2., (float)wifPar.atten[13]/2., (float)wifPar.atten[13+NRX]/2.,
+	    	      			  (float)wifPar.atten[14]/2., (float)wifPar.atten[14+NRX]/2., (float)wifPar.atten[15]/2., (float)wifPar.atten[15+NRX]/2.,
 
 	    	      			  d2, rxPar[16].LNAsets[0], d2, rxPar[16].LNAsets[1], d2, rxPar[17].LNAsets[0], d2, rxPar[17].LNAsets[1],
 	    	      			  d2, rxPar[18].LNAsets[0], d2, rxPar[18].LNAsets[1], d2, rxPar[19].LNAsets[0], d2, rxPar[19].LNAsets[1],
 	    	      			  d1, rxPar[16].LNAsets[2], d1, rxPar[16].LNAsets[3], d1, rxPar[17].LNAsets[2], d1, rxPar[17].LNAsets[3],
 	    	      			  d1, rxPar[18].LNAsets[2], d1, rxPar[18].LNAsets[3], d1, rxPar[19].LNAsets[2], d1, rxPar[19].LNAsets[3],
-	    	      			  (float)wifPar.Iatten[16]/2., (float)wifPar.Qatten[16]/2., (float)wifPar.Iatten[17]/2., (float)wifPar.Qatten[17]/2.,
-	    	      			  (float)wifPar.Iatten[18]/2., (float)wifPar.Qatten[18]/2., (float)wifPar.Iatten[19]/2., (float)wifPar.Qatten[19]/2.);
+	    	      			  (float)wifPar.atten[16]/2., (float)wifPar.atten[16+NRX]/2., (float)wifPar.atten[17]/2., (float)wifPar.atten[17+NRX]/2.,
+	    	      			  (float)wifPar.atten[18]/2., (float)wifPar.atten[18+NRX]/2., (float)wifPar.atten[19]/2., (float)wifPar.atten[19+NRX]/2.);
 	   	    		  } else {
 	    			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
 	              }
-	    	 /* } else if (!strcasecmp(state, "wif")) {
+	    	 /* } else if (!strcasecmp(state, "wif")) {  /// NEEDS WORK ?????
       			  OSTimeDly(CMDDELAY);
 	    	      rtn = argus_readWIF();         // update total power and temperature in status table
 	    	      rtn += argus_readWIFpsADCs();  // update power supply voltage in status table
@@ -1178,43 +1178,42 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  "          17              18              19              20\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  (float)wifPar.Iatten[0]/2., (float)wifPar.Qatten[0]/2., wifPar.atten[1], (float)wifPar.Iatten[0]/2., (float)wifPar.Qatten[0]/2., wifPar.atten[1],
 	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
 	      			  statusOK,
-	      			  flashData.LNAsets[0], flashData.LNAsets[1], flashData.LNAsets[4], flashData.LNAsets[5],
-	      			  flashData.LNAsets[8], flashData.LNAsets[9], flashData.LNAsets[12], flashData.LNAsets[13],
-	      			  flashData.LNAsets[3], flashData.LNAsets[4], flashData.LNAsets[7], flashData.LNAsets[8],
-	      			  flashData.LNAsets[11], flashData.LNAsets[12], flashData.LNAsets[15], flashData.LNAsets[16],
-	      			  (float)flashData.Iatten[0]/2., (float)flashData.Qatten[0]/2., (float)flashData.Iatten[1]/2., (float)flashData.Qatten[1]/2.,
-	      			  (float)flashData.Iatten[2]/2., (float)flashData.Qatten[2]/2., (float)flashData.Iatten[3]/2., (float)flashData.Qatten[3]/2.,
+	      			  flashData.lnaGsets[0], flashData.lnaGsets[1], flashData.lnaGsets[2], flashData.lnaGsets[3],
+	      			  flashData.lnaGsets[4], flashData.lnaGsets[5], flashData.lnaGsets[6], flashData.lnaGsets[7],
+	      			  flashData.lnaDsets[0], flashData.lnaDsets[1], flashData.lnaDsets[2], flashData.lnaDsets[3],
+	      			  flashData.lnaDsets[4], flashData.lnaDsets[5], flashData.lnaDsets[6], flashData.lnaDsets[7],
+	      			  (float)flashData.atten[0]/2., (float)flashData.atten[1]/2., (float)flashData.atten[2]/2., (float)flashData.atten[3]/2.,
+	      			  (float)flashData.atten[4]/2., (float)flashData.atten[5]/2., (float)flashData.atten[6]/2., (float)flashData.atten[7]/2.,
 
-	      			  flashData.LNAsets[24], flashData.LNAsets[25], flashData.LNAsets[30], flashData.LNAsets[31],
-	      			  flashData.LNAsets[36], flashData.LNAsets[37], flashData.LNAsets[42], flashData.LNAsets[43],
-	      			  flashData.LNAsets[26], flashData.LNAsets[27], flashData.LNAsets[32], flashData.LNAsets[33],
-	      			  flashData.LNAsets[38], flashData.LNAsets[39], flashData.LNAsets[44], flashData.LNAsets[45],
-	      			  (float)flashData.Iatten[4]/2., (float)flashData.Qatten[4]/2., (float)flashData.Iatten[5]/2., (float)flashData.Qatten[5]/2.,
-	      			  (float)flashData.Iatten[6]/2., (float)flashData.Qatten[6]/2., (float)flashData.Iatten[7]/2., (float)flashData.Qatten[7]/2.,
+	      			  flashData.lnaGsets[8], flashData.lnaGsets[9], flashData.lnaGsets[10], flashData.lnaGsets[11],
+	      			  flashData.lnaGsets[12], flashData.lnaGsets[13], flashData.lnaGsets[14], flashData.lnaGsets[15],
+	      			  flashData.lnaDsets[8], flashData.lnaDsets[9], flashData.lnaDsets[10], flashData.lnaDsets[11],
+	      			  flashData.lnaDsets[12], flashData.lnaDsets[13], flashData.lnaDsets[14], flashData.lnaDsets[15],
+	      			  (float)flashData.atten[8]/2., (float)flashData.atten[9]/2., (float)flashData.atten[10]/2., (float)flashData.atten[11]/2.,
+	      			  (float)flashData.atten[12]/2., (float)flashData.atten[13]/2., (float)flashData.atten[14]/2., (float)flashData.atten[15]/2.,
 			  
-	      			  flashData.LNAsets[48], flashData.LNAsets[49], flashData.LNAsets[54], flashData.LNAsets[55],
-	      			  flashData.LNAsets[60], flashData.LNAsets[61], flashData.LNAsets[66], flashData.LNAsets[67],
-	      			  flashData.LNAsets[50], flashData.LNAsets[51], flashData.LNAsets[56], flashData.LNAsets[57],
-	      			  flashData.LNAsets[62], flashData.LNAsets[63], flashData.LNAsets[68], flashData.LNAsets[69],
-	      			  (float)flashData.Iatten[8]/2., (float)flashData.Qatten[8]/2., (float)flashData.Iatten[9]/2., (float)flashData.Qatten[9]/2.,
-	      			  (float)flashData.Iatten[10]/2., (float)flashData.Qatten[10]/2., (float)flashData.Iatten[11]/2., (float)flashData.Qatten[11]/2.,
+	      			  flashData.lnaGsets[16], flashData.lnaGsets[17], flashData.lnaGsets[18], flashData.lnaGsets[19],
+	      			  flashData.lnaGsets[20], flashData.lnaGsets[21], flashData.lnaGsets[22], flashData.lnaGsets[23],
+	      			  flashData.lnaDsets[16], flashData.lnaDsets[17], flashData.lnaDsets[18], flashData.lnaDsets[19],
+	      			  flashData.lnaDsets[20], flashData.lnaDsets[21], flashData.lnaDsets[22], flashData.lnaDsets[23],
+	      			  (float)flashData.atten[16]/2., (float)flashData.atten[17]/2., (float)flashData.atten[18]/2., (float)flashData.atten[19]/2.,
+	      			  (float)flashData.atten[20]/2., (float)flashData.atten[21]/2., (float)flashData.atten[22]/2., (float)flashData.atten[23]/2.,
 			  
-	      			  flashData.LNAsets[72], flashData.LNAsets[73], flashData.LNAsets[78], flashData.LNAsets[79],
-	      			  flashData.LNAsets[84], flashData.LNAsets[85], flashData.LNAsets[90], flashData.LNAsets[91],
-	      			  flashData.LNAsets[74], flashData.LNAsets[75], flashData.LNAsets[80], flashData.LNAsets[81],
-	      			  flashData.LNAsets[86], flashData.LNAsets[87], flashData.LNAsets[92], flashData.LNAsets[93],
-	      			  (float)flashData.Iatten[12]/2., (float)flashData.Qatten[12]/2., (float)flashData.Iatten[13]/2., (float)flashData.Qatten[13]/2.,
-	      			  (float)flashData.Iatten[14]/2., (float)flashData.Qatten[14]/2., (float)flashData.Iatten[15]/2., (float)flashData.Qatten[15]/2.,
+	      			  flashData.lnaGsets[24], flashData.lnaGsets[25], flashData.lnaGsets[26], flashData.lnaGsets[27],
+	      			  flashData.lnaGsets[28], flashData.lnaGsets[29], flashData.lnaGsets[30], flashData.lnaGsets[31],
+	      			  flashData.lnaDsets[24], flashData.lnaDsets[25], flashData.lnaDsets[26], flashData.lnaDsets[27],
+	      			  flashData.lnaDsets[28], flashData.lnaDsets[29], flashData.lnaDsets[30], flashData.lnaDsets[31],
+	      			  (float)flashData.atten[24]/2., (float)flashData.atten[25]/2., (float)flashData.atten[26]/2., (float)flashData.atten[27]/2.,
+	      			  (float)flashData.atten[28]/2., (float)flashData.atten[29]/2., (float)flashData.atten[30]/2., (float)flashData.atten[31]/2.,
 
-	      			  flashData.LNAsets[96], flashData.LNAsets[97], flashData.LNAsets[98], flashData.LNAsets[99],
-	      			  flashData.LNAsets[100], flashData.LNAsets[101], flashData.LNAsets[102], flashData.LNAsets[103],
-	      			  flashData.LNAsets[104], flashData.LNAsets[105], flashData.LNAsets[106], flashData.LNAsets[107],
-	      			  flashData.LNAsets[108], flashData.LNAsets[109], flashData.LNAsets[110], flashData.LNAsets[111],
-	      			  (float)flashData.Iatten[16]/2., (float)flashData.Qatten[16]/2., (float)flashData.Iatten[17]/2., (float)flashData.Qatten[17]/2.,
-	      			  (float)flashData.Iatten[18]/2., (float)flashData.Qatten[18]/2., (float)flashData.Iatten[19]/2., (float)flashData.Qatten[19]/2.);
+	      			  flashData.lnaGsets[32], flashData.lnaGsets[33], flashData.lnaGsets[34], flashData.lnaGsets[35],
+	      			  flashData.lnaGsets[36], flashData.lnaGsets[37], flashData.lnaGsets[38], flashData.lnaGsets[39],
+	      			  flashData.lnaDsets[32], flashData.lnaDsets[33], flashData.lnaDsets[34], flashData.lnaDsets[35],
+	      			  flashData.lnaDsets[36], flashData.lnaDsets[37], flashData.lnaDsets[38], flashData.lnaDsets[39],
+	      			  (float)flashData.atten[32]/2., (float)flashData.atten[33]/2., (float)flashData.atten[34]/2., (float)flashData.atten[35]/2.,
+	      			  (float)flashData.atten[36]/2., (float)flashData.atten[37]/2., (float)flashData.atten[38]/2., (float)flashData.atten[39]/2.);
 
 
 	      } else if (!strcasecmp(state, "vane")) {
@@ -1374,14 +1373,6 @@ void Correlator::execArgusLock(return_type status, argument_type arg)
 	  i2cBusBusy = busy;
 	  rtn = argus_readWIF();
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readWIF()\r\n", i2cBusBusy, rtn);
-
-	  i2cBusBusy = busy;
-	  rtn = argus_setWIFswitches("a", 3, 20, 0);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setWIFswitches(a, 3, 20, 0)\r\n", i2cBusBusy, rtn);
-
-	  i2cBusBusy = busy;
-	  rtn = argus_setWIFswitches("s", 2, 1, 0);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setWIFswitches(s, 2, 1, 0) \r\n", i2cBusBusy, rtn);
 
 	  i2cBusBusy = busy;
 	  rtn = argus_setAllWIFswitches("a", 10);

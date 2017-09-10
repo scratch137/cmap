@@ -165,8 +165,7 @@ struct warmIFparams {
 	float ItotPow[20];   // total power reading for each IF channel
 	float QtotPow[20];   // total power reading for each IF channel
 	float cardTemp[20]; // card temperature
-	char Iatten[20];     // quad-I attenuation for each IF channel
-	char Qatten[20];     // quad-Q attenuation for each IF channel
+	char  atten[NRX*NSTAGES];     // quad-I attenuation for each IF channel
 };
 
 /*********************************************************************/

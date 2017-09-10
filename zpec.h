@@ -11,6 +11,9 @@
 #include <nettypes.h>
 #include <ucos.h>
 
+#include "argusHardwareStructs.h"
+
+
 /** Swap values of arbitrary type (C-callable). */
 #define ZPEC_SWAP(type, a, b) do { \
     type tmp;  tmp = a;  a = b;  b = tmp; \
@@ -83,9 +86,9 @@ typedef struct flash_struct {
 		         valid;     /**< Structure validity flag. */
   zpec_hw_t      hw;        /**< Hardware variant. */
   float          gvdiv;     /**< Gate voltage divider ratio. */
-  float          LNAsets[80]; /**< 2*2 values for each of 20 pixels. */
-  char	         Iatten[20]; /**< receiver quad-I attenuations. */
-  char	         Qatten[20]; /**< receiver quad-Q attenuations. */
+  float          lnaGsets[NRX*NSTAGES]; /**< Gate voltages, stored by RX:[stage, stage...], RX:[stage, stage...] */
+  float          lnaDsets[NRX*NSTAGES]; /**< Drain voltages, stored by RX:[stage, stage...], RX:[stage, stage...] */
+  char	         atten[NRX*2]; /**< IF system attenuations, first I, then Q. */
 } flash_t;
 
 extern void zpec_readFlash(flash_t *flashData);

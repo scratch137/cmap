@@ -190,8 +190,7 @@ struct calSysParams calSysPar = {
 	float ItotPow[20];   // total power reading for each IF channel
 	float QtotPow[20];   // total power reading for each IF channel
 	float cardTemp[20]; // card temperature
-	char Iatten[20];     // 2*quad-I attenuation for each IF channel
-	char Qatten[20];     // 2*quad-Q attenuation for each IF channel
+	char atten[40];     // 2*quad-I attenuation for each IF channel
   (setting attens to max value matches initialization in argus_init() below)
 */
 struct warmIFparams wifPar = {
@@ -199,9 +198,9 @@ struct warmIFparams wifPar = {
 		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99},
 		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99},
 		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99},
-		{64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64},
-		{64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}
+		{64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}
 };
+
 // Warm IF channel ordering
 BYTE wifChan_i2caddr[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 //BYTE wifChan_i2caddr[] = {0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
@@ -1346,7 +1345,7 @@ int argus_LNApresets(const flash_t *flash)
 {
 // Storage for Argus is is g1, g2, d1, d2, m1, m2, g3, g4 ... m31, m32
 	// Data written in control.cpp, approx line 405
-	short i, j, k;
+	short i, j;
 	int rtn = 0;
 
 	// check for freeze
@@ -1357,18 +1356,18 @@ int argus_LNApresets(const flash_t *flash)
 	i2cBusBusy = 1;
 	busLockCtr += 1;
 
-	k = 2*NSTAGES;
 	for (i=0; i<NRX; i++) {
 		for (j=0; j<NSTAGES; j++){  // set drains first, then gates
-			rtn += argus_setLNAbias("d", i, j, flash->LNAsets[i*k+j+NSTAGES], 1);
-			rtn += argus_setLNAbias("g", i, j, flash->LNAsets[i*k+j], 1);
+			rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[i+j], 1);
+			// insert OSdelay?
+			rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[i*j], 1);
 		}
 	}
 	if (NWIFBOX > 0) {
 		for (i=0; i<NRX; i++) {
 			////// NEEDS WORK HERE ???? ///////////
-			rtn += argus_setWIFswitches("a", i, flash->Iatten[i], 1);
-			rtn += argus_setWIFswitches("a", i, flash->Qatten[i], 1);
+			rtn += argus_setWIFswitches("a", i, flash->atten[i+NRX], 1);
+			rtn += argus_setWIFswitches("a", i, flash->atten[i], 1);
 		}
 	}
 
@@ -1460,8 +1459,7 @@ int argus_readWIF(void)
 		I2CStat = I2CSEND1;     // trigger ADC conversion
 		OSTimeDly(1); // wait 50 ms to ensure ADC conversion complete (slow converters)
 		I2CREAD2;				// read ADC buffer
-		if (I2CStat == 0) {  // write result to structure
-			/*  NEEDS WORK HERE ??????
+		/* if (I2CStat == 0) {  // write result to structure  /// NEEDS WORK ?????
 			wifPar.totPow[m] = (float)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
 			wifPar.totPow[m] = wifPar.totPow[m] * 5./65536.;  // scale output
 		} else {
@@ -1512,7 +1510,8 @@ int argus_readWIF(void)
   \param busy set to 0 to release I2C bus, 1 to retain (for loops)
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
-/*int argus_setWIFswitches(char *inp, int m, char val, unsigned char busyOverride)
+/*
+ * int argus_setWIFswitches(char *inp, int m, char val, unsigned char busyOverride)
 {
 	int I2CStat;
 	int chassis; // warm IF chassis number
@@ -2166,8 +2165,8 @@ int argus_ifCheck(void)
 	float lims[] = MINIFPWRDETV;
 
 	// loop over channels, check for low power and no response from det system
-	for (i=0; i<16; i++) {
-/*  NEEDS WORK HERE ??????????
+	/* for (i=0; i<16; i++) {  ////  NEEDS WORK HERE ??????????
+
 
 		if ( (wifPar.totPow[i] < lims[i]) || (wifPar.totPow[i]) > MAXIFPWRDETV) ret |= mask;
 		mask <<= 1;
