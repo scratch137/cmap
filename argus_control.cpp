@@ -1018,23 +1018,18 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	      			  "         1               2               3               4\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n"
 	    	      			  "         5               6               7               8\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n"
 	    	      			  "         9               10              11              12\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n"
 	    	      			  "         13              14              15              16\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
 	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n"
 	    	      			  "         17              18              19              20\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "A: %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f,   %5.1f, %5.1f\r\n\r\n",
+	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n",
 
 	    	      			  statusOK,
 
@@ -1042,36 +1037,26 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	      			  d2, rxPar[2].LNAsets[0], d2, rxPar[2].LNAsets[1], d2, rxPar[3].LNAsets[0], d2, rxPar[3].LNAsets[1],
 	    	      			  d1, rxPar[0].LNAsets[2], d1, rxPar[0].LNAsets[3], d1, rxPar[1].LNAsets[2], d1, rxPar[1].LNAsets[3],
 	    	      			  d1, rxPar[2].LNAsets[2], d1, rxPar[2].LNAsets[3], d1, rxPar[3].LNAsets[2], d1, rxPar[3].LNAsets[3],
-	    	      			  (float)wifPar.atten[0]/2., (float)wifPar.atten[0+NRX]/2., (float)wifPar.atten[1]/2., (float)wifPar.atten[1+NRX]/2.,
-	    	      			  (float)wifPar.atten[2]/2., (float)wifPar.atten[2+NRX]/2., (float)wifPar.atten[3]/2., (float)wifPar.atten[3+NRX]/2.,
 
 	    	      			  d2, rxPar[4].LNAsets[0], d2, rxPar[4].LNAsets[1], d2, rxPar[5].LNAsets[0], d2, rxPar[5].LNAsets[1],
 	    	      			  d2, rxPar[6].LNAsets[0], d2, rxPar[6].LNAsets[1], d2, rxPar[7].LNAsets[0], d2, rxPar[7].LNAsets[1],
 	    	      			  d1, rxPar[4].LNAsets[2], d1, rxPar[4].LNAsets[3], d1, rxPar[5].LNAsets[2], d1, rxPar[5].LNAsets[3],
 	    	      			  d1, rxPar[6].LNAsets[2], d1, rxPar[6].LNAsets[3], d1, rxPar[7].LNAsets[2], d1, rxPar[7].LNAsets[3],
-	    	      			  (float)wifPar.atten[4]/2., (float)wifPar.atten[4+NRX]/2., (float)wifPar.atten[5]/2., (float)wifPar.atten[5+NRX]/2.,
-	    	      			  (float)wifPar.atten[6]/2., (float)wifPar.atten[6+NRX]/2., (float)wifPar.atten[7]/2., (float)wifPar.atten[7+NRX]/2.,
 
 	    	      			  d2, rxPar[8].LNAsets[0], d2, rxPar[8].LNAsets[1], d2, rxPar[9].LNAsets[0], d2, rxPar[9].LNAsets[1],
 	    	      			  d2, rxPar[10].LNAsets[0], d2, rxPar[10].LNAsets[1], d2, rxPar[11].LNAsets[0], d2, rxPar[11].LNAsets[1],
 	    	      			  d1, rxPar[8].LNAsets[2], d1, rxPar[8].LNAsets[3], d1, rxPar[9].LNAsets[2], d1, rxPar[9].LNAsets[3],
 	    	      			  d1, rxPar[10].LNAsets[2], d1, rxPar[10].LNAsets[3], d1, rxPar[11].LNAsets[2], d1, rxPar[11].LNAsets[3],
-	    	      			  (float)wifPar.atten[8]/2., (float)wifPar.atten[8+NRX]/2., (float)wifPar.atten[9]/2., (float)wifPar.atten[9+NRX]/2.,
-	    	      			  (float)wifPar.atten[10]/2., (float)wifPar.atten[10+NRX]/2., (float)wifPar.atten[11]/2., (float)wifPar.atten[11+NRX]/2.,
 
 	    	      			  d2, rxPar[12].LNAsets[0], d2, rxPar[12].LNAsets[1], d2, rxPar[13].LNAsets[0], d2, rxPar[13].LNAsets[1],
 	    	      			  d2, rxPar[14].LNAsets[0], d2, rxPar[14].LNAsets[1], d2, rxPar[15].LNAsets[0], d2, rxPar[15].LNAsets[1],
 	    	      			  d1, rxPar[12].LNAsets[2], d1, rxPar[12].LNAsets[3], d1, rxPar[13].LNAsets[2], d1, rxPar[13].LNAsets[3],
 	    	      			  d1, rxPar[14].LNAsets[2], d1, rxPar[14].LNAsets[3], d1, rxPar[15].LNAsets[2], d1, rxPar[15].LNAsets[3],
-	    	      			  (float)wifPar.atten[12]/2., (float)wifPar.atten[12+NRX]/2., (float)wifPar.atten[13]/2., (float)wifPar.atten[13+NRX]/2.,
-	    	      			  (float)wifPar.atten[14]/2., (float)wifPar.atten[14+NRX]/2., (float)wifPar.atten[15]/2., (float)wifPar.atten[15+NRX]/2.,
 
 	    	      			  d2, rxPar[16].LNAsets[0], d2, rxPar[16].LNAsets[1], d2, rxPar[17].LNAsets[0], d2, rxPar[17].LNAsets[1],
 	    	      			  d2, rxPar[18].LNAsets[0], d2, rxPar[18].LNAsets[1], d2, rxPar[19].LNAsets[0], d2, rxPar[19].LNAsets[1],
 	    	      			  d1, rxPar[16].LNAsets[2], d1, rxPar[16].LNAsets[3], d1, rxPar[17].LNAsets[2], d1, rxPar[17].LNAsets[3],
-	    	      			  d1, rxPar[18].LNAsets[2], d1, rxPar[18].LNAsets[3], d1, rxPar[19].LNAsets[2], d1, rxPar[19].LNAsets[3],
-	    	      			  (float)wifPar.atten[16]/2., (float)wifPar.atten[16+NRX]/2., (float)wifPar.atten[17]/2., (float)wifPar.atten[17+NRX]/2.,
-	    	      			  (float)wifPar.atten[18]/2., (float)wifPar.atten[18+NRX]/2., (float)wifPar.atten[19]/2., (float)wifPar.atten[19+NRX]/2.);
+	    	      			  d1, rxPar[18].LNAsets[2], d1, rxPar[18].LNAsets[3], d1, rxPar[19].LNAsets[2], d1, rxPar[19].LNAsets[3]);
 	   	    		  } else {
 	    			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
 	              }
@@ -1216,7 +1201,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  (float)flashData.atten[36]/2., (float)flashData.atten[37]/2., (float)flashData.atten[38]/2., (float)flashData.atten[39]/2.);
 
 
-	      } else if (!strcasecmp(state, "vane")) {
+	      } /* else if (!strcasecmp(state, "vane")) {
 	    	OSTimeDly(CMDDELAY);
 	      	rtn = argus_readAllCalSysADC();
 	      	sprintf(status, "%sVane parameters:\r\n"
@@ -1229,7 +1214,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      		   calSysPar.adcv[1]);
 	      } else {  // invalid argument
     	  	  longHelp(status, usage, &Correlator::execArgusMonPts);
-	      }
+	      }*/
 	      }
 	      } else {  // no argument; send LNA bias readout to screen
      		  if (lnaPwrState) {
