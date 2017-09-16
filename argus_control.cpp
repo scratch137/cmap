@@ -926,7 +926,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 		  "  Read and display monitor and set points.\r\n"
 		  "  KEYWORD:\r\n"
 		  "    LNA for measured LNA bias values.\r\n"
-		  "    SETS for LNA set points.\r\n"
+		  "    SETS for LNA requested set points.\r\n"
 		  "    POW for power supply values and card power monitor points.\r\n"
 		  "    CRYO for cryostat monitor points.\r\n"
 		  "    PRESETS for stored bias values.\r\n"
