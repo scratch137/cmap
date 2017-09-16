@@ -928,11 +928,9 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 		  "    LNA for measured LNA bias values.\r\n"
 		  "    SETS for LNA set points.\r\n"
 		  "    POW for power supply values and card power monitor points.\r\n"
-		  "    WIF for warm IF monitor points.\r\n"
 		  "    CRYO for cryostat monitor points.\r\n"
-		  "    VANE for cal system vane data.\r\n"
 		  "    PRESETS for stored bias values.\r\n"
-		  "  No KEYWORD returns LNA bias values.\r\n"
+		  "  Empty KEYWORD returns LNA bias values.\r\n"
 		  ;
 
   int rtn = 0;
@@ -976,37 +974,37 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	      			  pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0],  //pv, nv, vds
 	    	      			  d2, rxPar[0].LNAmonPts[0], d2, rxPar[0].LNAmonPts[1], d2, rxPar[1].LNAmonPts[0], d2, rxPar[1].LNAmonPts[1],
 	    	      			  d2, rxPar[2].LNAmonPts[0], d2, rxPar[2].LNAmonPts[1], d2, rxPar[3].LNAmonPts[0], d2, rxPar[3].LNAmonPts[1],
-	    	      			  d1, rxPar[0].LNAmonPts[2], d1, rxPar[0].LNAmonPts[3], d1, rxPar[1].LNAmonPts[2], d1, rxPar[1].LNAmonPts[3],
+	    	      			  d2, rxPar[0].LNAmonPts[2], d2, rxPar[0].LNAmonPts[3], d2, rxPar[1].LNAmonPts[2], d2, rxPar[1].LNAmonPts[3],
 	    	      			  d2, rxPar[2].LNAmonPts[2], d2, rxPar[2].LNAmonPts[3], d2, rxPar[3].LNAmonPts[2], d2, rxPar[3].LNAmonPts[3],
-	    	      			  d2, rxPar[0].LNAmonPts[4], d2, rxPar[0].LNAmonPts[5], d2, rxPar[1].LNAmonPts[4], d2, rxPar[1].LNAmonPts[5],
+	    	      			  d1, rxPar[0].LNAmonPts[4], d1, rxPar[0].LNAmonPts[5], d1, rxPar[1].LNAmonPts[4], d1, rxPar[1].LNAmonPts[5],
 	    	      			  d1, rxPar[2].LNAmonPts[4], d1, rxPar[2].LNAmonPts[5], d1, rxPar[3].LNAmonPts[4], d1, rxPar[3].LNAmonPts[5],
 
 	    	      			  d2, rxPar[4].LNAmonPts[0], d2, rxPar[4].LNAmonPts[1], d2, rxPar[5].LNAmonPts[0], d2, rxPar[5].LNAmonPts[1],
 	    	      			  d2, rxPar[6].LNAmonPts[0], d2, rxPar[6].LNAmonPts[1], d2, rxPar[7].LNAmonPts[0], d2, rxPar[7].LNAmonPts[1],
-	    	      			  d1, rxPar[4].LNAmonPts[2], d1, rxPar[4].LNAmonPts[3], d1, rxPar[5].LNAmonPts[2], d1, rxPar[5].LNAmonPts[3],
+	    	      			  d2, rxPar[4].LNAmonPts[2], d2, rxPar[4].LNAmonPts[3], d2, rxPar[5].LNAmonPts[2], d2, rxPar[5].LNAmonPts[3],
 	    	      			  d2, rxPar[6].LNAmonPts[2], d2, rxPar[6].LNAmonPts[3], d2, rxPar[7].LNAmonPts[2], d2, rxPar[7].LNAmonPts[3],
-	    	      			  d2, rxPar[4].LNAmonPts[4], d1, rxPar[4].LNAmonPts[5], d1, rxPar[5].LNAmonPts[4], d1, rxPar[5].LNAmonPts[5],
-	    	      			  d1, rxPar[6].LNAmonPts[4], d2, rxPar[6].LNAmonPts[5], d2, rxPar[7].LNAmonPts[4], d2, rxPar[7].LNAmonPts[5],
+	    	      			  d1, rxPar[4].LNAmonPts[4], d1, rxPar[4].LNAmonPts[5], d1, rxPar[5].LNAmonPts[4], d1, rxPar[5].LNAmonPts[5],
+	    	      			  d1, rxPar[6].LNAmonPts[4], d1, rxPar[6].LNAmonPts[5], d1, rxPar[7].LNAmonPts[4], d1, rxPar[7].LNAmonPts[5],
 
 	    	      			  d2, rxPar[8].LNAmonPts[0],  d2, rxPar[8].LNAmonPts[1],  d2, rxPar[9].LNAmonPts[0],  d2, rxPar[9].LNAmonPts[1],
 	    	      			  d2, rxPar[10].LNAmonPts[0], d2, rxPar[10].LNAmonPts[1], d2, rxPar[11].LNAmonPts[0], d2, rxPar[11].LNAmonPts[1],
-	    	      			  d1, rxPar[8].LNAmonPts[2],  d1, rxPar[8].LNAmonPts[3],  d1, rxPar[9].LNAmonPts[2],  d1, rxPar[9].LNAmonPts[3],
+	    	      			  d2, rxPar[8].LNAmonPts[2],  d2, rxPar[8].LNAmonPts[3],  d2, rxPar[9].LNAmonPts[2],  d2, rxPar[9].LNAmonPts[3],
 	    	      			  d2, rxPar[10].LNAmonPts[2], d2, rxPar[10].LNAmonPts[3], d2, rxPar[11].LNAmonPts[2], d2, rxPar[11].LNAmonPts[3],
-	    	      			  d2, rxPar[8].LNAmonPts[4],  d2, rxPar[8].LNAmonPts[5],  d2, rxPar[9].LNAmonPts[4],  d2, rxPar[9].LNAmonPts[5],
+	    	      			  d1, rxPar[8].LNAmonPts[4],  d1, rxPar[8].LNAmonPts[5],  d1, rxPar[9].LNAmonPts[4],  d1, rxPar[9].LNAmonPts[5],
 	    	      			  d1, rxPar[10].LNAmonPts[4], d1, rxPar[10].LNAmonPts[5], d1, rxPar[11].LNAmonPts[4], d1, rxPar[11].LNAmonPts[5],
 
 	    	      			  d2, rxPar[12].LNAmonPts[0], d2, rxPar[12].LNAmonPts[1], d2, rxPar[13].LNAmonPts[0], d2, rxPar[13].LNAmonPts[1],
 	    	      			  d2, rxPar[14].LNAmonPts[0], d2, rxPar[14].LNAmonPts[1], d2, rxPar[15].LNAmonPts[0], d2, rxPar[15].LNAmonPts[1],
-	    	      			  d1, rxPar[12].LNAmonPts[2], d1, rxPar[12].LNAmonPts[3], d1, rxPar[13].LNAmonPts[2], d1, rxPar[13].LNAmonPts[3],
+	    	      			  d2, rxPar[12].LNAmonPts[2], d2, rxPar[12].LNAmonPts[3], d2, rxPar[13].LNAmonPts[2], d2, rxPar[13].LNAmonPts[3],
 	    	      			  d2, rxPar[14].LNAmonPts[2], d2, rxPar[14].LNAmonPts[3], d2, rxPar[15].LNAmonPts[2], d2, rxPar[15].LNAmonPts[3],
-	    	      			  d2, rxPar[12].LNAmonPts[4], d2, rxPar[12].LNAmonPts[5], d2, rxPar[13].LNAmonPts[4], d2, rxPar[13].LNAmonPts[5],
+	    	      			  d1, rxPar[12].LNAmonPts[4], d1, rxPar[12].LNAmonPts[5], d1, rxPar[13].LNAmonPts[4], d1, rxPar[13].LNAmonPts[5],
 	    	      			  d1, rxPar[14].LNAmonPts[4], d1, rxPar[14].LNAmonPts[5], d1, rxPar[15].LNAmonPts[4], d1, rxPar[15].LNAmonPts[5],
 
 	    	      			  d2, rxPar[16].LNAmonPts[0], d2, rxPar[16].LNAmonPts[1], d2, rxPar[17].LNAmonPts[0], d2, rxPar[17].LNAmonPts[1],
 	    	      			  d2, rxPar[18].LNAmonPts[0], d2, rxPar[18].LNAmonPts[1], d2, rxPar[19].LNAmonPts[0], d2, rxPar[19].LNAmonPts[1],
-	    	      			  d1, rxPar[16].LNAmonPts[2], d1, rxPar[16].LNAmonPts[3], d1, rxPar[17].LNAmonPts[2], d1, rxPar[17].LNAmonPts[3],
+	    	      			  d2, rxPar[16].LNAmonPts[2], d2, rxPar[16].LNAmonPts[3], d2, rxPar[17].LNAmonPts[2], d2, rxPar[17].LNAmonPts[3],
 	    	      			  d2, rxPar[18].LNAmonPts[2], d2, rxPar[18].LNAmonPts[3], d2, rxPar[19].LNAmonPts[2], d2, rxPar[19].LNAmonPts[3],
-	    	      			  d2, rxPar[16].LNAmonPts[4], d2, rxPar[16].LNAmonPts[5], d2, rxPar[17].LNAmonPts[4], d2, rxPar[17].LNAmonPts[5],
+	    	      			  d1, rxPar[16].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[17].LNAmonPts[4], d1, rxPar[17].LNAmonPts[5],
 	    	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
 	    		  } else {
 	    			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
@@ -1035,28 +1033,28 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 
 	    	      			  d2, rxPar[0].LNAsets[0], d2, rxPar[0].LNAsets[1], d2, rxPar[1].LNAsets[0], d2, rxPar[1].LNAsets[1],
 	    	      			  d2, rxPar[2].LNAsets[0], d2, rxPar[2].LNAsets[1], d2, rxPar[3].LNAsets[0], d2, rxPar[3].LNAsets[1],
-	    	      			  d1, rxPar[0].LNAsets[2], d1, rxPar[0].LNAsets[3], d1, rxPar[1].LNAsets[2], d1, rxPar[1].LNAsets[3],
-	    	      			  d1, rxPar[2].LNAsets[2], d1, rxPar[2].LNAsets[3], d1, rxPar[3].LNAsets[2], d1, rxPar[3].LNAsets[3],
+	    	      			  d2, rxPar[0].LNAsets[2], d2, rxPar[0].LNAsets[3], d2, rxPar[1].LNAsets[2], d2, rxPar[1].LNAsets[3],
+	    	      			  d2, rxPar[2].LNAsets[2], d2, rxPar[2].LNAsets[3], d2, rxPar[3].LNAsets[2], d2, rxPar[3].LNAsets[3],
 
 	    	      			  d2, rxPar[4].LNAsets[0], d2, rxPar[4].LNAsets[1], d2, rxPar[5].LNAsets[0], d2, rxPar[5].LNAsets[1],
 	    	      			  d2, rxPar[6].LNAsets[0], d2, rxPar[6].LNAsets[1], d2, rxPar[7].LNAsets[0], d2, rxPar[7].LNAsets[1],
-	    	      			  d1, rxPar[4].LNAsets[2], d1, rxPar[4].LNAsets[3], d1, rxPar[5].LNAsets[2], d1, rxPar[5].LNAsets[3],
-	    	      			  d1, rxPar[6].LNAsets[2], d1, rxPar[6].LNAsets[3], d1, rxPar[7].LNAsets[2], d1, rxPar[7].LNAsets[3],
+	    	      			  d2, rxPar[4].LNAsets[2], d2, rxPar[4].LNAsets[3], d2, rxPar[5].LNAsets[2], d2, rxPar[5].LNAsets[3],
+	    	      			  d2, rxPar[6].LNAsets[2], d2, rxPar[6].LNAsets[3], d2, rxPar[7].LNAsets[2], d2, rxPar[7].LNAsets[3],
 
 	    	      			  d2, rxPar[8].LNAsets[0], d2, rxPar[8].LNAsets[1], d2, rxPar[9].LNAsets[0], d2, rxPar[9].LNAsets[1],
 	    	      			  d2, rxPar[10].LNAsets[0], d2, rxPar[10].LNAsets[1], d2, rxPar[11].LNAsets[0], d2, rxPar[11].LNAsets[1],
-	    	      			  d1, rxPar[8].LNAsets[2], d1, rxPar[8].LNAsets[3], d1, rxPar[9].LNAsets[2], d1, rxPar[9].LNAsets[3],
-	    	      			  d1, rxPar[10].LNAsets[2], d1, rxPar[10].LNAsets[3], d1, rxPar[11].LNAsets[2], d1, rxPar[11].LNAsets[3],
+	    	      			  d2, rxPar[8].LNAsets[2], d2, rxPar[8].LNAsets[3], d2, rxPar[9].LNAsets[2], d2, rxPar[9].LNAsets[3],
+	    	      			  d2, rxPar[10].LNAsets[2], d2, rxPar[10].LNAsets[3], d2, rxPar[11].LNAsets[2], d2, rxPar[11].LNAsets[3],
 
 	    	      			  d2, rxPar[12].LNAsets[0], d2, rxPar[12].LNAsets[1], d2, rxPar[13].LNAsets[0], d2, rxPar[13].LNAsets[1],
 	    	      			  d2, rxPar[14].LNAsets[0], d2, rxPar[14].LNAsets[1], d2, rxPar[15].LNAsets[0], d2, rxPar[15].LNAsets[1],
-	    	      			  d1, rxPar[12].LNAsets[2], d1, rxPar[12].LNAsets[3], d1, rxPar[13].LNAsets[2], d1, rxPar[13].LNAsets[3],
-	    	      			  d1, rxPar[14].LNAsets[2], d1, rxPar[14].LNAsets[3], d1, rxPar[15].LNAsets[2], d1, rxPar[15].LNAsets[3],
+	    	      			  d2, rxPar[12].LNAsets[2], d2, rxPar[12].LNAsets[3], d2, rxPar[13].LNAsets[2], d2, rxPar[13].LNAsets[3],
+	    	      			  d2, rxPar[14].LNAsets[2], d2, rxPar[14].LNAsets[3], d2, rxPar[15].LNAsets[2], d2, rxPar[15].LNAsets[3],
 
 	    	      			  d2, rxPar[16].LNAsets[0], d2, rxPar[16].LNAsets[1], d2, rxPar[17].LNAsets[0], d2, rxPar[17].LNAsets[1],
 	    	      			  d2, rxPar[18].LNAsets[0], d2, rxPar[18].LNAsets[1], d2, rxPar[19].LNAsets[0], d2, rxPar[19].LNAsets[1],
-	    	      			  d1, rxPar[16].LNAsets[2], d1, rxPar[16].LNAsets[3], d1, rxPar[17].LNAsets[2], d1, rxPar[17].LNAsets[3],
-	    	      			  d1, rxPar[18].LNAsets[2], d1, rxPar[18].LNAsets[3], d1, rxPar[19].LNAsets[2], d1, rxPar[19].LNAsets[3]);
+	    	      			  d2, rxPar[16].LNAsets[2], d2, rxPar[16].LNAsets[3], d2, rxPar[17].LNAsets[2], d2, rxPar[17].LNAsets[3],
+	    	      			  d2, rxPar[18].LNAsets[2], d2, rxPar[18].LNAsets[3], d2, rxPar[19].LNAsets[2], d2, rxPar[19].LNAsets[3]);
 	   	    		  } else {
 	    			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
 	              }
