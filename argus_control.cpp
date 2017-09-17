@@ -772,12 +772,81 @@ void Correlator::execArgusPwrCtrl(return_type status, argument_type arg)
       	}
       }
     } else {
-      // Command called without arguments; echo power state and key values
-      int rtn = argus_readPwrADCs();
+      // Command called without arguments; write LNA state
+    	int rtn = 0;
+    	if (lnaPwrState) {
+    		OSTimeDly(CMDDELAY);
+    		rtn += argus_readPwrADCs();
+    		rtn += argus_readLNAbiasADCs("vg");
+    		rtn += argus_readLNAbiasADCs("vd");
+    		rtn += argus_readLNAbiasADCs("id");
 
-      sprintf(status, "%sLNA power state %s.\r\n +15V: %6.2f V\r\n -15V: %6.2f V\r\n  +5V: %6.2f V\r\n",
-    		  (rtn==0 ? statusOK : statusERR), (lnaPwrState==1 ? "ON" : "OFF"),
-    		  pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0]);
+    		sprintf(status, "%sLNA power state %s.\r\nSupplies: +15V: %5.2f V; "
+				  "-15V: %5.2f V; +5V: %5.2f V\r\n"
+				  "Voltages in [V], currents in [mA]\r\n\r\n"
+	      			  "          1               2               3               4\r\n"
+	      			  "VG: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "VD: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "ID: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
+	      			  "          5               6               7               8\r\n"
+	      			  "VG: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "VD: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "ID: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
+	      			  "          9               10              11              12\r\n"
+	      			  "VG: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "VD: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "ID: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
+	      			  "          13              14              15              16\r\n"
+	      			  "VG: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "VD: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "ID: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
+	      			  "          17              18              19              20\r\n"
+	      			  "VG: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "VD: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	      			  "ID: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n",
+	      			  (rtn==0 ? statusOK : statusERR), (lnaPwrState==1 ? "ON" : "OFF"),
+	      			  pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0],  //pv, nv, vds
+	      			  d2, rxPar[0].LNAmonPts[0], d2, rxPar[0].LNAmonPts[1], d2, rxPar[1].LNAmonPts[0], d2, rxPar[1].LNAmonPts[1],
+	      			  d2, rxPar[2].LNAmonPts[0], d2, rxPar[2].LNAmonPts[1], d2, rxPar[3].LNAmonPts[0], d2, rxPar[3].LNAmonPts[1],
+	      			  d2, rxPar[0].LNAmonPts[2], d2, rxPar[0].LNAmonPts[3], d2, rxPar[1].LNAmonPts[2], d2, rxPar[1].LNAmonPts[3],
+	      			  d2, rxPar[2].LNAmonPts[2], d2, rxPar[2].LNAmonPts[3], d2, rxPar[3].LNAmonPts[2], d2, rxPar[3].LNAmonPts[3],
+	      			  d1, rxPar[0].LNAmonPts[4], d1, rxPar[0].LNAmonPts[5], d1, rxPar[1].LNAmonPts[4], d1, rxPar[1].LNAmonPts[5],
+	      			  d1, rxPar[2].LNAmonPts[4], d1, rxPar[2].LNAmonPts[5], d1, rxPar[3].LNAmonPts[4], d1, rxPar[3].LNAmonPts[5],
+
+	      			  d2, rxPar[4].LNAmonPts[0], d2, rxPar[4].LNAmonPts[1], d2, rxPar[5].LNAmonPts[0], d2, rxPar[5].LNAmonPts[1],
+	      			  d2, rxPar[6].LNAmonPts[0], d2, rxPar[6].LNAmonPts[1], d2, rxPar[7].LNAmonPts[0], d2, rxPar[7].LNAmonPts[1],
+	      			  d2, rxPar[4].LNAmonPts[2], d2, rxPar[4].LNAmonPts[3], d2, rxPar[5].LNAmonPts[2], d2, rxPar[5].LNAmonPts[3],
+	      			  d2, rxPar[6].LNAmonPts[2], d2, rxPar[6].LNAmonPts[3], d2, rxPar[7].LNAmonPts[2], d2, rxPar[7].LNAmonPts[3],
+	      			  d1, rxPar[4].LNAmonPts[4], d1, rxPar[4].LNAmonPts[5], d1, rxPar[5].LNAmonPts[4], d1, rxPar[5].LNAmonPts[5],
+	      			  d1, rxPar[6].LNAmonPts[4], d1, rxPar[6].LNAmonPts[5], d1, rxPar[7].LNAmonPts[4], d1, rxPar[7].LNAmonPts[5],
+
+	      			  d2, rxPar[8].LNAmonPts[0],  d2, rxPar[8].LNAmonPts[1],  d2, rxPar[9].LNAmonPts[0],  d2, rxPar[9].LNAmonPts[1],
+	      			  d2, rxPar[10].LNAmonPts[0], d2, rxPar[10].LNAmonPts[1], d2, rxPar[11].LNAmonPts[0], d2, rxPar[11].LNAmonPts[1],
+	      			  d2, rxPar[8].LNAmonPts[2],  d2, rxPar[8].LNAmonPts[3],  d2, rxPar[9].LNAmonPts[2],  d2, rxPar[9].LNAmonPts[3],
+	      			  d2, rxPar[10].LNAmonPts[2], d2, rxPar[10].LNAmonPts[3], d2, rxPar[11].LNAmonPts[2], d2, rxPar[11].LNAmonPts[3],
+	      			  d1, rxPar[8].LNAmonPts[4],  d1, rxPar[8].LNAmonPts[5],  d1, rxPar[9].LNAmonPts[4],  d1, rxPar[9].LNAmonPts[5],
+	      			  d1, rxPar[10].LNAmonPts[4], d1, rxPar[10].LNAmonPts[5], d1, rxPar[11].LNAmonPts[4], d1, rxPar[11].LNAmonPts[5],
+
+	      			  d2, rxPar[12].LNAmonPts[0], d2, rxPar[12].LNAmonPts[1], d2, rxPar[13].LNAmonPts[0], d2, rxPar[13].LNAmonPts[1],
+	      			  d2, rxPar[14].LNAmonPts[0], d2, rxPar[14].LNAmonPts[1], d2, rxPar[15].LNAmonPts[0], d2, rxPar[15].LNAmonPts[1],
+	      			  d2, rxPar[12].LNAmonPts[2], d2, rxPar[12].LNAmonPts[3], d2, rxPar[13].LNAmonPts[2], d2, rxPar[13].LNAmonPts[3],
+	      			  d2, rxPar[14].LNAmonPts[2], d2, rxPar[14].LNAmonPts[3], d2, rxPar[15].LNAmonPts[2], d2, rxPar[15].LNAmonPts[3],
+	      			  d1, rxPar[12].LNAmonPts[4], d1, rxPar[12].LNAmonPts[5], d1, rxPar[13].LNAmonPts[4], d1, rxPar[13].LNAmonPts[5],
+	      			  d1, rxPar[14].LNAmonPts[4], d1, rxPar[14].LNAmonPts[5], d1, rxPar[15].LNAmonPts[4], d1, rxPar[15].LNAmonPts[5],
+
+	      			  d2, rxPar[16].LNAmonPts[0], d2, rxPar[16].LNAmonPts[1], d2, rxPar[17].LNAmonPts[0], d2, rxPar[17].LNAmonPts[1],
+	      			  d2, rxPar[18].LNAmonPts[0], d2, rxPar[18].LNAmonPts[1], d2, rxPar[19].LNAmonPts[0], d2, rxPar[19].LNAmonPts[1],
+	      			  d2, rxPar[16].LNAmonPts[2], d2, rxPar[16].LNAmonPts[3], d2, rxPar[17].LNAmonPts[2], d2, rxPar[17].LNAmonPts[3],
+	      			  d2, rxPar[18].LNAmonPts[2], d2, rxPar[18].LNAmonPts[3], d2, rxPar[19].LNAmonPts[2], d2, rxPar[19].LNAmonPts[3],
+	      			  d1, rxPar[16].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[17].LNAmonPts[4], d1, rxPar[17].LNAmonPts[5],
+	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
+ 		  } else {
+ 	    		rtn = argus_readPwrADCs();
+		   		sprintf(status, "%sLNA power state %s.\r\nSupplies: +15V: %5.2f V; "
+ 						  "-15V: %5.2f V; +5V: %5.2f V\r\n",
+ 		    		  (rtn==0 ? statusOK : statusERR), (lnaPwrState==1 ? "ON" : "OFF"),
+ 		    		  pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0]);
+ 		  }
     }
   } else {
     longHelp(status, usage, &Correlator::execArgusPwrCtrl);
@@ -1224,7 +1293,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 			  rtn += argus_readLNAbiasADCs("id");
 
 			  sprintf(status, "%sLNA power state %s.\r\nSupplies: +15V: %5.2f V; "
-					  "-15V: %5.2f V; +5V: %5.2f V\r\n"
+			"-15V: %5.2f V; +5V: %5.2f V\r\n"
 					  "Voltages in [V], currents in [mA]\r\n\r\n"
     	      			  "          1               2               3               4\r\n"
     	      			  "VG: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
