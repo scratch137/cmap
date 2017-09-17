@@ -930,12 +930,12 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 		  "    POW for power supply values and card power monitor points.\r\n"
 		  "    CRYO for cryostat monitor points.\r\n"
 		  "    PRESETS for stored bias values.\r\n"
-		  "  Empty KEYWORD returns LNA bias values.\r\n"
+		  "  Empty keyword gives LNA bias values.\r\n"
 		  ;
 
   int rtn = 0;
-  if (!arg.help) {
-	  if (arg.str) {  // argument present, set new state.
+  if (!arg.help) {    // if no flag for help continue
+	  if (arg.str) {  // if argument is present set new state.
 		  char state[5] = {0};
       // Command called with an argument.
 	      int narg = sscanf(arg.str, "%4s", state);
@@ -1006,28 +1006,28 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	      			  d2, rxPar[18].LNAmonPts[2], d2, rxPar[18].LNAmonPts[3], d2, rxPar[19].LNAmonPts[2], d2, rxPar[19].LNAmonPts[3],
 	    	      			  d1, rxPar[16].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[17].LNAmonPts[4], d1, rxPar[17].LNAmonPts[5],
 	    	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
-	    		  } else {
-	    			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
-	    		  }
+	     		  } else {
+	     			  	  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
+	     		  }
 	    	  } else if (!strcasecmp(state, "sets")) {
 	    		  if (1) {     //(lnaPwrState != 0) {
 	    	      	  sprintf(status, "%sSet values:\r\n"
 	    	      			  "Voltages in [V], currents in [mA]\r\n\r\n"
 	    	      			  "         1               2               3               4\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
 	    	      			  "         5               6               7               8\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
 	    	      			  "         9               10              11              12\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
 	    	      			  "         13              14              15              16\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
+	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n"
 	    	      			  "         17              18              19              20\r\n"
 	    	      			  "G: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
-	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n",
+	    	      			  "D: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n\r\n",
 
 	    	      			  statusOK,
 
@@ -1157,7 +1157,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  "          13              14              15              16\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          17              18              19              20\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
@@ -1199,7 +1199,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  (float)flashData.atten[36]/2., (float)flashData.atten[37]/2., (float)flashData.atten[38]/2., (float)flashData.atten[39]/2.);
 
 
-	      } /* else if (!strcasecmp(state, "vane")) {
+	       } else if (!strcasecmp(state, "vane")) {
 	    	OSTimeDly(CMDDELAY);
 	      	rtn = argus_readAllCalSysADC();
 	      	sprintf(status, "%sVane parameters:\r\n"
@@ -1210,21 +1210,22 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	       		   calSysPar.adcv[2], calSysPar.state,
 	      		   calSysPar.adcv[0],
 	      		   calSysPar.adcv[1]);
-	      } else {  // invalid argument
-    	  	  longHelp(status, usage, &Correlator::execArgusMonPts);
-	      }*/
-	      }
-	      } else {  // no argument; send LNA bias readout to screen
-     		  if (lnaPwrState) {
-     			  OSTimeDly(CMDDELAY);
-    	      	  rtn += argus_readPwrADCs();
-    			  rtn += argus_readLNAbiasADCs("vg");
-    	      	  rtn += argus_readLNAbiasADCs("vd");
-    	      	  rtn += argus_readLNAbiasADCs("id");
 
-    	      	  sprintf(status, "%sLNA power state %s.\r\nSupplies: +15V: %5.2f V; "
-    	      			  "-15V: %5.2f V; +5V: %5.2f V\r\n"
-    	      			  "Voltages in [V], currents in [mA]\r\n\r\n"
+		      } else { // no valid argument; list options
+		    	  longHelp(status, usage, &Correlator::execArgusMonPts);
+		      }
+	      }
+	  } else {	 // no argument given; show lna mon points
+		  if (lnaPwrState) {
+			  OSTimeDly(CMDDELAY);
+			  rtn += argus_readPwrADCs();
+			  rtn += argus_readLNAbiasADCs("vg");
+			  rtn += argus_readLNAbiasADCs("vd");
+			  rtn += argus_readLNAbiasADCs("id");
+
+			  sprintf(status, "%sLNA power state %s.\r\nSupplies: +15V: %5.2f V; "
+					  "-15V: %5.2f V; +5V: %5.2f V\r\n"
+					  "Voltages in [V], currents in [mA]\r\n\r\n"
     	      			  "          1               2               3               4\r\n"
     	      			  "VG: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
     	      			  "VD: %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f,   %5.*f, %5.*f\r\n"
@@ -1281,14 +1282,15 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
     	      			  d2, rxPar[18].LNAmonPts[2], d2, rxPar[18].LNAmonPts[3], d2, rxPar[19].LNAmonPts[2], d2, rxPar[19].LNAmonPts[3],
     	      			  d1, rxPar[16].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[17].LNAmonPts[4], d1, rxPar[17].LNAmonPts[5],
     	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
-   		  } else {
+     		  } else {
     			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
     		  }
 	      }
-	  } else {
-		  longHelp(status, usage, &Correlator::execArgusMonPts);
-	  }
-}
+  } else { // help string requested
+	  longHelp(status, usage, &Correlator::execArgusMonPts);
+  }
+ }
+
 
 /*************************************************************************************/
 /**
