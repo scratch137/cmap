@@ -1344,10 +1344,6 @@ int argus_readThermADCs(void)
 int argus_LNApresets(const flash_t *flash)
 {
 // Storage for Argus is is g1, g2, d1, d2, m1, m2, g3, g4 ... m31, m32
-	// Data written in control.cpp, approx line 405
-	short i, j;
-	int rtn = 0;
-
 	// check for freeze
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
@@ -1356,11 +1352,16 @@ int argus_LNApresets(const flash_t *flash)
 	i2cBusBusy = 1;
 	busLockCtr += 1;
 
+	// Data written in control.cpp, approx line 405
+	short i, j;
+    short k = 2*NSTAGES + NMIX;
+	int rtn = 0;
+
 	for (i=0; i<NRX; i++) {
 		for (j=0; j<NSTAGES; j++){  // set drains first, then gates
-			rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[i+j], 1);
+			rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[i*k+j], 1);
 			// insert OSdelay?
-			rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[i*j], 1);
+			rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[i*k*j], 1);
 		}
 	}
 	if (NWIFBOX > 0) {
@@ -1371,7 +1372,7 @@ int argus_LNApresets(const flash_t *flash)
 		}
 	}
 
-    // release I2C bus
+	// release I2C bus
 	i2cBusBusy = 0;
 
 	return rtn;

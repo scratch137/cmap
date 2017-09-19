@@ -369,17 +369,18 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
     		    // Move LNA bias settings to flashData; storage is g, d  (matches argus_LNApresets)
     		    short i, j;
+    		    short k = 2*NSTAGES + NMIX;
     		    for (i=0; i<NRX; i++) {
     		      for (j=0; j<NSTAGES; j++){
-    		    	  if (rxPar[i].LNAsets[j+NSTAGES] >= VDMIN && rxPar[i].LNAsets[j+NSTAGES] <= VDMAX) {
-    		    		  flashData.lnaDsets[i+j] = rxPar[i].LNAsets[j+NSTAGES];
-    		    	  } else {
-    		    		  flashData.lnaDsets[i+j] = VDSTART;
-    		    	  }
     		    	  if (rxPar[i].LNAsets[j] >= VGMIN && rxPar[i].LNAsets[j] <= VGMAX) {
-    		    		  flashData.lnaGsets[i+j] = rxPar[i].LNAsets[j];
+    		    		  flashData.lnaGsets[i*k+j] = rxPar[i].LNAsets[j];
     		    	  } else {
-    		    		  flashData.lnaGsets[i+j] = VGSTART;
+    		    		  flashData.lnaGsets[i*k+j] = VGSTART;
+    		    	  }
+    		    	  if (rxPar[i].LNAsets[j+NSTAGES] >= VDMIN && rxPar[i].LNAsets[j+NSTAGES] <= VDMAX) {
+    		    		  flashData.lnaDsets[i*k+j] = rxPar[i].LNAsets[j+NSTAGES];
+    		    	  } else {
+    		    		  flashData.lnaDsets[i*k+j] = VDSTART;
     		    	  }
     		      }
     		    }
