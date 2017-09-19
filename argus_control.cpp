@@ -1213,59 +1213,59 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      	  sprintf(status, "%sStored bias values.  Voltages in [V]\r\n\r\n"
 	      			  "          1               2               3               4\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          5               6               7               8\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          9               10              11              12\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          13              14              15              16\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          17              18              19              20\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
-	      			  "A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
+	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
+	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
 	      			  statusOK,
 	      			  flashData.lnaGsets[0], flashData.lnaGsets[1], flashData.lnaGsets[2], flashData.lnaGsets[3],
 	      			  flashData.lnaGsets[4], flashData.lnaGsets[5], flashData.lnaGsets[6], flashData.lnaGsets[7],
 	      			  flashData.lnaDsets[0], flashData.lnaDsets[1], flashData.lnaDsets[2], flashData.lnaDsets[3],
 	      			  flashData.lnaDsets[4], flashData.lnaDsets[5], flashData.lnaDsets[6], flashData.lnaDsets[7],
-	      			  (float)flashData.atten[0]/2., (float)flashData.atten[1]/2., (float)flashData.atten[2]/2., (float)flashData.atten[3]/2.,
-	      			  (float)flashData.atten[4]/2., (float)flashData.atten[5]/2., (float)flashData.atten[6]/2., (float)flashData.atten[7]/2.,
+	      			  //(float)flashData.atten[0]/2., (float)flashData.atten[1]/2., (float)flashData.atten[2]/2., (float)flashData.atten[3]/2.,
+	      			  //(float)flashData.atten[4]/2., (float)flashData.atten[5]/2., (float)flashData.atten[6]/2., (float)flashData.atten[7]/2.,
 
 	      			  flashData.lnaGsets[8], flashData.lnaGsets[9], flashData.lnaGsets[10], flashData.lnaGsets[11],
 	      			  flashData.lnaGsets[12], flashData.lnaGsets[13], flashData.lnaGsets[14], flashData.lnaGsets[15],
 	      			  flashData.lnaDsets[8], flashData.lnaDsets[9], flashData.lnaDsets[10], flashData.lnaDsets[11],
 	      			  flashData.lnaDsets[12], flashData.lnaDsets[13], flashData.lnaDsets[14], flashData.lnaDsets[15],
-	      			  (float)flashData.atten[8]/2., (float)flashData.atten[9]/2., (float)flashData.atten[10]/2., (float)flashData.atten[11]/2.,
-	      			  (float)flashData.atten[12]/2., (float)flashData.atten[13]/2., (float)flashData.atten[14]/2., (float)flashData.atten[15]/2.,
+	      			  //(float)flashData.atten[8]/2., (float)flashData.atten[9]/2., (float)flashData.atten[10]/2., (float)flashData.atten[11]/2.,
+	      			  //(float)flashData.atten[12]/2., (float)flashData.atten[13]/2., (float)flashData.atten[14]/2., (float)flashData.atten[15]/2.,
 			  
 	      			  flashData.lnaGsets[16], flashData.lnaGsets[17], flashData.lnaGsets[18], flashData.lnaGsets[19],
 	      			  flashData.lnaGsets[20], flashData.lnaGsets[21], flashData.lnaGsets[22], flashData.lnaGsets[23],
 	      			  flashData.lnaDsets[16], flashData.lnaDsets[17], flashData.lnaDsets[18], flashData.lnaDsets[19],
 	      			  flashData.lnaDsets[20], flashData.lnaDsets[21], flashData.lnaDsets[22], flashData.lnaDsets[23],
-	      			  (float)flashData.atten[16]/2., (float)flashData.atten[17]/2., (float)flashData.atten[18]/2., (float)flashData.atten[19]/2.,
-	      			  (float)flashData.atten[20]/2., (float)flashData.atten[21]/2., (float)flashData.atten[22]/2., (float)flashData.atten[23]/2.,
+	      			  //(float)flashData.atten[16]/2., (float)flashData.atten[17]/2., (float)flashData.atten[18]/2., (float)flashData.atten[19]/2.,
+	      			  //(float)flashData.atten[20]/2., (float)flashData.atten[21]/2., (float)flashData.atten[22]/2., (float)flashData.atten[23]/2.,
 			  
 	      			  flashData.lnaGsets[24], flashData.lnaGsets[25], flashData.lnaGsets[26], flashData.lnaGsets[27],
 	      			  flashData.lnaGsets[28], flashData.lnaGsets[29], flashData.lnaGsets[30], flashData.lnaGsets[31],
 	      			  flashData.lnaDsets[24], flashData.lnaDsets[25], flashData.lnaDsets[26], flashData.lnaDsets[27],
 	      			  flashData.lnaDsets[28], flashData.lnaDsets[29], flashData.lnaDsets[30], flashData.lnaDsets[31],
-	      			  (float)flashData.atten[24]/2., (float)flashData.atten[25]/2., (float)flashData.atten[26]/2., (float)flashData.atten[27]/2.,
-	      			  (float)flashData.atten[28]/2., (float)flashData.atten[29]/2., (float)flashData.atten[30]/2., (float)flashData.atten[31]/2.,
+	      			  //(float)flashData.atten[24]/2., (float)flashData.atten[25]/2., (float)flashData.atten[26]/2., (float)flashData.atten[27]/2.,
+	      			  //(float)flashData.atten[28]/2., (float)flashData.atten[29]/2., (float)flashData.atten[30]/2., (float)flashData.atten[31]/2.,
 
 	      			  flashData.lnaGsets[32], flashData.lnaGsets[33], flashData.lnaGsets[34], flashData.lnaGsets[35],
 	      			  flashData.lnaGsets[36], flashData.lnaGsets[37], flashData.lnaGsets[38], flashData.lnaGsets[39],
 	      			  flashData.lnaDsets[32], flashData.lnaDsets[33], flashData.lnaDsets[34], flashData.lnaDsets[35],
-	      			  flashData.lnaDsets[36], flashData.lnaDsets[37], flashData.lnaDsets[38], flashData.lnaDsets[39],
-	      			  (float)flashData.atten[32]/2., (float)flashData.atten[33]/2., (float)flashData.atten[34]/2., (float)flashData.atten[35]/2.,
-	      			  (float)flashData.atten[36]/2., (float)flashData.atten[37]/2., (float)flashData.atten[38]/2., (float)flashData.atten[39]/2.);
+	      			  flashData.lnaDsets[36], flashData.lnaDsets[37], flashData.lnaDsets[38], flashData.lnaDsets[39]);
+	      			  //(float)flashData.atten[32]/2., (float)flashData.atten[33]/2., (float)flashData.atten[34]/2., (float)flashData.atten[35]/2.,
+	      			  //(float)flashData.atten[36]/2., (float)flashData.atten[37]/2., (float)flashData.atten[38]/2., (float)flashData.atten[39]/2.);
 
 
 	       } else if (!strcasecmp(state, "vane")) {
