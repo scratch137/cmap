@@ -1394,6 +1394,35 @@ void Correlator::execCOMAPjlna(return_type status, argument_type arg)
   }
 }
 
+/**
+  \brief COMAP jlna command.
+
+  This method returns the LNA monitor points in JSON format.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Return cryostat monitor point values in JSON format.\r\n";
+
+  if (!arg.help && !arg.str) {
+	  int rtn = argus_readThermADCs();
+	  sprintf(status, "{\"frontend\":{\"subsys:cryostat\", \"valid\":%s, \"temps\":"
+			  "{%.1f, %.1f, %.1f, %.1f, %.1f, %.1f}, \"press\":{%.1f, %.3f}}}\r\n",
+	    	    (rtn==0 ? "ok" : "err"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
+	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
+	    		cryoPar.cryoTemps[5],
+	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.),
+	    		cryoPar.auxInputs[0]);
+  } else {
+    	longHelp(status, usage, &Correlator::execCOMAPjcryo);
+  }
+}
+
 /*************************************************************************************/
 /**
   \brief Argus lock test command.
