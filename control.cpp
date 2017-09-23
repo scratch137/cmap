@@ -368,26 +368,24 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		    flashData.gvdiv = (float)value;
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
     		    // Move LNA bias settings to flashData; storage is g, d  (matches argus_LNApresets)
-    		    short i, j;
-    		    short k = 2*NSTAGES + NMIX;
-    		    for (i=0; i<NRX; i++) {
+    		    short i, j, k;
+     		    for (i=0; i<NRX; i++) {
     		      for (j=0; j<NSTAGES; j++){
+    		    	  k = i*NSTAGES + j;  // index within rxPar.lnaXsets vector
+    		    	  // gates, if value is within limits
     		    	  if (rxPar[i].LNAsets[j] >= VGMIN && rxPar[i].LNAsets[j] <= VGMAX) {
-    		    		  flashData.lnaGsets[i*k+j] = rxPar[i].LNAsets[j];
+    		    		  flashData.lnaGsets[k] = rxPar[i].LNAsets[j];
     		    	  } else {
-    		    		  flashData.lnaGsets[i*k+j] = VGSTART;
+    		    		  flashData.lnaGsets[k] = VGSTART;
     		    	  }
+    		    	  // drains, if value is within limits
     		    	  if (rxPar[i].LNAsets[j+NSTAGES] >= VDMIN && rxPar[i].LNAsets[j+NSTAGES] <= VDMAX) {
-    		    		  flashData.lnaDsets[i*k+j] = rxPar[i].LNAsets[j+NSTAGES];
+    		    		  flashData.lnaDsets[k] = rxPar[i].LNAsets[j+NSTAGES];
     		    	  } else {
-    		    		  flashData.lnaDsets[i*k+j] = VDSTART;
+    		    		  flashData.lnaDsets[k] = VDSTART;
     		    	  }
     		      }
     		    }
-    		  	/*for (i=0; i<NRX; i++) {   /// NEEDS WORK ?????
-    		   		flashData.atten[i] = wifPar.Iatten[i];
-    		   		flashData.atten[i+NRX] = wifPar.Qatten[i];
-    		   	} */
     		  } else {
     	            // no valid selection, quit
     		    longHelp(status, usage, &Correlator::execFlash);

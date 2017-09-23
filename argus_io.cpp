@@ -1353,22 +1353,15 @@ int argus_LNApresets(const flash_t *flash)
 	busLockCtr += 1;
 
 	// Data written in control.cpp, approx line 405
-	short i, j;
-    short k = 2*NSTAGES + NMIX;
+	short i, j, k;
 	int rtn = 0;
 
 	for (i=0; i<NRX; i++) {
 		for (j=0; j<NSTAGES; j++){  // set drains first, then gates
-			rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[i*k+j], 1);
-			// insert OSdelay?
-			rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[i*k*j], 1);
-		}
-	}
-	if (NWIFBOX > 0) {
-		for (i=0; i<NRX; i++) {
-			////// NEEDS WORK HERE ???? ///////////
-			rtn += argus_setWIFswitches("a", i, flash->atten[i+NRX], 1);
-			rtn += argus_setWIFswitches("a", i, flash->atten[i], 1);
+			k = i*NSTAGES+j;
+			rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[k], 1);
+			//OSTimeDly(1);   // insert for settling?
+			rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[k], 1);
 		}
 	}
 

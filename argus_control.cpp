@@ -1361,6 +1361,39 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
  }
 
 
+/**
+  \brief COMAP jlna command.
+
+  This method returns the LNA monitor points in JSON format.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execCOMAPjlna(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Return LNA monitor point values in JSON format.\r\n";
+
+  if (!arg.help && !arg.str) {
+/*	    short i, j, k;
+		for (i=0; i<NRX; i++) {
+	      for (j=0; j<NSTAGES; j++){
+	    	  k = i*NSTAGES + j;  // index within rxPar.lnaXsets vector
+	    	  // gates, if value is within limits
+	          flashData.lnaGsets[k] = rxPar[i].LNAsets[j];
+	    	  // drains, if value is within limits
+	    		  flashData.lnaDsets[k] = rxPar[i].LNAsets[j+NSTAGES];
+	      }
+	    }
+*/
+	  sprintf(status, "%sStub for jlna.\r\n", statusOK);
+  } else {
+    	longHelp(status, usage, &Correlator::execCOMAPjlna);
+  }
+}
+
 /*************************************************************************************/
 /**
   \brief Argus lock test command.

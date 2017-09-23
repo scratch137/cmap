@@ -133,6 +133,8 @@ void initCommandShell()
 //      ::zpecShell["check"]     = &Correlator::execArgusRxHealth;
       ::zpecShell["freeze"]    = &Correlator::execArgusFreeze;
       ::zpecShell["thaw"]      = &Correlator::execArgusThaw;
+      ::zpecShell["jlna"]      = &Correlator::execCOMAPjlna;
+
       //::zpecShell["lock"]    = &Correlator::execArgusLock;
       break;
 

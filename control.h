@@ -304,6 +304,7 @@ public:
   void execArgusFreeze(return_type status, argument_type arg);
   void execArgusThaw(return_type status, argument_type arg);
   void execArgusLock(return_type status, argument_type arg);
+  void execCOMAPjlna(return_type status, argument_type arg);
 
 private:
   /// Alias map container type.
