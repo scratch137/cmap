@@ -1411,13 +1411,12 @@ void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
 
   if (!arg.help && !arg.str) {
 	  int rtn = argus_readThermADCs();
-	  sprintf(status, "{\"frontend\":{\"subsys:cryostat\", \"valid\":%s, \"temps\":"
-			  "{%.1f, %.1f, %.1f, %.1f, %.1f, %.1f}, \"press\":{%.1f, %.3f}}}\r\n",
-	    	    (rtn==0 ? "ok" : "err"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
+	  sprintf(status, "{\"cryostat\":{\"valid\":%s, \"temps\":"
+			  "{%.1f, %.1f, %.1f, %.1f, %.1f, %.1f}, \"press\":%.1f}}\r\n",
+	    	    (rtn==0 ? "true" : "false"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
 	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
 	    		cryoPar.cryoTemps[5],
-	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.),
-	    		cryoPar.auxInputs[0]);
+	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.));
   } else {
     	longHelp(status, usage, &Correlator::execCOMAPjcryo);
   }
