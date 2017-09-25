@@ -1359,6 +1359,7 @@ int argus_LNApresets(const flash_t *flash)
 	for (i=0; i<NRX; i++) {
 		for (j=0; j<NSTAGES; j++){  // set drains first, then gates
 			k = i*NSTAGES+j;
+			// need to adjust gates first to keep from running into high-v limit on drains
 			rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[k], 1);
 			//OSTimeDly(1);   // insert for settling?
 			rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[k], 1);
