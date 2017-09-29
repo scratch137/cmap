@@ -12,10 +12,10 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_dev_20170925"
+#define VER "comap_nohardware_20170929"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
-//#define SIMULATE
+#define SIMULATE
 #ifdef SIMULATE
 #define I2CSEND1 0
 #define I2CSEND2 0
