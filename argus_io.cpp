@@ -1889,7 +1889,7 @@ int argus_driveVane(BYTE cmd, short int nmax, float stopv, float deltastop)
 int argus_clearBus(void)
 {
 
-	/* return value will be:
+	/* return value will be:  //// NEEDS WORK -- needs update to reflect error message ///
 	 * i2cBusBusy value +
 	 * write failure to spare switch *2 +
 	 * write failure to backplane switch * 4 +
@@ -1933,13 +1933,12 @@ int argus_clearBus(void)
 	if(I2CSEND1) I2CStat += 8;     // write to switch
 	address = wifaddr[1];      // I2C address for warm IF chassis #2
 	if(I2CSEND1) I2CStat += 16;     // write to switch
+
 	// hardware reset, main sub-bus switch
-	// set and clear sends lows to main sub-bus switch to reset it
-	address = I2CSWITCH_SP;
-	buffer[0] = 0x08;  // ch 3, hardware hack
-	if(I2CSEND1) I2CStat += 32;     // write to switch
-	buffer[0] = 0x00;
-	if(I2CSEND1) I2CStat += 64;     // write to switch
+	OSTimeDly(1); // needs a delay to make the pulse the right width, otherwise lots of jitter
+	J2[28].set();
+	OSTimeDly(1);
+	J2[28].clr();
 
 	// wrap up with check of the state of the I2C bus:
 	i2cState[1] = 0;
