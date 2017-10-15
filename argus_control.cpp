@@ -1412,7 +1412,7 @@ void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
   if (!arg.help && !arg.str) {
 	  int rtn = argus_readThermADCs();
 	  sprintf(status, "{\"cryostat\":{\"dataOK\":%s, \"temps\":"
-			  "[%.1f, %.1f, %.1f, %.1f, %.1f, %.1f], \"press\":%.1f}}\r\n",
+			  "[%.1f, %.1f, %.1f, %.1f, %.1f, %.1f], \"press\":[%.1f]}}\r\n",
 	    	    (rtn==0 ? "true" : "false"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
 	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
 	    		cryoPar.cryoTemps[5],
