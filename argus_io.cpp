@@ -327,9 +327,13 @@ void argus_init(const flash_t *flash)
 	printf("argus_init: flash serNo = %d, hwType = %d, valid = %d.\n",
 	  			  flash->serialNo, flash->hw, flash->valid);
 
-	// initialize I2C switch reset line for microC (irrelevant for earlier versions)
+	// initialize I2C switch reset line and pulse reset for microC (irrelevant for earlier versions)
 	J2[28].function (PINJ2_28_GPIO);  // configure pin J2-28 for GPIO
 	J2[28].clr();  // set pin low to enable I2C switches
+	OSTimeDly(1);  // delay to make pulse come out right
+	J2[28].set();  // reset
+	OSTimeDly(1);
+	J2[28].clr();  // enable I2C switches
 
 	// get voltage divider value from flash
 	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
