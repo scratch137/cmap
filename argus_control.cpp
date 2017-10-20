@@ -88,6 +88,9 @@ void Correlator::execArgusInit(return_type status, argument_type arg)
   "  Initialize hardware without a reboot.\r\n";
 
   if (!arg.help) {
+	  flash_t flashData;
+	  zpec_readFlash(&flashData);
+	  argus_init(&flashData);
 	  sprintf(status, "%sHardware initialized\r\n", statusOK);
   } else {
     longHelp(status, usage, &Correlator::execArgusInit);
