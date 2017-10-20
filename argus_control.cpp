@@ -68,6 +68,33 @@ void Correlator::execArgusTest(return_type status, argument_type arg)
 }
 
 /**
+  \brief Argus init command.
+
+  This method runs the hardware initialization function as a standalone rather than at boot.
+  This will
+  - pulse the I2C reset line to reset switches
+  - turn off the LNAs gracefully if they are on
+  - initialize all the parallel IO converters
+  - and so on
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execArgusInit(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Initialize hardware without a reboot.\r\n";
+
+  if (!arg.help) {
+	  sprintf(status, "%sHardware initialized\r\n", statusOK);
+  } else {
+    longHelp(status, usage, &Correlator::execArgusInit);
+  }
+}
+
+/**
   \brief Argus freeze command.
 
   This method sets a bit to freeze the system state, generally meant for during integrations.

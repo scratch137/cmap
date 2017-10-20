@@ -284,6 +284,7 @@ public:
   // Argus-specific commands.
   //
   void execArgusTest(return_type status, argument_type arg);
+  void execArgusInit(return_type status, argument_type arg);
   void execArgusLimits(return_type status, argument_type arg);
   void execArgusDrain(return_type status, argument_type arg);
   void execArgusGate(return_type status, argument_type arg);

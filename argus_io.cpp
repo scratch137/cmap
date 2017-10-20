@@ -312,6 +312,11 @@ struct chRead thRead = {
 void argus_init(const flash_t *flash)
 {
 
+	// get voltage divider value from flash
+	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
+	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
+	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
+
 	// start I2C interface
 	I2CInit( 0xaa, 0x1a );   // Initialize I2C and set NB device slave address and I2C clock
 	// Second argument is clock divisor for I2C bus, freqdiv
@@ -335,13 +340,10 @@ void argus_init(const flash_t *flash)
 	OSTimeDly(1);
 	J2[28].clr();  // enable I2C switches
 
-	// get voltage divider value from flash
-	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
-	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
-	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
-
-	// in case system is already running, set bias levels to safe voltages
-	// before power control relays reset open -- code in control.cpp/Correlator::execReboot
+	// shut down LNA power if it is on
+	// may take a while if lnaPwrState is high but PIOs aren't initialized,
+	// or maybe not
+	if (lnaPwrState==1) argus_lnaPower(0);
 
 	/** Initialize devices on main I2C bus **/
 	//// Power control card

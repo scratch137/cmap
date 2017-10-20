@@ -116,6 +116,7 @@ void initCommandShell()
 
     case ZPEC_HW_ARG:    // edited for comap, AH 2017-08-12
       //::zpecShell["test"]      = &Correlator::execArgusTest;
+      ::zpecShell["init"]      = &Correlator::execArgusInit;
       ::zpecShell["limits"]    = &Correlator::execArgusLimits;
       ::zpecShell["all"]       = &Correlator::execArgusSetAll;
       ::zpecShell["g"]         = &Correlator::execArgusGate;
