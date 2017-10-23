@@ -343,8 +343,10 @@ void argus_init(const flash_t *flash)
 	// shut down LNA power if it is on
 	// may take a while if lnaPwrState is high but PIOs aren't initialized,
 	// or maybe not
-	//if (lnaPwrState==1) argus_lnaPower(0);
-	argus_lnaPower(0);
+	if (lnaPwrState==1) {
+		argus_lnaPower(0);
+		lnaPwrState=0;
+	}
 
 	/** Initialize devices on main I2C bus **/
 	//// Power control card
