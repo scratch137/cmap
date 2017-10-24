@@ -345,7 +345,6 @@ void argus_init(const flash_t *flash)
 	// or maybe not
 	if (lnaPwrState==1) {
 		argus_lnaPower(0);
-		lnaPwrState=0;
 	}
 
 	/** Initialize devices on main I2C bus **/

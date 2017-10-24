@@ -90,7 +90,9 @@ void Correlator::execArgusInit(return_type status, argument_type arg)
   if (!arg.help) {
 	  flash_t flashData;
 	  zpec_readFlash(&flashData);
-	  argus_init(&flashData);
+	  argus_init(&flashData);  // initialize hardware
+	  argus_init(&flashData);  // often seems to need a second reset
+	  argus_init(&flashData);  // and one more for good measure
 	  sprintf(status, "%sHardware initialized\r\n", statusOK);
   } else {
     longHelp(status, usage, &Correlator::execArgusInit);
