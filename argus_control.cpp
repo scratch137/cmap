@@ -320,8 +320,8 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
   "[KEYWORD [VALUE]]\r\n"
   "  Set engineering mode functions.\r\n"
   "    KEYWORD         VALUE:\r\n"
-  "    bypassLNApsLim  x   magic number x to bypass LNA power supply limits.\r\n"
-  "    bypassCIFpsLim  x   magic number x bypass cold IF power supply limits.\r\n"
+  "    bypassLNApsLims  x   magic number x to bypass LNA power supply limits.\r\n"
+//  "    bypassCIFpsLim  x   magic number x bypass cold IF power supply limits.\r\n"
   "    bypassLNAlims   y   magic number y to bypass soft limits on LNA biases.\r\n"
   "    stopVaneOnStall x   0 to ignore vane auto-stop when vane stalled.\r\n"
   "    sendVane        z   send vane drive hardware integer z.\r\n"
@@ -339,8 +339,8 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
 
       if (narg == 2) {
         // Execute the command.
-      	if (!strcasecmp(kw, "bypassLNApsLim")) lnaPSlimitsBypass = (val == 37 ? 1 : 0);
-      	else if (!strcasecmp(kw, "bypassCIFpsLim")) cifPSlimitsBypass = (val == 37 ? 1 : 0);
+      	if (!strcasecmp(kw, "bypassLNApsLims")) lnaPSlimitsBypass = (val == 37 ? 1 : 0);
+//      	else if (!strcasecmp(kw, "bypassCIFpsLim")) cifPSlimitsBypass = (val == 37 ? 1 : 0);
       	else if (!strcasecmp(kw, "bypassLNAlims"))  lnaLimitsBypass = (val == 74 ? 1 : 0);
       	else if (!strcasecmp(kw, "stopVaneOnStall"))  lnaLimitsBypass = (val == 0 ? 0 : 1);
       	else if (!strcasecmp(kw, "sendVane")) {
