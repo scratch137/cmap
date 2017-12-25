@@ -1250,8 +1250,8 @@ float v2t_670(float v) {
 			     0.010019, 0.}};
 
   // pick correct set of coefficients; first out-of-range tests
-  if (v > 1.680) return(-99);  // overvoltage error
-  if (v < 0.070) return(99);   // undervoltage error
+  if (v > 1.680) return(-999);  // overvoltage error
+  if (v < 0.070) return(999);   // undervoltage error
   if (v >= 1.339) ptc = &t1;       // for 2-12K
   else if (v >= 1.118) ptc = &t2;  // for 12-24.5K
   else if (v >= 0.954) ptc = &t3;  // for 24.5-100K
