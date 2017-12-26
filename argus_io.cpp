@@ -2217,4 +2217,607 @@ int argus_test(int foo, float bar)
   return rtn;
 }
 
+/************************************************************************/
+// SPI masks
+#define SPI_CLK0_M 0x04
+#define SPI_DAT0_M 0x01
+#define SPI_CSB1_M 0x02  // on-board BEX, CS& for P1, temp. sensor
+#define SPI_CSB4_M 0x10  // on-board BEX, CS& for P4
+
+// Inits
+#define BEXREAD0 SPI_DAT0_M  // read P0, write P1..P7 for on-board TCA6408A
+#define BEXINIT0 SPI_CSB1_M | SPI_CSB4_M
+
+// BEX address
+#define BEX_ADDR0 0x21
+
+// For downconverter card
+// SPI masks
+#define QLOG_CS 0x01
+#define ILOG_CS 0x02
+#define Q_ATTEN_LE 0x04
+#define I_ATTEN_LE 0x08
+#define BOARD_T_CS 0x10
+#define SPI_MISO_M 0x20
+#define SPI_MOSI_M 0x40
+#define SPI_CLK_M 0x80
+
+// Inits
+#define BEXREAD SPI_MISO_M  // read SPI_MISO_M, write all others on BEX
+#define BEXINIT QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS
+
+// BEX address
+#define BEX_ADDR 0x20
+// other parameters
+
+// NEED CLEANUP BELOW
+
+int portErr[2] = {0, 0};  // keep track of which ports have a DCM2 attached; 0 means no error
+                     // also use this to manually block port acces with an engr-type command
+
+int iq_idx = 0;  // array index for tracking I, Q
+int dcm_idx = 0; // index for retained values
+int attenVal[4] = {999, 999, 999, 999}; // record of attenuator values for S4I, S4Q, S5I, S5Q
+float logampOut[4] = {999., 999., 999., 999.};  // record of logamp output voltages for S4I, S4Q, S5I, S5Q
+
+int I2CStatus = 0;  // 0 for successful completion of I2C transaction, else NetBurner I2C error code
+
+// CLEANUP ABOVE
+
+#define NDCMCHAN 20  // number of DCM2 channels
+
+// Channel-specific structure
+struct dcm2chan {
+	BYTE status[NDCMCHAN]; // status byte
+	BYTE attenI[NDCMCHAN]; // command attenuation, I channel
+	BYTE attenQ[NDCMCHAN]; // command attenuation, Q channel
+	float powDetI[NDCMCHAN]; // nominal power in dBm, I channel
+	float powDetQ[NDCMCHAN]; // nominal power in dBm, Q channel
+	float bTemp[NDCMCHAN];   // board temperature, C
+};
+
+// I2C switch addresses for subbus and subsubbuses
+struct dcm2switches {
+	// I2C switch settings for addressing DCM2 module cards
+	BYTE sb[NDCMCHAN];     // for subbus
+	BYTE ssba[NDCMCHAN];   // for subsbubus, row A
+	BYTE ssbb[NDCMCHAN];   // for subsubbus, row B
+};
+struct dcm2switches dcm2sw = {
+	{0x10, 0x10, 0x10, 0x10, 0x08, 0x08, 0x08, 0x08, 0x04, 0x04, 0x04, 0x04,
+			0x02, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01, 0x01},
+	{0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01,
+			    0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01},
+	{0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10,
+			    0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10}
+};
+
+// TEST CODE, need to replace with proper interface
+BYTE chan = 19;
+BYTE I2C_SB0 = dcm2sw.sb[chan];   // on-board subbus switch setting for A/B 1
+BYTE I2C_SSB5 = dcm2sw.ssba[chan];  // S5 firewire connector, connects to A 1
+BYTE I2C_SSB4 = dcm2sw.ssbb[chan];  // S4 firewire connector, connects to B 1
+// TEST CODE
+
+// Vector to store on-board ADC values: power supply mon, PLL mon pts
+float DCM2adcVal[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
+
+
+// Functions
+
+
+/*******************************************************************/
+/**
+  \brief Set an I2C subbus switch.
+
+  This function sets an TCA9548A I2C subbus switch. 
+
+  \param  addr_sb command byte to set the subbus switch.
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+/*------------------------------------------------------------------
+ * Set up I2C subbus
+ ------------------------------------------------------------------*/
+int openI2Csbus(BYTE addr_sb)
+{
+	  address = 0x77;        // I2C switch address 0x77 for top-level switch
+	  buffer[0] = addr_sb;   // I2C channel address  0x01 for second-level switch
+	  I2CStat = I2CSEND1;
+
+	  return I2CStat;
+}
+
+/*******************************************************************/
+/**
+  \brief Open a I2C subbus switch.
+
+  This function opens TCA9548A I2C subbus switche. 
+
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+int closeI2Csbus(void)
+{
+	  address = 0x77;    // I2C switch address 0x77 for subbus switch
+	  buffer[0] = 0x00;  // I2C channel address 0x00 to open all switches
+	  I2CStat = I2CSEND1;
+
+	  return I2CStat;
+}
+
+/*******************************************************************/
+/**
+  \brief Set a pair of I2C subbus and subsubbus switches.
+
+  This function sets a sequential pair of TCA9548A I2C switches, first the 
+  subbus, then the subsubbus. 
+
+  \param  addr_sb command byte to set the subbus switch.
+  \param  addr_ssb command byte to set the subsubbus switch.
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+int openI2Cssbus(BYTE addr_sb, BYTE addr_ssb)
+{
+	  address = 0x77;        // I2C switch address 0x77 for top-level switch
+	  buffer[0] = addr_sb;   // I2C channel address  0x01 for second-level switch
+	  I2CStat = I2CSEND1;
+
+	  address = 0x73;        // I2C switch address 0x73 for second-level switch
+	  buffer[0] = addr_ssb;  // I2C channel address for device: 0x80 for test BEX, 0x04 for J4, 0x02 for J5
+	  I2CStat = I2CSEND1;
+
+	  return I2CStat;
+}
+
+/*******************************************************************/
+/**
+  \brief Set a pair of I2C subbus and subsubbus switches.
+
+  This function sets a sequential pair of TCA9548A I2C switches, first the 
+  subbus, then the subsubbus. 
+
+  \param  addr_sb command byte to set the subbus switch.
+  \param  addr_ssb command byte to set the subsubbus switch.
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+int closeI2Cssbus(void)
+{
+	  address = 0x73;    // I2C switch address 0x73 for second-level switch
+	  buffer[0] = 0x00;  // I2C channel address 0x00 to open all switches
+	  I2CStat = I2CSEND1;
+
+	  address = 0x77;    // I2C switch address 0x77 for top-level switch
+	  buffer[0] = 0x00;  // I2C channel address 0x00 to open all switches
+	  I2CStat = I2CSEND1;
+
+	  return I2CStat;
+}
+
+/*******************************************************************/
+/**
+  \brief Configure bus expander (BEX)
+
+  This function configures a TCA6408A bus expander; which pins will be set as 
+  inputs and which as outputs.
+
+  \param  conf configuration register content byte.
+  \param  addr I2C address for BEX chip
+  \return Zero on success, else (9000 + NB I2C error code) for latest bus error.
+*/
+int configBEX(BYTE conf, BYTE addr)
+{
+	address = addr;    // I2C address for BEX chip on board
+	buffer[0] = 0x03;  // configuration register
+	buffer[1] = conf;  // conf = 0x01 for warm IF tester, LSB only reads
+	I2CStat = I2CSEND2;
+
+	return (I2CStat==0 ? 0 : 9000+I2CStat);
+}
+
+/*******************************************************************/
+/**
+  \brief Write to bus expander (BEX) output pins.
+
+  This function sets values on TCA6408A bus expander output pins.
+
+  \param  val output content byte.
+  \param  addr I2C address for BEX chip
+  \return Zero on success, else (9000 + NB I2C error code) for latest bus error.
+*/
+int writeBEX(BYTE val, BYTE addr)
+{
+	address = addr;    // I2C address for BEX chip on board
+	buffer[0] = 0x01;  // output port register
+	buffer[1] = val;  // conf = 0x01 for warm IF tester, LSB only reads
+	I2CStat = I2CSEND2;
+
+	return (I2CStat==0 ? 0 : 9000+I2CStat);
+}
+
+/*******************************************************************/
+/**
+  \brief Read bus expander (BEX) input pins.
+
+  This function reads values on TCA6408A bus expander input pins.
+
+  \param  addr I2C address for BEX chip
+  \return byte with input value.
+*/
+BYTE readBEX(BYTE addr)
+{
+	address = addr;    // I2C address for BEX chip on board
+	buffer[0] = 0x01;  // output port register
+	I2CSEND1;
+	I2CREAD1;
+
+	return (buffer[0]);
+}
+
+
+/*******************************************************************/
+/**
+  \brief Read all channels of DCM2 ADC.
+
+  This function reads values from all channels of the DCM2 LTC2309 ADC.
+
+  \return Zero on success, else (9000 + NB I2C error code) for latest bus error.
+*/
+int readDCM2adc(void)
+{
+
+	short i;
+	unsigned short int rawu;
+	const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+	const float scale[8] = {4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3};
+	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
+	// 
+
+	//Read all channels of ADC
+	for (i = 0 ;  i < 8 ; i++) {
+		address = (BYTE)0x08;    // ADC device address on I2C bus
+		buffer[0] = (BYTE)pcRead.add[i];        // internal address for channel
+		I2CStat = I2CSEND1;  // send command for conversion
+		I2CREAD2;  // read device buffer back
+		if (I2CStat == 0) {
+			rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
+			DCM2adcVal[i] = rawu*scale[i]*4.096/65535 + offset[i];
+		}
+		else DCM2adcVal[i] = 9999.;  // error condition
+	}
+
+	return (I2CStat==0 ? 0 : 9000+I2CStat);
+}
+
+/*******************************************************************/
+/**
+  \brief Turn on LED for DCM2.
+
+  This function turns on the software-controlled LED(s) for the DCM2.
+
+  \return Zero.
+*/
+int DCM2ledOn (void)
+{
+	int I2CStat;
+	BYTE tmp;
+
+	openI2Csbus(0x80);	// select BEX
+
+	// get command state of output pins on interface
+	address = 0x21;      // I2C address for BEX chip on board
+	buffer[0] = 0x01;    // output port register
+	I2CStat = I2CSEND1;  // set register
+	// kick out for I2C bus errors
+	if (I2CStat) return (9000+I2CStat);
+	I2CREAD1;            // get pin data from BEX
+	tmp = buffer[0];
+
+	// LED is on P7, address 0x80; FP LED on P4, address 0x10.  Low is LED on.
+	buffer[0] = 0x01;  // write buffer
+	buffer[1] = tmp & ~(0x80 | 0x10);
+	I2CSEND2;
+
+	closeI2Csbus();
+	return(0);
+}
+
+/*******************************************************************/
+/**
+  \brief SPI bit-bang read AD7841 10-bit temperature sensor.
+
+  This function reads an AD7841 10-bit temperature sensor by generating SPI
+  bit-bang signals through a TCA6408A parallel interface chip.
+
+  Requires previous call to function that sets I2C bus switches to
+  address the interface before use, and close after.  Also requires
+  previous single call to initialize interface chip.
+
+  \param  val  value to convert and send
+  \return voltage, or (9000 + NB I2C error code) for bus errors.
+*/
+float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE addr)
+{
+
+	/* Mask definitions are hardware dependent
+	*/
+
+	BYTE x = 0;             // Working command byte
+	int I2CStat = 0;        // Comms error
+ 	// var and var_m are defined below
+
+	// get command state of output pins on interface
+	x = readBEXoutput(addr);
+
+    buffer[0] = 0x01;    // write register
+	address = addr;      // I2C address for BEX chip on board
+	// set up for read
+	x |= spi_csb_m;       // ensure CS is high at start
+	x |= spi_clk_m;      // ensure CLK is high at start
+	buffer[1] = x;
+	I2CStat = I2CSEND2;
+	if (I2CStat) return (9000+I2CStat);
+
+	x &= ~spi_csb_m;      // send CS low to initiate read
+	buffer[1] = x;
+	I2CSEND2;
+
+	// read initial zero, one cycle
+	x &= ~spi_clk_m;     // set clock low
+	buffer[1] = x;
+	I2CSEND2;
+	x |= spi_clk_m;      // set clock high
+	buffer[1] = x;
+	I2CSEND2;
+
+	// read MSB at clock high to get sign bit
+	x &= ~spi_clk_m;      // set clock low
+	buffer[1] = x;
+	I2CSEND2;
+	x |= spi_clk_m;       // set clock high
+	buffer[1] = x;
+	I2CSEND2;
+	buffer[0] = 0x00;     // set input port register and get pin data
+	I2CSEND1;
+	I2CREAD1;
+
+	int flag = 0;
+	// define input variable and mask, deal with negative values
+	short int val = 0;              // initialize value
+	short int val_m = 0x0100;       // initialize mask
+	if (buffer[0] & (unsigned short)spi_dat_m) {
+		flag = 1;
+		val = 0xfe00; // fill top bits of word if val < 0
+	}
+
+	// step through remainder of input word, reading at clock high
+	while (val_m > 0) {
+		// set clock low
+		x &= ~spi_clk_m;
+		buffer[0] = 0x01;
+		buffer[1] = x;
+		I2CSEND2;
+		// set clock high
+		x |= spi_clk_m;
+		buffer[1] = x;
+		I2CSEND2;
+		// read bit
+		buffer[0] = 0x00;
+		I2CSEND1;
+		I2CREAD1;
+		// put bit in word and rotate mask for next-LSB
+		if (buffer[0] & (unsigned short)spi_dat_m) val |= val_m;
+		val_m >>= 1;
+	}
+
+	// all done, deselect with CS& high
+	x |= spi_csb_m;
+	buffer[0] = 0x01;
+	buffer[1] = x;
+	I2CStat = I2CSEND2;
+
+	return ( I2CStat ? (float)(9000+I2CStat) : (float)val*0.25 );
+}
+
+/*******************************************************************/
+/**
+  \brief SPI bit-bang read AD7860 16-bit ADC.
+
+  This function reads an AD7860 16-bit ADC by generating SPI
+  bit-bang signals through a TCA6408A parallel interface chip.
+
+  Requires previous call to function that sets I2C bus switches to
+  address the interface before use, and close after.  Also requires
+  previous single call to initialize interface chip.
+
+  \param  val  value to convert and send
+  \return voltage, or (9000 + NB I2C error code) for bus errors.
+*/
+float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float vdd, BYTE addr)
+{
+
+	BYTE x ;                        // Working command byte
+	int I2CStat = 0;                // Comms error counter
+	short unsigned int val = 0;     // ADC value
+	short unsigned int val_m;       // Mask
+
+	// get command state of output pins on interface
+	address = addr;      // I2C address for BEX chip on board
+	buffer[0] = 0x01;    // output port register
+	I2CStat = I2CSEND1;  // set register
+	// kick out for I2C bus errors
+	if (I2CStat) return (9000+I2CStat);
+	I2CREAD1;            // get pin data
+	x = buffer[0];       // update working byte
+
+	// set up for read
+	x |= spi_csb_m;       // ensure CS is high at start
+	x |= spi_clk_m;      // ensure CLK is high at start
+    buffer[0] = 0x01;    // write register
+	buffer[1] = x;
+	I2CSEND2;
+	x &= ~spi_csb_m;      // send CS low to initiate read
+	buffer[1] = x;
+	I2CSEND2;
+
+	// read three cycles of initial zeros
+	val_m = 1 << (3 - 1);
+	while (val_m > 0) {
+		x &= ~spi_clk_m;     // set clock low
+		buffer[1] = x;
+		I2CSEND2;
+		x |= spi_clk_m;      // set clock high
+		buffer[1] = x;
+		I2CSEND2;
+		val_m >>= 1;
+	}
+
+	// step through 16-bit input word, msb to lsb, reading at clock high
+	val_m = 1 << (16 - 1);
+	while (val_m > 0) {
+		// set clock low
+		x &= ~spi_clk_m;
+		buffer[0] = 0x01;
+		buffer[1] = x;
+		I2CSEND2;
+		// set clock high
+		x |= spi_clk_m;
+		buffer[1] = x;
+		I2CSEND2;
+		// read bit
+		buffer[0] = 0x00;
+		I2CSEND1;
+		I2CREAD1;
+		// put bit in word and rotate mask for next-LSB
+		if (buffer[0] & (unsigned short)spi_dat_m) val |= val_m;
+		val_m >>= 1;
+	}
+
+	// all done. clock low, then deselect with CS& high
+	buffer[0] = 0x01;
+	x &= ~spi_clk_m;
+	buffer[1] = x;
+	x |= spi_csb_m;
+	buffer[1] = x;
+	I2CStat = I2CSEND2;
+
+	return ( I2CStat ? (float)(9000+I2CStat) : (float)val*vdd/65536. );
+}
+
+/*******************************************************************/
+/**
+  \brief SPI bit-bang write to 6-bit step attenuator.
+
+  This function converts an unsigned integer to a series of I2C commands
+  for a HNC624 step attenuator.
+
+  Requires previous call to function that sets I2C bus switches to
+  address the interface before use, and close after.  Also requires
+  previous single call to initialize interface chip.
+
+  \param  atten  attenuation to convert and send
+  \return NB I2C error code for bus errors.
+
+*/
+int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float atten, BYTE addr)
+{
+
+	BYTE x = 0;                       // working byte
+	int I2CStat = 0;                  // comms errors
+	unsigned short int val, val_m;    // binary value word and mask
+
+	val = (unsigned short)round(atten * 2.);  // convert from dB to bits
+	if (val > 63) val = 63;
+
+	// get command state of output pins on interface
+	x = readBEXoutput(addr);
+
+    buffer[0] = 0x01;    // write register
+	address = addr;      // I2C address for BEX chip on board
+	// set up for read
+	x |= spi_csb_m;       // ensure CS is high at start
+	x |= spi_clk_m;      // ensure CLK is high at start
+	buffer[1] = x;
+	I2CStat = I2CSEND2;
+	if (I2CStat) return (9000+I2CStat);
+
+	x &= ~spi_csb_m;      // send CS low to initiate read
+	buffer[1] = x;
+	I2CSEND2;
+
+	// step through input word with mask; write data with clock low, then raise clock
+	val_m = 1 << (6 - 1);
+	while (val_m > 0) {
+		x &= ~spi_clk_m; // set clock low
+		if (val & val_m) { // look at bit value in word to set data bit
+			x &= ~spi_dat_m;  // bit inversion: 0 is logical TRUE
+		}
+		else {
+			x |= spi_dat_m;
+		}
+		buffer[1] = x;
+		I2CSEND2;        // write to bus extender
+		x |= spi_clk_m;  // set clock high, data will be valid here
+		buffer[1] = x;
+		I2CSEND2;        // write to bus extender
+		val_m >>= 1;     // rotate to next-MSB
+	}
+
+	// done, set CS high to terminate SPI write
+	x |= spi_csb_m;
+	buffer[1] = x;
+	I2CStat += I2CSEND2;
+
+	return ( I2CStat );
+
+}
+/*******************************************************************************************
+
+Initialization stuff
+
+		  //// Hardware initialization at startup
+		  // Initialize and pulse I2C switch reset line
+		  J2[28].function (PINJ2_28_GPIO);  // configure pin J2-28 for GPIO
+		  OSTimeDly (5);
+		  J2[28].set();  // send reset pulse out at start
+		  OSTimeDly (5);
+		  J2[28].clr();  // set pin low to enable IF board I2C switches
+		  // Configure system and turn on LED on completion
+		  openI2Csbus(I2C_SB7);
+		  configBEX(BEXREAD0, BEX_ADDR0);
+		  writeBEX(BEXINIT0, BEX_ADDR0);
+		  printf("\r\nTest board temperature = %.2f\r\n\r\n",
+				  AD7814_SPI_bitbang(SPI_CLK0_M, SPI_DAT0_M, SPI_CSB1_M, BEX_ADDR0));
+		  readADC();
+		  printf("ADC values: %f, %f, %f, %f, %f, %f, %f, %f\r\n\r\n",
+				  adcVal[0], adcVal[1], adcVal[2], adcVal[3], adcVal[4], adcVal[5], adcVal[6], adcVal[7]);
+		  closeI2Csbus();
+		  ledOn();
+		  // report on switch settings
+		  iprintf("sb = 0x%02x, ssba = 0x%02x, ssbb = 0x%02x\r\n", I2C_SB0, I2C_SSB5, I2C_SSB4);
+
+
+                  // Detect connected DCM2 modules
+
+		  // Try configuring BEX on downconverter board attached to P4, record error state
+		  openI2Cssbus(I2C_SB0, I2C_SSB4);
+		  configBEX(BEXREAD, BEX_ADDR);           // configure bus extender
+		  I2CStatus = writeBEX(BEXINIT, BEX_ADDR); // set initial value
+		  portErr[0] = I2CStatus;              // record 0 for success, err code for fail
+		  if (!I2CStatus) {
+			  // HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
+			  iprintf("Found module on port 4\r\n");
+		  }
+		  closeI2Cssbus();
+
+		  // Try configuring BEX on downconverter board attached to P5, record error state
+		  openI2Cssbus(I2C_SB0, I2C_SSB5);
+		  configBEX(BEXREAD, BEX_ADDR);           // configure bus extender
+		  I2CStatus = writeBEX(BEXINIT, BEX_ADDR); // set initial value
+		  portErr[1] = I2CStatus;              // record 0 for success, err code for fail
+		  if (!I2CStatus) {
+			  // HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
+			  iprintf("Found module on port 5\r\n");
+		  }
+		  closeI2Cssbus();
+
+*/
 
