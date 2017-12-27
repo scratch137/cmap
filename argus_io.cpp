@@ -1567,41 +1567,6 @@ int argus_readWIF(void)
 }
 */
 
-/********************************************************************/
-/**
-  \brief Set all warm IF switches.
-
-  This command sets the switches for sideband selection and attenuation in the warm IF
-
-  \param  inp  select on a for attenuation, s for sideband.
-  \param  m    mth receiver.
-  \param  val  value.
-  \return Zero on success, -1 for invalid selection, else number of I2C read fails.
-*/
-int argus_setAllWIFswitches(char *inp, char val)
-{
-	if (NWIFBOX < 1) return -10;  // check that warm IF should be addressed
-
-	// check for freeze
-	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
-
-	// check that I2C bus is available, else return
-	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
-	i2cBusBusy = 1;
-	busLockCtr += 1;
-
-	int m;  // loop counter
-	int I2CStat = 0;
-	for (m=0; m<NRX; m++){
-		I2CStat += argus_setWIFswitches(inp, m, val, 1);
-	}
-
-	// release I2C bus
-	i2cBusBusy = 0;
-
-	return I2CStat;
-}
-
 /*******************************************************************/
 /**
   \brief Open subbus communication.
@@ -2282,8 +2247,7 @@ struct dcm2switches {
 	BYTE sb[NDCMCHAN];     // for subbus
 	BYTE ssba[NDCMCHAN];   // for subsbubus, row A
 	BYTE ssbb[NDCMCHAN];   // for subsubbus, row B
-};
-struct dcm2switches dcm2sw = {
+} dcm2sw = {
 	{0x10, 0x10, 0x10, 0x10, 0x08, 0x08, 0x08, 0x08, 0x04, 0x04, 0x04, 0x04,
 			0x02, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01, 0x01},
 	{0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01,
@@ -2495,7 +2459,7 @@ int readDCM2adc(void)
 
   \return Zero.
 */
-int DCM2ledOn (void)
+int dcm2_ledOn (void)
 {
 	int I2CStat;
 	BYTE tmp;
@@ -2545,7 +2509,7 @@ float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE ad
  	// var and var_m are defined below
 
 	// get command state of output pins on interface
-	x = readBEXoutput(addr);
+	x = readBEX(addr);
 
     buffer[0] = 0x01;    // write register
 	address = addr;      // I2C address for BEX chip on board
@@ -2728,7 +2692,7 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	if (val > 63) val = 63;
 
 	// get command state of output pins on interface
-	x = readBEXoutput(addr);
+	x = readBEX(addr);
 
     buffer[0] = 0x01;    // write register
 	address = addr;      // I2C address for BEX chip on board
@@ -2769,6 +2733,40 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	return ( I2CStat );
 
 }
+/********************************************************************/
+/**
+  \brief Set all DCM2 attenuators.
+
+  This command sets the attenuators in the DCM2 modules
+
+  \param  inp  select on a for attenuation.
+  \param  m    mth receiver.
+  \param  val  value.
+  \return Zero on success, -1 for invalid selection, else number of I2C read fails.
+*/
+int dcm2_setAllAttens(char *inp, char val)
+{
+
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
+
+	// check that I2C bus is available, else return
+	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
+	i2cBusBusy = 1;
+	busLockCtr += 1;
+
+	int m;  // loop counter
+	int I2CStat = 0;
+	for (m=0; m<NDCMCHAN; m++){
+		//I2CStat += dcm_setAtten(inp, m, val, iq, 1);
+	}
+
+	// release I2C bus
+	i2cBusBusy = 0;
+
+	return I2CStat;
+}
+
 /*******************************************************************************************
 
 Initialization stuff
@@ -2786,7 +2784,7 @@ Initialization stuff
 		  writeBEX(BEXINIT0, BEX_ADDR0);
 		  printf("\r\nTest board temperature = %.2f\r\n\r\n",
 				  AD7814_SPI_bitbang(SPI_CLK0_M, SPI_DAT0_M, SPI_CSB1_M, BEX_ADDR0));
-		  readADC();
+		  readDCM2adc();
 		  printf("ADC values: %f, %f, %f, %f, %f, %f, %f, %f\r\n\r\n",
 				  adcVal[0], adcVal[1], adcVal[2], adcVal[3], adcVal[4], adcVal[5], adcVal[6], adcVal[7]);
 		  closeI2Csbus();

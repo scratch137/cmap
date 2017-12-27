@@ -59,7 +59,7 @@ extern int  argus_LNApresets(const flash_t *flash);
 extern unsigned char argus_lnaPowerPIO(void);
 extern int  argus_readWIFpsADCs(void);
 extern int  argus_setWIFswitches(char *term, int m, char val, unsigned char busyOverride);
-extern int  argus_setAllWIFswitches(char *inp, char val);
+extern int  dcm2_setAllAtten(char *inp, char val);
 extern int  argus_readWIF(void);
 extern int  argus_openSubbusC(BYTE addr);
 extern int  argus_closeSubbusC(void);

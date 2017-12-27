@@ -659,7 +659,7 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
 
   if (!arg.help) {
     float v = 0.0;
-    char inp[2] = {0};
+    char inp[2] = {0,0};
 
     if (arg.str) {
       // Command called with one or more arguments.
@@ -667,14 +667,15 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
       if (narg < 2) {
         // Too few arguments; return help string.
         longHelp(status, usage, &Correlator::execArgusSetAll);
-      } else if (!strcmp(inp, "a") || !strcmp(inp, "s")) {
-    	// Set atten, sb
+      } else if (!(strcasecmp(inp, "a"))) {
+    	// Set atten
    		OSTimeDly(CMDDELAY);
-        int rtn = argus_setAllWIFswitches(inp, (char)v);
-		sprintf(status, "%sargus_setAlWIFswitches(%s, %d) returned status %d.\r\n",
-					(rtn==0 ? statusOK : statusERR), inp, (char)v, rtn);
-      } else {
-        // Set G, D, M biases
+        //ZZZ int rtn = dcm2_setAllAttens(inp, v);
+		int rtn = 0;
+		sprintf(status, "%sdcm2_setAllAttens(%s, %f) returned status %d.\r\n",
+					(rtn==0 ? statusOK : statusERR), inp, v, rtn);
+      } else if (!(strcasecmp(inp, "d") || !(strcasecmp(inp, "g")))){
+        // Set G, D biases
     	OSTimeDly(CMDDELAY);
     	int rtn = argus_setAllBias(inp, v, 0);
     	if (rtn == -10) {
@@ -685,7 +686,6 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
     				(rtn==0 ? statusOK : statusERR), inp, v, rtn);
     	}
       }
-
   } else {
       // Command called without arguments
       longHelp(status, usage, &Correlator::execArgusSetAll);
@@ -1522,8 +1522,8 @@ void Correlator::execArgusLock(return_type status, argument_type arg)
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readWIF()\r\n", i2cBusBusy, rtn);
 
 	  i2cBusBusy = busy;
-	  rtn = argus_setAllWIFswitches("a", 10);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setAllWIFswitches(a, 10)\r\n", i2cBusBusy, rtn);
+	  //rtn = argus_setAllAttens("a", 10);
+	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setAllAttens(a, 10)\r\n", i2cBusBusy, rtn);
 
 	  lnaPwrState = lnaps;
 	  i2cBusBusy = busy;
