@@ -2213,6 +2213,8 @@ int argus_test(int foo, float bar)
 
 // BEX address
 #define BEX_ADDR 0x20
+#define NDCMCHAN 20  // number of DCM2 channels
+#define DCM2PERIPH_SBADDR 0x80 // subbus address for DCM2 peripherals
 // other parameters
 
 // NEED CLEANUP BELOW
@@ -2228,8 +2230,6 @@ float logampOut[4] = {999., 999., 999., 999.};  // record of logamp output volta
 int I2CStatus = 0;  // 0 for successful completion of I2C transaction, else NetBurner I2C error code
 
 // CLEANUP ABOVE
-
-#define NDCMCHAN 20  // number of DCM2 channels
 
 // Channel-specific structure
 struct dcm2chan {
@@ -2284,11 +2284,18 @@ float DCM2adcVal[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
  ------------------------------------------------------------------*/
 int openI2Csbus(BYTE addr_sb)
 {
-	  address = 0x77;        // I2C switch address 0x77 for top-level switch
-	  buffer[0] = addr_sb;   // I2C channel address  0x01 for second-level switch
-	  I2CStat = I2CSEND1;
+    // check that I2C bus is available, else return
+	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
+	i2cBusBusy = 1;
+	busLockCtr += 1;
 
-	  return I2CStat;
+	address = 0x77;        // I2C switch address 0x77 for top-level switch
+	buffer[0] = addr_sb;   // I2C channel address  0x01 for second-level switch
+	I2CStat = I2CSEND1;
+
+	if (I2CStat) i2cBusBusy = 0;  // clear bit if write errors on muBox bus
+
+	return I2CStat;
 }
 
 /*******************************************************************/
@@ -2304,6 +2311,9 @@ int closeI2Csbus(void)
 	  address = 0x77;    // I2C switch address 0x77 for subbus switch
 	  buffer[0] = 0x00;  // I2C channel address 0x00 to open all switches
 	  I2CStat = I2CSEND1;
+
+	  // release I2C bus
+	  i2cBusBusy = 0;
 
 	  return I2CStat;
 }
@@ -2321,15 +2331,22 @@ int closeI2Csbus(void)
 */
 int openI2Cssbus(BYTE addr_sb, BYTE addr_ssb)
 {
-	  address = 0x77;        // I2C switch address 0x77 for top-level switch
-	  buffer[0] = addr_sb;   // I2C channel address  0x01 for second-level switch
-	  I2CStat = I2CSEND1;
+    // check that I2C bus is available, else return
+	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
+	i2cBusBusy = 1;
+	busLockCtr += 1;
 
-	  address = 0x73;        // I2C switch address 0x73 for second-level switch
-	  buffer[0] = addr_ssb;  // I2C channel address for device: 0x80 for test BEX, 0x04 for J4, 0x02 for J5
-	  I2CStat = I2CSEND1;
+	address = 0x77;        // I2C switch address 0x77 for top-level switch
+	buffer[0] = addr_sb;   // I2C channel address  0x01 for second-level switch
+	I2CStat = I2CSEND1;
 
-	  return I2CStat;
+	address = 0x73;        // I2C switch address 0x73 for second-level switch
+	buffer[0] = addr_ssb;  // I2C channel address for device: 0x80 for test BEX, 0x04 for J4, 0x02 for J5
+	I2CStat = I2CSEND1;
+
+	if (I2CStat) i2cBusBusy = 0;  // clear bit if write errors on muBox bus
+
+	return I2CStat;
 }
 
 /*******************************************************************/
@@ -2352,6 +2369,9 @@ int closeI2Cssbus(void)
 	  address = 0x77;    // I2C switch address 0x77 for top-level switch
 	  buffer[0] = 0x00;  // I2C channel address 0x00 to open all switches
 	  I2CStat = I2CSEND1;
+
+	  // release I2C bus
+	  i2cBusBusy = 0;
 
 	  return I2CStat;
 }
@@ -2416,7 +2436,6 @@ BYTE readBEX(BYTE addr)
 	return (buffer[0]);
 }
 
-
 /*******************************************************************/
 /**
   \brief Read all channels of DCM2 ADC.
@@ -2427,6 +2446,8 @@ BYTE readBEX(BYTE addr)
 */
 int readDCM2adc(void)
 {
+
+	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
 
 	short i;
 	unsigned short int rawu;
@@ -2448,6 +2469,8 @@ int readDCM2adc(void)
 		else DCM2adcVal[i] = 9999.;  // error condition
 	}
 
+	closeI2Csbus();  // release I2C bus
+
 	return (I2CStat==0 ? 0 : 9000+I2CStat);
 }
 
@@ -2461,10 +2484,10 @@ int readDCM2adc(void)
 */
 int dcm2_ledOn (void)
 {
+	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
+
 	int I2CStat;
 	BYTE tmp;
-
-	openI2Csbus(0x80);	// select BEX
 
 	// get command state of output pins on interface
 	address = 0x21;      // I2C address for BEX chip on board
@@ -2479,6 +2502,10 @@ int dcm2_ledOn (void)
 	buffer[0] = 0x01;  // write buffer
 	buffer[1] = tmp & ~(0x80 | 0x10);
 	I2CSEND2;
+
+	/* replace above with this?
+	writeBEX(readBEX(BEX_ADDR) & ~(0x80 | 0x10), BEX_ADDR);
+	*/
 
 	closeI2Csbus();
 	return(0);
@@ -2741,10 +2768,56 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 
   \param  inp  select on a for attenuation.
   \param  m    mth receiver.
+  \param  ab   A or B channel
+  \param  iq   I or Q channel
   \param  val  value.
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
-int dcm2_setAllAttens(char *inp, char val)
+int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float val)
+{
+
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
+
+	// check for out-of-range channel number
+	if (m > NDCMCHAN) return -10;
+	// select card for band A or B
+	BYTE ssb = 0;
+	if (!strcasecmp(ab, "a")) {
+		ssb = dcm2sw.ssba[m];
+	} else {
+		ssb = dcm2sw.ssbb[m];
+	}
+	// select I or Q input on card
+	BYTE iqsel = I_ATTEN_LE;
+	if (!strcasecmp(iq, "q")) iqsel = Q_ATTEN_LE;
+
+	// open bus to card
+	openI2Cssbus(dcm2sw.sb[m], ssb);
+
+	// send command
+	I2CStat += HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, iqsel, val, BEX_ADDR);
+
+	// close bus to card
+	closeI2Cssbus();
+
+	return 7000+I2CStat;
+}
+
+/*******************************************************************************************
+
+/********************************************************************/
+/**
+  \brief Set all DCM2 attenuators.
+
+  This command sets the attenuators in the DCM2 modules
+
+  \param  inp  select on a for attenuation.
+  \param  m    mth receiver.
+  \param  val  value.
+  \return Zero on success, -1 for invalid selection, else number of I2C read fails.
+*/
+int dcm2_setAllAttens(char *inp, float val)
 {
 
 	// check for freeze
@@ -2758,13 +2831,24 @@ int dcm2_setAllAttens(char *inp, char val)
 	int m;  // loop counter
 	int I2CStat = 0;
 	for (m=0; m<NDCMCHAN; m++){
-		//I2CStat += dcm_setAtten(inp, m, val, iq, 1);
+		// first set addresses to select a and b channels of DCM2 modules
+		address = 0x77;        // I2C switch address 0x77 for top-level switch
+		buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
+		I2CStat = I2CSEND1;
+		address = 0x73;        // I2C switch address 0x73 for second-level switch
+		buffer[0] = dcm2sw.ssba[m] || dcm2sw.ssbb[m];  // Select a and b channels simultaneously
+		I2CStat = I2CSEND1;
+		// write to Q and I for both cards
+		I2CStat += HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), val, BEX_ADDR);
+		// no cleanup since switches will be reset at next loop
 	}
 
+	// close switches at end just to be tidy
+	closeI2Cssbus();
 	// release I2C bus
 	i2cBusBusy = 0;
 
-	return I2CStat;
+	return 7000+I2CStat;
 }
 
 /*******************************************************************************************

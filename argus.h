@@ -22,6 +22,8 @@ extern float pwrCtrlPar[];
 extern struct chSet *chSetPtr;
 extern struct chRead *chReadPtr;
 extern struct chRead2 *chRead2Ptr;
+extern float DCM2adcVal[];
+
 
 extern "C" {
 #endif
@@ -59,7 +61,6 @@ extern int  argus_LNApresets(const flash_t *flash);
 extern unsigned char argus_lnaPowerPIO(void);
 extern int  argus_readWIFpsADCs(void);
 extern int  argus_setWIFswitches(char *term, int m, char val, unsigned char busyOverride);
-extern int  dcm2_setAllAtten(char *inp, char val);
 extern int  argus_readWIF(void);
 extern int  argus_openSubbusC(BYTE addr);
 extern int  argus_closeSubbusC(void);
@@ -74,6 +75,8 @@ extern int  argus_powCheck(void);
 extern int  argus_thermCheck(void);
 extern int  argus_ifCheck(void);
 extern int  argus_systemState(void);
+extern int  dcm2_setAtten(char *inp, int m, char *ab, char *iq, float val);
+extern int  dcm2_setAllAtten(char *inp, float val);
 
 /**************************************************************************/
 
