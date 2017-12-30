@@ -54,7 +54,7 @@ unsigned int vaneErr;                      // vane motion has failed if vaneErr 
 //Pointer defs
 struct chSet *chSetPtr; // pointer to structure of form chSet
 struct chRead *chReadPtr; // pointer to structure of form chRead
-struct chRead2 *chRead2Ptr; // pointer to structure of form chRead
+struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
 
 // control bits within power control board PIO
 BYTE ctlVDS = 0x01;
@@ -2823,8 +2823,10 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
 	BYTE ssb;
 	if (!strcasecmp(ab, "a")) {
 		ssb = dcm2sw.ssba[m];
+		dcm2parPtr = &dcm2Apar;
 	} else if (!strcasecmp(ab, "b")){
 		ssb = dcm2sw.ssbb[m];
+		dcm2parPtr = &dcm2Bpar;
 	} else {
 		return -20;
 	}
@@ -2836,16 +2838,16 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
 	if (!strcasecmp(iq, "i")) {
 		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR);
 		if (!I2CStat) {
-			dcm2Apar.attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2parPtr->attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
 		} else {
-			dcm2Apar.attenI[m] = 99*2;
+			dcm2parPtr->attenI[m] = 99*2;
 		}
 	} else if (!strcasecmp(iq, "q")){
 		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR);
 		if (!I2CStat) {
-			dcm2Apar.attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2parPtr->attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
 		} else {
-			dcm2Apar.attenQ[m] = 99*2;
+			dcm2parPtr->attenQ[m] = 99*2;
 		}
 	} else {
 		closeI2Cssbus();
