@@ -2099,73 +2099,31 @@ int argus_test(int foo, float bar)
   return rtn;
 }
 
+
 /************************************************************************/
-// SPI masks
-#define SPI_CLK0_M 0x04
-#define SPI_DAT0_M 0x01
-#define SPI_CSB1_M 0x02  // on-board BEX, CS& for P1, temp. sensor
-#define SPI_CSB4_M 0x10  // on-board BEX, CS& for P4
 
-// Inits
-#define BEXREAD0 SPI_DAT0_M  // read P0, write P1..P7 for on-board TCA6408A
-#define BEXINIT0 SPI_CSB1_M | SPI_CSB4_M
-
-// BEX address
-#define BEX_ADDR0 0x21
-
-// For downconverter card
-// SPI masks
-#define QLOG_CS 0x01
-#define ILOG_CS 0x02
-#define Q_ATTEN_LE 0x04
-#define I_ATTEN_LE 0x08
-#define BOARD_T_CS 0x10
-#define SPI_MISO_M 0x20
-#define SPI_MOSI_M 0x40
-#define SPI_CLK_M 0x80
-
-// Inits
-#define BEXREAD SPI_MISO_M  // read SPI_MISO_M, write all others on BEX
-#define BEXINIT QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS
-
-// BEX address
-#define BEX_ADDR 0x20
-#define NDCMCHAN 20  // number of DCM2 channels
-#define DCM2PERIPH_SBADDR 0x80 // subbus address for DCM2 peripherals
-// other parameters
-
-// NEED CLEANUP BELOW
-
-int portErr[2] = {0, 0};  // keep track of which ports have a DCM2 attached; 0 means no error
-                     // also use this to manually block port acces with an engr-type command
-
-int iq_idx = 0;  // array index for tracking I, Q
-int dcm_idx = 0; // index for retained values
-int attenVal[4] = {999, 999, 999, 999}; // record of attenuator values for S4I, S4Q, S5I, S5Q
-float logampOut[4] = {999., 999., 999., 999.};  // record of logamp output voltages for S4I, S4Q, S5I, S5Q
-
-int I2CStatus = 0;  // 0 for successful completion of I2C transaction, else NetBurner I2C error code
-
-// CLEANUP ABOVE
-
+// DCM2 storage structures
 // Channel-specific structure
 struct dcm2params {
-	BYTE status[NDCMCHAN]; // status byte
-	BYTE attenI[NDCMCHAN]; // command attenuation, I channel
-	BYTE attenQ[NDCMCHAN]; // command attenuation, Q channel
-	float powDetI[NDCMCHAN]; // nominal power in dBm, I channel
-	float powDetQ[NDCMCHAN]; // nominal power in dBm, Q channel
-	float bTemp[NDCMCHAN];   // board temperature, C
+	BYTE status[NRX]; // status byte
+	BYTE attenI[NRX]; // command attenuation, I channel
+	BYTE attenQ[NRX]; // command attenuation, Q channel
+	float powDetI[NRX]; // nominal power in dBm, I channel
+	float powDetQ[NRX]; // nominal power in dBm, Q channel
+	float bTemp[NRX];   // board temperature, C
 };
-struct dcm2params dcm2Apar;
-struct dcm2params dcm2Bpar;
+struct dcm2params dcm2Apar;  // structure for IF bank A parameters
+struct dcm2params dcm2Bpar;  // structure for IF bank B barameters
 
-// I2C switch addresses for subbus and subsubbuses
+// Vector to store on-board ADC values: Ain3, Ain2, Ain1, Ain0, MonP12, MonP8, GND, GND
+float DCM2adcVal[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
+
+// DCM2 I2C switch settings for subbus and subsubbuses
 struct dcm2switches {
 	// I2C switch settings for addressing DCM2 module cards
-	BYTE sb[NDCMCHAN];     // for subbus
-	BYTE ssba[NDCMCHAN];   // for subsbubus, row A
-	BYTE ssbb[NDCMCHAN];   // for subsubbus, row B
+	BYTE sb[NRX];     // for subbus
+	BYTE ssba[NRX];   // for subsbubus, Bank A
+	BYTE ssbb[NRX];   // for subsubbus, Bank B
 } dcm2sw = {
 	{0x10, 0x10, 0x10, 0x10, 0x08, 0x08, 0x08, 0x08, 0x04, 0x04, 0x04, 0x04,
 			0x02, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01, 0x01},
@@ -2174,18 +2132,6 @@ struct dcm2switches {
 	{0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10,
 			    0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10}
 };
-
-// TEST CODE, need to replace with proper interface
-BYTE chan = 19;
-BYTE I2C_SB0 = dcm2sw.sb[chan];   // on-board subbus switch setting for A/B 1
-BYTE I2C_SSB5 = dcm2sw.ssba[chan];  // S5 firewire connector, connects to A 1
-BYTE I2C_SSB4 = dcm2sw.ssbb[chan];  // S4 firewire connector, connects to B 1
-// TEST CODE
-
-// Vector to store on-board ADC values: power supply mon, PLL mon pts
-float DCM2adcVal[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
-
-// Functions
 
 
 /*******************************************************************/
@@ -2422,7 +2368,7 @@ int dcm2_ledOn (void)
 	I2CSEND2;
 
 	/* replace above with this?
-	writeBEX(readBEX(BEX_ADDR) & ~(0x80 | 0x10), BEX_ADDR);
+	writeBEX(readBEX(BEX_ADDR0) & ~(0x80 | 0x10), BEX_ADDR0);
 	*/
 
 	closeI2Csbus();
@@ -2704,7 +2650,7 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
 	// check for out-of-range channel number
-	if (m > NDCMCHAN) return -10;
+	if (m > NRX) return -10;
 	// select card for band A or B, set pointer to correct parameter structure
 	if (!strcasecmp(ab, "a")) {
 		ssb = dcm2sw.ssba[m];
@@ -2769,7 +2715,7 @@ int dcm2_setAllAttens(float atten)
 	int I2CStat = 0;
 	BYTE attenBits;
 
-	for (m=0; m<NDCMCHAN; m++){
+	for (m=0; m<NRX; m++){
 		// first set addresses to select a and b channels of DCM2 modules
 		address = 0x77;        // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
@@ -2913,6 +2859,14 @@ void argus_init(const flash_t *flash)
 		}
 	}
 
+	/*
+	 * Both DCM2 main board and microC have bus switches at 0x77 and 0x73
+	 * For DCM2, 0x77 is subbus, 0x73 is subsubbus from 0x77
+	 * For microC, 0x77 and 0x73 are independent subbuses
+	 * For DCM2,  0x80 switch setting from 0x77 connects to main board peripherals, BEX @ 0x21
+	 * For microC, 0x80 switch setting from 0x77 connects to a bias card without BEXs (ADCs and DACs)
+	 * So attempting to address the DCM2 main board BEX will show whether the hardware is bias or DCM2
+	 */
 	// DCM2 setups
 	closeI2Cssbus();
 	openI2Csbus(DCM2PERIPH_SBADDR);

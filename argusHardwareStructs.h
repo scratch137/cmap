@@ -129,7 +129,6 @@ AH 2014.07.01
 //I2C mapping for subbuses from I2CSSB card
 #define SADDLEBAG_I2CADDR {0x00, 0x00, 0x00, 0x00}
 
-
 /****************************************/
 // Parameter structure definitions
 
@@ -195,5 +194,36 @@ struct chRead2 { // read ADCs
   float offset; // offset for reading
   char bip;     // bipolar or unipolar, bipolar = 1
 };
+
+/***************************************************************************/
+/* DCM2 definitions */
+// subbus switch setting for DCM2 main board peripherals
+#define DCM2PERIPH_SBADDR 0x80
+
+// SPI masks for temp sensor, main board BEX
+#define SPI_CLK0_M 0x04
+#define SPI_DAT0_M 0x01
+#define SPI_CSB1_M 0x02  // main board BEX, CS& for P1, temp. sensor
+#define SPI_CSB4_M 0x10  // main board BEX, CS& for P4
+// BEX I2C address for main board
+#define BEX_ADDR0 0x21   // Bus expander addresses for DCM2 main board
+// BEX init values for main board
+#define BEXREAD0 SPI_DAT0_M  // read P0, write P1..P7 for on-board TCA6408A
+#define BEXINIT0 SPI_CSB1_M | SPI_CSB4_M
+
+// SPI masks for downconverter cards
+#define QLOG_CS 0x01
+#define ILOG_CS 0x02
+#define Q_ATTEN_LE 0x04
+#define I_ATTEN_LE 0x08
+#define BOARD_T_CS 0x10
+#define SPI_MISO_M 0x20
+#define SPI_MOSI_M 0x40
+#define SPI_CLK_M 0x80
+// BEX I2C address for downconverter cards
+#define BEX_ADDR 0x20
+// BEX init values for downconverter cards
+#define BEXREAD SPI_MISO_M  // read SPI_MISO_M, write all others on BEX
+#define BEXINIT QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS
 
 #endif
