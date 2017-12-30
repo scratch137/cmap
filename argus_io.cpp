@@ -2267,7 +2267,7 @@ int I2CStatus = 0;  // 0 for successful completion of I2C transaction, else NetB
 // CLEANUP ABOVE
 
 // Channel-specific structure
-struct dcm2chan {
+struct dcm2params {
 	BYTE status[NDCMCHAN]; // status byte
 	BYTE attenI[NDCMCHAN]; // command attenuation, I channel
 	BYTE attenQ[NDCMCHAN]; // command attenuation, Q channel
@@ -2275,6 +2275,8 @@ struct dcm2chan {
 	float powDetQ[NDCMCHAN]; // nominal power in dBm, Q channel
 	float bTemp[NDCMCHAN];   // board temperature, C
 };
+struct dcm2params dcm2Apar;
+struct dcm2params dcm2Bpar;
 
 // I2C switch addresses for subbus and subsubbuses
 struct dcm2switches {
@@ -2300,7 +2302,6 @@ BYTE I2C_SSB4 = dcm2sw.ssbb[chan];  // S4 firewire connector, connects to B 1
 
 // Vector to store on-board ADC values: power supply mon, PLL mon pts
 float DCM2adcVal[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
-
 
 // Functions
 
@@ -2748,10 +2749,12 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 
 	BYTE x = 0;                       // working byte
 	int I2CStat = 0;                  // comms errors
-	unsigned short int val, val_m;    // binary value word and mask
+	BYTE attenBits, attenBits_m;    // binary value word and mask
 
-	val = (unsigned short)round(atten * 2.);  // convert from dB to bits
-	if (val > 63) val = 63;
+	if (atten < 0.) atten = 0.;
+    attenBits = (BYTE)(round(atten) * 2.);
+ 	if (attenBits > 63) attenBits = 63;
+
 
 	// get command state of output pins on interface
 	x = readBEX(addr);
@@ -2770,10 +2773,10 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	I2CSEND2;
 
 	// step through input word with mask; write data with clock low, then raise clock
-	val_m = 1 << (6 - 1);
-	while (val_m > 0) {
+	attenBits_m = 1 << (6 - 1);
+	while (attenBits_m > 0) {
 		x &= ~spi_clk_m; // set clock low
-		if (val & val_m) { // look at bit value in word to set data bit
+		if (attenBits & attenBits_m) { // look at bit value in word to set data bit
 			x &= ~spi_dat_m;  // bit inversion: 0 is logical TRUE
 		}
 		else {
@@ -2784,7 +2787,7 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 		x |= spi_clk_m;  // set clock high, data will be valid here
 		buffer[1] = x;
 		I2CSEND2;        // write to bus extender
-		val_m >>= 1;     // rotate to next-MSB
+		attenBits_m >>= 1;     // rotate to next-MSB
 	}
 
 	// done, set CS high to terminate SPI write
@@ -2805,10 +2808,10 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
   \param  m    mth receiver.
   \param  ab   A or B channel
   \param  iq   I or Q channel
-  \param  val  value.
+  \param  atten  attenuation value.
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
-int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float val)
+int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
 {
 
 	// check for freeze
@@ -2817,31 +2820,43 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float val)
 	// check for out-of-range channel number
 	if (m > NDCMCHAN) return -10;
 	// select card for band A or B
-	BYTE ssb = 0;
+	BYTE ssb;
 	if (!strcasecmp(ab, "a")) {
 		ssb = dcm2sw.ssba[m];
-	} else {
+	} else if (!strcasecmp(ab, "b")){
 		ssb = dcm2sw.ssbb[m];
+	} else {
+		return -20;
 	}
-	// select I or Q input on card
-	BYTE iqsel = I_ATTEN_LE;
-	if (!strcasecmp(iq, "q")) iqsel = Q_ATTEN_LE;
 
 	// open bus to card
 	openI2Cssbus(dcm2sw.sb[m], ssb);
-
 	// send command
-	I2CStat += HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, iqsel, val, BEX_ADDR);
-
-	// close bus to card
+	// select I or Q input on card
+	if (!strcasecmp(iq, "i")) {
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR);
+		if (!I2CStat) {
+			dcm2Apar.attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
+		} else {
+			dcm2Apar.attenI[m] = 99*2;
+		}
+	} else if (!strcasecmp(iq, "q")){
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR);
+		if (!I2CStat) {
+			dcm2Apar.attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
+		} else {
+			dcm2Apar.attenQ[m] = 99*2;
+		}
+	} else {
+		closeI2Cssbus();
+		return (-40);
+	}
+	// wrap up if all is successful close bus to card
 	closeI2Cssbus();
-
-	return 7000+I2CStat;
+	return (I2CStat ? 7000+I2CStat : 0);
 }
 
-/*******************************************************************************************
-
-/********************************************************************/
+/*******************************************************************************************/
 /**
   \brief Set all DCM2 attenuators.
 
@@ -2852,7 +2867,7 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float val)
   \param  val  value.
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
-int dcm2_setAllAttens(char *inp, float val)
+int dcm2_setAllAttens(char *inp, float atten)
 {
 
 	// check for freeze
@@ -2874,8 +2889,19 @@ int dcm2_setAllAttens(char *inp, float val)
 		buffer[0] = dcm2sw.ssba[m] || dcm2sw.ssbb[m];  // Select a and b channels simultaneously
 		I2CStat = I2CSEND1;
 		// write to Q and I for both cards
-		I2CStat += HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), val, BEX_ADDR);
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR);
 		// no cleanup since switches will be reset at next loop
+		if (!I2CStat) {
+			dcm2Apar.attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2Apar.attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2Bpar.attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2Bpar.attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
+		} else {
+			dcm2Apar.attenI[m] = 99*2;
+			dcm2Apar.attenQ[m] = 99*2;
+			dcm2Bpar.attenI[m] = 99*2;
+			dcm2Bpar.attenQ[m] = 99*2;
+		}
 	}
 
 	// close switches at end just to be tidy
