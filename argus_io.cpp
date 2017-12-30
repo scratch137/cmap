@@ -300,123 +300,6 @@ struct chRead thRead = {
 		{0xf8, 0xb8, 0xe8, 0x98, 0xc8, 0x88, 0xd8, 0xa8},
 		1, 0, 0};
 
-/**************************************************************************/
-
-/**
-  \brief Initialize hardware.
-
-  This routine is called automatically at boot (for Argus hardware).
-
-  \param  flash  User flash data structure.
-*/
-void argus_init(const flash_t *flash)
-{
-
-	// get voltage divider value from flash
-	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
-	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
-	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
-
-	// start I2C interface
-	I2CInit( 0xaa, 0x1a );   // Initialize I2C and set NB device slave address and I2C clock
-	// Second argument is clock divisor for I2C bus, freqdiv
-	// 0x16 for 97.6 kHz (fastest)
-	// 0x17 for 78.1 kHz
-	// 0x3b for 73.2 kHz
-	// 0x18 for 65.1 kHz
-	// 0x19 for 58.6 kHz
-	// 0x1a for 48.8 kHz
-	// 0x1c for 32.6 kHz
-	// 0x1f for 19.5 kHz (slowest)
-	//Echo setup
-	printf("argus_init: flash serNo = %d, hwType = %d, valid = %d.\n",
-	  			  flash->serialNo, flash->hw, flash->valid);
-
-	// initialize I2C switch reset line and pulse reset for microC (irrelevant for earlier versions)
-	J2[28].function (PINJ2_28_GPIO);  // configure pin J2-28 for GPIO
-	J2[28].clr();  // set pin low to enable I2C switches
-	OSTimeDly(1);  // delay to make pulse come out right
-	J2[28].set();  // reset
-	OSTimeDly(1);
-	J2[28].clr();  // enable I2C switches
-
-	// shut down LNA power if it is on
-	// may take a while if lnaPwrState is high but PIOs aren't initialized,
-	// or maybe not
-	if (lnaPwrState==1) {
-		argus_lnaPower(0);
-	}
-
-	/** Initialize devices on main I2C bus **/
-	//// Power control card
-	address = I2CSWITCH_BP;
-	buffer[0] = PWCTL_I2CADDR;
-	I2CSEND1;
-	// set default value in PIO
-	address = 0x21;
-	buffer[0] = 0x01;
-	buffer[1] = 0x20;  // all relays off low; FPLED is off high
-	I2CSEND2;
-	// configure PIO I/O
-	address = 0x21;
-	buffer[0] = 0x03;
-	buffer[1] = 0xc0;
-	I2CSEND2;
-	//// vane interface
-	address = I2CSWITCH_BP;
-	buffer[0] = CALSY_I2CADDR;
-	I2CSEND1;
-	// set switch on card for vane
-	address = I2CSWITCH_VMUB;
-	buffer[0] = VANE_I2CADDR;
-	I2CSEND1;
-	// set default value in vane PIO
-	address = 0x21;
-	buffer[0] = 0x01;
-	buffer[1] = VANESTOP;  // set stop drive bit
-	I2CSEND2;
-	// configure vane PIO I/O
-	buffer[0] = 0x03;  // control byte for PIO configuration
-	buffer[1] = 0xf8;  // P0-2 as outputs, others high-z
-	I2CSEND2;
-	// deselect cal system
-	address = I2CSWITCH_VMUB;
-	buffer[0] = 0;
-	I2CSEND1;
-	//// Clean up: disconnect I2C sub-buses
-	address = I2CSWITCH_BP;
-	buffer[0] = 0;
-	I2CStat = I2CSEND1;
-
-	// Now deal with I2C buses other than main bus
-	if (NWIFBOX > 0) {
-		// set up warm IF receiver PIOs, start with all bits high (gives max atten, USB)
-		int i;
-		BYTE i2cSwitchWIF_addr[] = I2CSWITCH_WIF;
-		for (i=0; i<NWIFBOX; i++) {  // step through warm IF chassis
-			address = i2cSwitchWIF_addr[i];  // main bus I2C address for receiver box buffer card
-			buffer[0] = 0xff;  // set switch for all receivers
-			I2CSEND1;
-			// configure PIOs
-			address = 0x21;    // PIO address on individual channel cards
-			buffer[0] = 0x03;  // command byte: config buffer
-			buffer[1] = 0x00;  // set all pins as outputs
-			I2CSEND2;
-			buffer[0] = 0x01;  // command byte: output buffer
-			buffer[1] = 0x00;  // set all pins low (max atten)
-			I2CSEND2;
-			// disconnect 12C sub-bus
-			address = i2cSwitchWIF_addr[i];
-			buffer[0] = 0x00;
-			I2CSEND1;
-		}
-	}
-
-    // release I2C bus
-	i2cBusBusy = 0;
-
-}
-
 /************************************************************************/
 
 /**
@@ -2158,6 +2041,7 @@ int argus_systemState(void)
 int argus_ifCheck(void)
 {
 	int ret = 0;      // return value
+/*
 	int mask = 0x01;  // mask for setting bits
 	int i;            // loop counter
 
@@ -2165,9 +2049,7 @@ int argus_ifCheck(void)
 	float lims[] = MINIFPWRDETV;
 
 	// loop over channels, check for low power and no response from det system
-	/* for (i=0; i<16; i++) {  ////  NEEDS WORK HERE ??????????
-
-
+	for (i=0; i<16; i++) {
 		if ( (wifPar.totPow[i] < lims[i]) || (wifPar.totPow[i]) > MAXIFPWRDETV) ret |= mask;
 		mask <<= 1;
 	}
@@ -2918,6 +2800,132 @@ int dcm2_setAllAttens(char *inp, float atten)
 
 	return 7000+I2CStat;
 }
+
+/**************************************************************************/
+
+/**
+  \brief Initialize hardware.
+
+  This routine is called automatically at boot (for Argus hardware).
+
+  \param  flash  User flash data structure.
+*/
+void argus_init(const flash_t *flash)
+{
+
+	// get voltage divider value from flash
+	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
+	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
+	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
+
+	// start I2C interface
+	I2CInit( 0xaa, 0x1a );   // Initialize I2C and set NB device slave address and I2C clock
+	// Second argument is clock divisor for I2C bus, freqdiv
+	// 0x16 for 97.6 kHz (fastest)
+	// 0x17 for 78.1 kHz
+	// 0x3b for 73.2 kHz
+	// 0x18 for 65.1 kHz
+	// 0x19 for 58.6 kHz
+	// 0x1a for 48.8 kHz
+	// 0x1c for 32.6 kHz
+	// 0x1f for 19.5 kHz (slowest)
+	//Echo setup
+	printf("argus_init: flash serNo = %d, hwType = %d, valid = %d.\n",
+	  			  flash->serialNo, flash->hw, flash->valid);
+
+	// initialize I2C switch reset line and pulse reset for microC (irrelevant for earlier versions)
+	J2[28].function (PINJ2_28_GPIO);  // configure pin J2-28 for GPIO
+	J2[28].clr();  // set pin low to enable I2C switches
+	OSTimeDly(1);  // delay to make pulse come out right
+	J2[28].set();  // reset
+	OSTimeDly(1);
+	J2[28].clr();  // enable I2C switches
+
+	// shut down LNA power if it is on
+	// may take a while if lnaPwrState is high but PIOs aren't initialized,
+	// or maybe not
+	if (lnaPwrState==1) {
+		argus_lnaPower(0);
+	}
+
+	/** Initialize devices on main I2C bus **/
+	//// Power control card
+	address = I2CSWITCH_BP;
+	buffer[0] = PWCTL_I2CADDR;
+	I2CSEND1;
+	// set default value in PIO
+	address = 0x21;
+	buffer[0] = 0x01;
+	buffer[1] = 0x20;  // all relays off low; FPLED is off high
+	I2CSEND2;
+	// configure PIO I/O
+	address = 0x21;
+	buffer[0] = 0x03;
+	buffer[1] = 0xc0;
+	I2CSEND2;
+	//// vane interface
+	address = I2CSWITCH_BP;
+	buffer[0] = CALSY_I2CADDR;
+	I2CSEND1;
+	// set switch on card for vane
+	address = I2CSWITCH_VMUB;
+	buffer[0] = VANE_I2CADDR;
+	I2CSEND1;
+	// set default value in vane PIO
+	address = 0x21;
+	buffer[0] = 0x01;
+	buffer[1] = VANESTOP;  // set stop drive bit
+	I2CSEND2;
+	// configure vane PIO I/O
+	buffer[0] = 0x03;  // control byte for PIO configuration
+	buffer[1] = 0xf8;  // P0-2 as outputs, others high-z
+	I2CSEND2;
+	// deselect cal system
+	address = I2CSWITCH_VMUB;
+	buffer[0] = 0;
+	I2CSEND1;
+	//// Clean up: disconnect I2C sub-buses
+	address = I2CSWITCH_BP;
+	buffer[0] = 0;
+	I2CStat = I2CSEND1;
+
+	// Now deal with I2C buses other than main bus
+	if (NWIFBOX > 0) {
+		// set up warm IF receiver PIOs, start with all bits high (gives max atten, USB)
+		int i;
+		BYTE i2cSwitchWIF_addr[] = I2CSWITCH_WIF;
+		for (i=0; i<NWIFBOX; i++) {  // step through warm IF chassis
+			address = i2cSwitchWIF_addr[i];  // main bus I2C address for receiver box buffer card
+			buffer[0] = 0xff;  // set switch for all receivers
+			I2CSEND1;
+			// configure PIOs
+			address = 0x21;    // PIO address on individual channel cards
+			buffer[0] = 0x03;  // command byte: config buffer
+			buffer[1] = 0x00;  // set all pins as outputs
+			I2CSEND2;
+			buffer[0] = 0x01;  // command byte: output buffer
+			buffer[1] = 0x00;  // set all pins low (max atten)
+			I2CSEND2;
+			// disconnect 12C sub-bus
+			address = i2cSwitchWIF_addr[i];
+			buffer[0] = 0x00;
+			I2CSEND1;
+		}
+	}
+
+	// DCM2 setups
+	closeI2Cssbus();
+	openI2Csbus(DCM2PERIPH_SBADDR);
+	configBEX(BEXREAD0, BEX_ADDR0);
+	writeBEX(BEXINIT0, BEX_ADDR0);
+	dcm2_ledOn();
+
+    // release I2C bus
+	i2cBusBusy = 0;
+
+}
+
+
 
 /*******************************************************************************************
 
