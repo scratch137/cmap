@@ -2744,7 +2744,7 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
   \return NB I2C error code for bus errors.
 
 */
-int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float atten, BYTE addr)
+int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float atten, BYTE addr, BYTE *bits)
 {
 
 	BYTE x = 0;                       // working byte
@@ -2754,7 +2754,7 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	if (atten < 0.) atten = 0.;
     attenBits = (BYTE)(round(atten) * 2.);
  	if (attenBits > 63) attenBits = 63;
-
+ 	*bits = attenBits;
 
 	// get command state of output pins on interface
 	x = readBEX(addr);
@@ -2835,15 +2835,16 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
 	openI2Cssbus(dcm2sw.sb[m], ssb);
 	// send command
 	// select I or Q input on card
+	BYTE bits;
 	if (!strcasecmp(iq, "i")) {
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR);
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &bits);
 		if (!I2CStat) {
 			dcm2parPtr->attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
 		} else {
 			dcm2parPtr->attenI[m] = 99*2;
 		}
 	} else if (!strcasecmp(iq, "q")){
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR);
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &bits);
 		if (!I2CStat) {
 			dcm2parPtr->attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
 		} else {
@@ -2882,6 +2883,7 @@ int dcm2_setAllAttens(char *inp, float atten)
 
 	int m;  // loop counter
 	int I2CStat = 0;
+	BYTE bits;
 	for (m=0; m<NDCMCHAN; m++){
 		// first set addresses to select a and b channels of DCM2 modules
 		address = 0x77;        // I2C switch address 0x77 for top-level switch
@@ -2891,13 +2893,13 @@ int dcm2_setAllAttens(char *inp, float atten)
 		buffer[0] = dcm2sw.ssba[m] || dcm2sw.ssbb[m];  // Select a and b channels simultaneously
 		I2CStat = I2CSEND1;
 		// write to Q and I for both cards
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR);
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR, &bits);
 		// no cleanup since switches will be reset at next loop
 		if (!I2CStat) {
-			dcm2Apar.attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
-			dcm2Apar.attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
-			dcm2Bpar.attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
-			dcm2Bpar.attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2Apar.attenI[m] = bits;  // store command bits for atten
+			dcm2Apar.attenQ[m] = bits;  // store command bits for atten
+			dcm2Bpar.attenI[m] = bits;  // store command bits for atten
+			dcm2Bpar.attenQ[m] = bits;  // store command bits for atten
 		} else {
 			dcm2Apar.attenI[m] = 99*2;
 			dcm2Apar.attenQ[m] = 99*2;
