@@ -26,7 +26,7 @@
 
 #include "argus.h"
 
-//I2C setups
+//I2C global setups
 BYTE buffer[I2C_MAX_BUF_SIZE];
 char I2CInputBuffer[I2C_MAX_BUF_SIZE];   // User created I2C input buffer
 char* inbuf = I2CInputBuffer;            // Pointer to user I2C buffer
@@ -2814,13 +2814,16 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
 {
 
+	BYTE ssb;         // subsubbus address
+	BYTE attenBits;   // attenuator command bits
+	                  // dcm2parPtr defined globally
+
 	// check for freeze
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
 	// check for out-of-range channel number
 	if (m > NDCMCHAN) return -10;
-	// select card for band A or B
-	BYTE ssb;
+	// select card for band A or B, set pointer to correct parameter structure
 	if (!strcasecmp(ab, "a")) {
 		ssb = dcm2sw.ssba[m];
 		dcm2parPtr = &dcm2Apar;
@@ -2831,26 +2834,25 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
 		return -20;
 	}
 
-	// open bus to card
+	// open communication to DCM2 card
 	openI2Cssbus(dcm2sw.sb[m], ssb);
 	// send command
 	// select I or Q input on card
-	BYTE bits;
 	if (!strcasecmp(iq, "i")) {
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &bits);
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 		if (!I2CStat) {
-			dcm2parPtr->attenI[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
 		} else {
 			dcm2parPtr->attenI[m] = 99*2;
 		}
 	} else if (!strcasecmp(iq, "q")){
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &bits);
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 		if (!I2CStat) {
-			dcm2parPtr->attenQ[m] = (BYTE)round(atten*2.);  // store command bits for atten
+			dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
 		} else {
 			dcm2parPtr->attenQ[m] = 99*2;
 		}
-	} else {
+	} else {  // invalid choice for IQ channels
 		closeI2Cssbus();
 		return (-40);
 	}
@@ -2867,7 +2869,7 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
 
   \param  inp  select on a for attenuation.
   \param  m    mth receiver.
-  \param  val  value.
+  \param  atten  attenuation value.
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
 int dcm2_setAllAttens(char *inp, float atten)
@@ -2883,23 +2885,24 @@ int dcm2_setAllAttens(char *inp, float atten)
 
 	int m;  // loop counter
 	int I2CStat = 0;
-	BYTE bits;
+	BYTE attenBits;
+
 	for (m=0; m<NDCMCHAN; m++){
 		// first set addresses to select a and b channels of DCM2 modules
 		address = 0x77;        // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
-		I2CStat = I2CSEND1;
+		I2CSEND1;
 		address = 0x73;        // I2C switch address 0x73 for second-level switch
 		buffer[0] = dcm2sw.ssba[m] || dcm2sw.ssbb[m];  // Select a and b channels simultaneously
-		I2CStat = I2CSEND1;
+		I2CSEND1;
 		// write to Q and I for both cards
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR, &bits);
+		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR, &attenBits);
 		// no cleanup since switches will be reset at next loop
 		if (!I2CStat) {
-			dcm2Apar.attenI[m] = bits;  // store command bits for atten
-			dcm2Apar.attenQ[m] = bits;  // store command bits for atten
-			dcm2Bpar.attenI[m] = bits;  // store command bits for atten
-			dcm2Bpar.attenQ[m] = bits;  // store command bits for atten
+			dcm2Apar.attenI[m] = attenBits;  // store command bits for atten
+			dcm2Apar.attenQ[m] = attenBits;
+			dcm2Bpar.attenI[m] = attenBits;
+			dcm2Bpar.attenQ[m] = attenBits;
 		} else {
 			dcm2Apar.attenI[m] = 99*2;
 			dcm2Apar.attenQ[m] = 99*2;
