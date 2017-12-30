@@ -553,18 +553,23 @@ void Correlator::execArgusGate(return_type status, argument_type arg)
 void Correlator::execArgusAtten(return_type status, argument_type arg)
 {
   static const char *usage =
-  "[M A]\r\n"
+  "[M AB IQ dB]\r\n"
   "  Set a receiver warm IF attenuation.\r\n"
   "  M is the Mth receiver to set.\r\n"
-  "  A is the attenuation in dB to set.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+  "  dB is the attenuation in dB to set.\r\n"
 		  ;
 
   if (!arg.help) {
-    int m, a;
+    int m;
+    char ab[4], iq[4];
+    float atten;
+
    if (arg.str) {
       // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%d%d", &m, &a);
-      if (narg < 2) {
+      int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
+      if (narg < 4) {
         // Too few arguments; return help string.
         longHelp(status, usage, &Correlator::execArgusAtten);
       } else {
@@ -572,9 +577,9 @@ void Correlator::execArgusAtten(return_type status, argument_type arg)
     	if (m > 0 && m <= NRX){
     		// convert from user's 1-base to code's 0-base
     		OSTimeDly(CMDDELAY);
-    		/* int rtn = argus_setWIFswitches("a", m-1, a, 0); /// NEEDS WORK ????
-   			sprintf(status, "%sargus_setWIFswitches(a, %d, %d, 0) returned status %d.\r\n",
-    					(rtn==0 ? statusOK : statusERR), m, a, rtn); */
+    		int rtn = dcm2_setAtten(m-1, ab, iq, atten);
+   			sprintf(status, "%sdcm2_setAtten(%d, %s, %s, %f) returned status %d.\r\n",
+    					(rtn==0 ? statusOK : statusERR), m, ab, iq, atten, rtn);
     	} else {
     		sprintf(status, "%sReceiver number out of range\r\n", statusERR);
     	}
@@ -667,12 +672,12 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
       if (narg < 2) {
         // Too few arguments; return help string.
         longHelp(status, usage, &Correlator::execArgusSetAll);
-      } else if (!strcmp(inp, "a") || !strcmp(inp, "s")) {
+      } else if (!strcmp(inp, "a")) {
     	// Set atten, sb
    		OSTimeDly(CMDDELAY);
-        int rtn = argus_setAllWIFswitches(inp, (char)v);
-		sprintf(status, "%sargus_setAlWIFswitches(%s, %d) returned status %d.\r\n",
-					(rtn==0 ? statusOK : statusERR), inp, (char)v, rtn);
+        int rtn = dcm2_setAllAttens(v);
+		sprintf(status, "%sdcm2_setAllAttens(%f) returned status %d.\r\n",
+					(rtn==0 ? statusOK : statusERR), v, rtn);
       } else {
         // Set G, D, M biases
     	OSTimeDly(CMDDELAY);

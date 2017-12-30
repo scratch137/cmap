@@ -2693,7 +2693,7 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
   \param  atten  attenuation value.
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
-int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
+int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 {
 
 	BYTE ssb;         // subsubbus address
@@ -2754,7 +2754,7 @@ int dcm2_setAtten(char *inp, int m, char *ab, char *iq, float atten)
   \param  atten  attenuation value.
   \return Zero on success, -1 for invalid selection, else number of I2C read fails.
 */
-int dcm2_setAllAttens(char *inp, float atten)
+int dcm2_setAllAttens(float atten)
 {
 
 	// check for freeze

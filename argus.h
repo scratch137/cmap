@@ -21,7 +21,6 @@ extern struct calSysParams calSysPar;
 extern float pwrCtrlPar[];
 extern struct chSet *chSetPtr;
 extern struct chRead *chReadPtr;
-extern struct chRead2 *chRead2Ptr;
 
 extern "C" {
 #endif
@@ -74,6 +73,9 @@ extern int  argus_powCheck(void);
 extern int  argus_thermCheck(void);
 extern int  argus_ifCheck(void);
 extern int  argus_systemState(void);
+
+extern int  dcm2_setAtten(int m, char *ab, char *iq, float atten);
+extern int  dcm2_setAllAttens(float atten);
 
 /**************************************************************************/
 
