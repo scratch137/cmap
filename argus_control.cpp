@@ -1432,7 +1432,7 @@ void Correlator::execCOMAPjlna(return_type status, argument_type arg)
 }
 
 /**
-  \brief COMAP jlna command.
+  \brief COMAP jcryo command.
 
   This method returns the LNA monitor points in JSON format.
 
@@ -1457,6 +1457,50 @@ void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
   } else {
     	longHelp(status, usage, &Correlator::execCOMAPjcryo);
   }
+}
+
+/**
+  \brief DCM2 test area.
+
+  This method controls DCM2 and readouts.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execDCM2(return_type status, argument_type arg)
+{
+	static const char *usage =
+	"[KEYWORD VALUE]\r\n"
+    "  DCM2 commands.\r\n"
+    "    KEYWORD          VALUE:\r\n"
+	"    amp              on/off  turns amplifier power on/off"
+		 ;
+
+	if (!arg.help) {
+		if (arg.str) {
+			// Command called with one or more arguments.
+			char kw[15] = {0};
+			char val[4] = {0};
+			int narg = sscanf(arg.str, "%s%s", kw, val);
+
+			if (narg == 2) {
+				// Execute the command.
+				if (!strcasecmp(kw, "amp")) {
+					int rtn = dcm2_ampPow(val);
+					sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
+							(!rtn ? statusOK : statusERR), val, rtn);
+				} else {
+					longHelp(status, usage, &Correlator::execArgusEngr);
+					sprintf(status,"\r\n");
+				}
+			}
+		} else {
+			sprintf(status, "DCM2 stub\r\n");
+		}
+	} else {
+		longHelp(status, usage, &Correlator::execArgusEngr);
+	}
 }
 
 /*************************************************************************************/

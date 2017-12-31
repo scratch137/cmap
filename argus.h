@@ -76,6 +76,8 @@ extern int  argus_systemState(void);
 
 extern int  dcm2_setAtten(int m, char *ab, char *iq, float atten);
 extern int  dcm2_setAllAttens(float atten);
+extern int  dcm2_ampPow(char *inp);
+
 
 /**************************************************************************/
 

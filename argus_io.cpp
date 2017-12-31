@@ -2364,7 +2364,7 @@ int dcm2_ledOn (void)
 
 	// LED is on P7, address 0x80; FP LED on P4, address 0x10.  Low is LED on.
 	buffer[0] = 0x01;  // write buffer
-	buffer[1] = tmp & ~(0x80 | 0x10);
+	buffer[1] = tmp & ~(DCM2_BD_LED | DCM2_FP_LED);
 	I2CSEND2;
 
 	/* replace above with this?
@@ -2373,6 +2373,33 @@ int dcm2_ledOn (void)
 
 	closeI2Csbus();
 	return(0);
+}
+
+/*******************************************************************/
+/**
+  \brief Turn on/off DCM2 amplifier power.
+
+  This function turns on the software-controlled power supply for the DCM2.  Default is to
+  turn the amplifier power supply on.
+
+  \par inp  string: "off" or "0" for off, else on
+
+  \return NB error code for write to BEX.
+*/
+int dcm2_ampPow(char *inp)
+{
+	int I2CStatus;
+
+	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
+
+	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
+		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | DCM2_AMPPOW, BEX_ADDR0); // high for on
+	} else {
+		I2CStatus = writeBEX(readBEX(BEX_ADDR0) & ~DCM2_AMPPOW, BEX_ADDR0);  // low for off
+	}
+
+	closeI2Csbus();
+	return(I2CStatus);
 }
 
 /*******************************************************************/

@@ -135,8 +135,8 @@ void initCommandShell()
       ::zpecShell["freeze"]    = &Correlator::execArgusFreeze;
       ::zpecShell["thaw"]      = &Correlator::execArgusThaw;
       ::zpecShell["jlna"]      = &Correlator::execCOMAPjlna;
-      ::zpecShell["jcryo"]      = &Correlator::execCOMAPjcryo;
-
+      ::zpecShell["jcryo"]     = &Correlator::execCOMAPjcryo;
+      ::zpecShell["dcm2"]      = &Correlator::execDCM2;
       //::zpecShell["lock"]    = &Correlator::execArgusLock;
       break;
 

@@ -203,13 +203,16 @@ struct chRead2 { // read ADCs
 // SPI masks for temp sensor, main board BEX
 #define SPI_CLK0_M 0x04
 #define SPI_DAT0_M 0x01
-#define SPI_CSB1_M 0x02  // main board BEX, CS& for P1, temp. sensor
-#define SPI_CSB4_M 0x10  // main board BEX, CS& for P4
+#define SPI_CSB1_M 0x02   // main board BEX, CS& for P1, temp. sensor
+#define DCM2_FP_LED 0x10  // front panel LED
+#define DCM2_AMPPOW 0x20  // amplifier power control bit
+#define DCM2_P6 0x04      // P6 (unused but available)
+#define DCM2_BD_LED 0x80  // main board LED
 // BEX I2C address for main board
 #define BEX_ADDR0 0x21   // Bus expander addresses for DCM2 main board
 // BEX init values for main board
 #define BEXREAD0 SPI_DAT0_M  // read P0, write P1..P7 for on-board TCA6408A
-#define BEXINIT0 SPI_CSB1_M | SPI_CSB4_M
+#define BEXINIT0 SPI_CSB1_M | DCM2_AMPPOW  // init: set CS and amp pow high, others X
 
 // SPI masks for downconverter cards
 #define QLOG_CS 0x01
