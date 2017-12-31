@@ -1491,7 +1491,7 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 		  sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
 					(!rtn ? statusOK : statusERR), val, rtn);
 		  } else {
-			  longHelp(status, usage, &Correlator::execArgusEngr);
+			  longHelp(status, usage, &Correlator::execDCM2);
 			  sprintf(status,"\r\n");
 		  }
 	  }
@@ -1499,7 +1499,7 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	    sprintf(status, "DCM2 stub\r\n");
     }
   } else {
-		longHelp(status, usage, &Correlator::execArgusEngr);
+		longHelp(status, usage, &Correlator::execDCM2);
   }
 }
 
