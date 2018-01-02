@@ -114,30 +114,25 @@ void initCommandShell()
       ::zpecShell["power"]     = &Correlator::execPower;
       break;
 
-    case ZPEC_HW_ARG:    // edited for comap, AH 2017-08-12
+    case ZPEC_HW_ARG:    // edited for comap, AH 2017-08-12, dcm2 2017-12-30
       //::zpecShell["test"]      = &Correlator::execArgusTest;
       ::zpecShell["init"]      = &Correlator::execArgusInit;
       ::zpecShell["limits"]    = &Correlator::execArgusLimits;
       ::zpecShell["all"]       = &Correlator::execArgusSetAll;
       ::zpecShell["g"]         = &Correlator::execArgusGate;
       ::zpecShell["d"]         = &Correlator::execArgusDrain;
+      ::zpecShell["a"]         = &Correlator::execArgusAtten;
       ::zpecShell["lna"]       = &Correlator::execArgusPwrCtrl;
       ::zpecShell["cryo"]      = &Correlator::execArgusCryo;
       ::zpecShell["c"]         = &Correlator::execArgusCryo;
       ::zpecShell["mon"]       = &Correlator::execArgusMonPts;
       ::zpecShell["presets"]   = &Correlator::execArgusPresets;
       ::zpecShell["engr"]      = &Correlator::execArgusEngr;
-//      ::zpecShell["wif"]       = &Correlator::execArgusWIFCtrl;
-//      ::zpecShell["a"]         = &Correlator::execArgusAtten;
-      ::zpecShell["s"]         = &Correlator::execArgusSB;
-//      ::zpecShell["vane"]      = &Correlator::execArgusVane;
-//      ::zpecShell["check"]     = &Correlator::execArgusRxHealth;
       ::zpecShell["freeze"]    = &Correlator::execArgusFreeze;
       ::zpecShell["thaw"]      = &Correlator::execArgusThaw;
       ::zpecShell["jlna"]      = &Correlator::execCOMAPjlna;
       ::zpecShell["jcryo"]     = &Correlator::execCOMAPjcryo;
       ::zpecShell["dcm2"]      = &Correlator::execDCM2;
-      //::zpecShell["lock"]    = &Correlator::execArgusLock;
       break;
 
     default:

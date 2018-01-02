@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20171025"
+#define VER "comap_20180102"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -211,7 +211,7 @@ struct chRead2 { // read ADCs
 // BEX I2C address for main board
 #define BEX_ADDR0 0x21   // Bus expander addresses for DCM2 main board
 // BEX init values for main board
-#define BEXREAD0 SPI_DAT0_M  // read P0, write P1..P7 for on-board TCA6408A
+#define BEXCONF0 SPI_DAT0_M  // read P0, write P1..P7 for on-board TCA6408A
 #define BEXINIT0 SPI_CSB1_M | DCM2_AMPPOW  // init: set CS and amp pow high, others X
 
 // SPI masks for downconverter cards
@@ -226,7 +226,17 @@ struct chRead2 { // read ADCs
 // BEX I2C address for downconverter cards
 #define BEX_ADDR 0x20
 // BEX init values for downconverter cards
-#define BEXREAD SPI_MISO_M  // read SPI_MISO_M, write all others on BEX
+#define BEXCONF SPI_MISO_M  // read SPI_MISO_M, write all others on BEX
 #define BEXINIT QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS
+
+struct dcm2params {
+	BYTE status[NRX]; // status byte
+	BYTE attenI[NRX]; // command attenuation, I channel
+	BYTE attenQ[NRX]; // command attenuation, Q channel
+	float powDetI[NRX]; // nominal power in dBm, I channel
+	float powDetQ[NRX]; // nominal power in dBm, Q channel
+	float bTemp[NRX];   // board temperature, C
+};
+
 
 #endif

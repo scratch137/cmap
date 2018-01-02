@@ -16,11 +16,16 @@ extern struct receiverParams rxPar[];
 extern struct cryostatParams cryoPar;
 extern struct biasCardParams bcPar[];
 extern struct warmIFparams wifPar;
-extern struct muBoxParams muBoxPar;
+//extern struct muBoxParams muBoxPar;
 extern struct calSysParams calSysPar;
 extern float pwrCtrlPar[];
 extern struct chSet *chSetPtr;
 extern struct chRead *chReadPtr;
+// dcm2 defs
+extern float dcm2MBpar[];
+extern struct dcm2params dcm2Apar;
+extern struct dcm2params dcm2Bpar;
+
 
 extern "C" {
 #endif
@@ -77,7 +82,11 @@ extern int  argus_systemState(void);
 extern int  dcm2_setAtten(int m, char *ab, char *iq, float atten);
 extern int  dcm2_setAllAttens(float atten);
 extern int  dcm2_ampPow(char *inp);
-
+extern int  dcm2_ledOnOff(char *inp);
+extern int  dcm2_readADC(void);
+extern int  dcm2_readMBtemp(void);
+extern int  dcm2_readAllModTemps(void);
+extern int  dcm2_readAllModTotPwr();
 
 /**************************************************************************/
 

@@ -1470,37 +1470,69 @@ void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
 */
 void Correlator::execDCM2(return_type status, argument_type arg)
 {
-  static const char *usage =
-  "[KEYWORD VALUE]\r\n"
-  "  DCM2 commands.\r\n"
-  "    KEYWORD          VALUE:\r\n"
-  "    amp              on/off  turns amplifier power on/off\r\n"
-		 ;
+	  static const char *usage =
+	  "[KEYWORD VALUE]\r\n"
+      "  DCM2 commands.\r\n"
+      "    KEYWORD          VALUE:\r\n"
+	  "    amp              on/off  turns amplifier power on/off\r\n"
+	  "    led              on/off  turns led on/off\r\n";
+
+  int rtn = 0;
 
   if (!arg.help) {
-	if (arg.str) {
-	// Command called with one or more arguments.
-	char kw[15] = {0};
-	char val[4] = {0};
-	int narg = sscanf(arg.str, "%s%s", kw, val);
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[15] = {0};
+	  char val[4] = {0};
+	  int narg = sscanf(arg.str, "%s%s", kw, val);
 
 	  if (narg == 2) {
-	    // Execute the command.
-	    if (!strcasecmp(kw, "amp")) {
-	  	  int rtn = dcm2_ampPow(val);
-		  sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
+	      // Execute the command.
+	      if (!strcasecmp(kw, "amp")) {
+  		    rtn = dcm2_ampPow(val);
+	        sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
 					(!rtn ? statusOK : statusERR), val, rtn);
-		  } else {
-			  longHelp(status, usage, &Correlator::execDCM2);
-			  sprintf(status,"\r\n");
-		  }
-	  }
-    } else {
-	    sprintf(status, "DCM2 stub\r\n");
-    }
-  } else {
-		longHelp(status, usage, &Correlator::execDCM2);
-  }
+	      } else if (!strcasecmp(kw, "led")) {
+	  		    int rtn = dcm2_ledOnOff(val);
+		        sprintf(status, "%sdcm2_ledOnOff(%s) returned with status %d\r\n",
+						(!rtn ? statusOK : statusERR), val, rtn);
+	      } else {
+		      longHelp(status, usage, &Correlator::execDCM2);
+	      }
+	   }
+     } else {
+    	rtn = dcm2_readADC();
+    	rtn += dcm2_readMBtemp();
+    	rtn += dcm2_readAllModTemps();
+    	rtn += dcm2_readAllModTotPwr();
+
+        sprintf(status, "%sdcm2_readADC() returned with status %d:\r\n"
+        		"Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n"
+        		"Status B:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
+        		"Status A:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
+        		"Temps A: %.3f  B: %.3f    PowDets A: %.3f, %.3f  B: %.3f, %.3f\r\n",
+        		(!rtn ? statusOK : statusERR), rtn,
+        		dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3],
+        		dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
+        		dcm2Bpar.status[0], dcm2Bpar.status[1], dcm2Bpar.status[2], dcm2Bpar.status[3],
+        		dcm2Bpar.status[4], dcm2Bpar.status[5], dcm2Bpar.status[6], dcm2Bpar.status[7],
+        		dcm2Bpar.status[8], dcm2Bpar.status[9], dcm2Bpar.status[10], dcm2Bpar.status[11],
+        		dcm2Bpar.status[12], dcm2Bpar.status[13], dcm2Bpar.status[14], dcm2Bpar.status[15],
+        		dcm2Bpar.status[16], dcm2Bpar.status[17], dcm2Bpar.status[18], dcm2Bpar.status[19],
+        		dcm2Apar.status[0], dcm2Apar.status[1], dcm2Apar.status[2], dcm2Apar.status[3],
+        		dcm2Apar.status[4], dcm2Apar.status[5], dcm2Apar.status[6], dcm2Apar.status[7],
+        		dcm2Apar.status[8], dcm2Apar.status[9], dcm2Apar.status[10], dcm2Apar.status[11],
+        		dcm2Apar.status[12], dcm2Apar.status[13], dcm2Apar.status[14], dcm2Apar.status[15],
+        		dcm2Apar.status[16], dcm2Apar.status[17], dcm2Apar.status[18], dcm2Apar.status[19],
+
+        		dcm2Apar.bTemp[19], dcm2Bpar.bTemp[19],
+        		dcm2Apar.powDetI[19], dcm2Apar.powDetQ[19], dcm2Bpar.powDetI[19], dcm2Bpar.powDetQ[19]);
+
+
+     }
+   } else {
+	  longHelp(status, usage, &Correlator::execDCM2);
+   }
 }
 
 /*************************************************************************************/
