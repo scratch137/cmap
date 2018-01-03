@@ -1510,7 +1510,9 @@ void Correlator::execDCM2(return_type status, argument_type arg)
         		"Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n"
         		"Status B:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
         		"Status A:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
-        		"Temps A: %.3f  B: %.3f    PowDets A: %.3f, %.3f  B: %.3f, %.3f\r\n",
+        		"Temps A: %.3f  B: %.3f\r\n"
+        		"Attens I: 0x%02x, %.2f   Q: 0x%02x, %.2f\r\n"
+        		"PowDets A: %.3f, %.3f  B: %.3f, %.3f\r\n",
         		(!rtn ? statusOK : statusERR), rtn,
         		dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3],
         		dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
@@ -1526,6 +1528,8 @@ void Correlator::execDCM2(return_type status, argument_type arg)
         		dcm2Apar.status[16], dcm2Apar.status[17], dcm2Apar.status[18], dcm2Apar.status[19],
 
         		dcm2Apar.bTemp[19], dcm2Bpar.bTemp[19],
+        		dcm2Apar.attenI[19], (float)dcm2Apar.attenI[19]/2.,
+        		dcm2Bpar.attenQ[19], (float)dcm2Bpar.attenQ[19]/2.,
         		dcm2Apar.powDetI[19], dcm2Apar.powDetQ[19], dcm2Bpar.powDetI[19], dcm2Bpar.powDetQ[19]);
 
 

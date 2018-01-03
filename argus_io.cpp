@@ -2126,7 +2126,7 @@ struct dcm2switches {
 	BYTE ssbb[NRX];   // for subsubbus, Bank B
 };
 
-#if 0   // set to 1 for normal operation
+#if 1   // set to 1 for normal operation
 struct dcm2switches dcm2sw = {
 	{0x10, 0x10, 0x10, 0x10, 0x08, 0x08, 0x08, 0x08, 0x04, 0x04, 0x04, 0x04,
 				0x02, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01, 0x01},
@@ -2711,7 +2711,7 @@ int dcm2_readAllModTotPwr(void)
   \brief SPI bit-bang write to 6-bit step attenuator.
 
   This function converts an unsigned integer to a series of I2C commands
-  for a HNC624 step attenuator.
+  for a HMC624 step attenuator.
 
   Requires previous call to function that sets I2C bus switches to
   address the interface before use, and close after.  Also requires
@@ -2721,7 +2721,7 @@ int dcm2_readAllModTotPwr(void)
   \return NB I2C error code for bus errors.
 
 */
-int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float atten, BYTE addr, BYTE *bits)
+int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float atten, BYTE addr, BYTE *bits)
 {
 
 	BYTE x = 0;                       // working byte
@@ -2729,8 +2729,8 @@ int HNC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	BYTE attenBits, attenBits_m;    // binary value word and mask
 
 	if (atten < 0.) atten = 0.;
-    attenBits = (BYTE)(round(atten) * 2.);
- 	if (attenBits > 63) attenBits = 63;
+	if (atten > 31.5) atten = 31.5;
+    attenBits = (BYTE)round(atten*2);
  	*bits = attenBits;
 
 	// get command state of output pins on interface
@@ -2816,14 +2816,14 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 	// send command
 	// select I or Q input on card
 	if (!strcasecmp(iq, "i")) {
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 		if (!I2CStat) {
 			dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
 		} else {
 			dcm2parPtr->attenI[m] = 0xff;
 		}
 	} else if (!strcasecmp(iq, "q")){
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 		if (!I2CStat) {
 			dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
 		} else {
@@ -2870,10 +2870,10 @@ int dcm2_setAllAttens(float atten)
 		buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
 		I2CSEND1;
 		address = 0x73;        // I2C switch address 0x73 for second-level switch
-		buffer[0] = dcm2sw.ssba[m] || dcm2sw.ssbb[m];  // Select a and b channels simultaneously
+		buffer[0] = dcm2sw.ssba[m] | dcm2sw.ssbb[m];  // Select a and b channels simultaneously
 		I2CSEND1;
 		// write to Q and I for both cards
-		I2CStat = HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR, &attenBits);
+		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR, &attenBits);
 		// no cleanup since switches will be reset at next loop
 		if (!I2CStat) {
 			dcm2Apar.attenI[m] = attenBits;  // store command bits for atten
@@ -3099,7 +3099,7 @@ Initialization stuff
 		  I2CStatus = writeBEX(BEXINIT, BEX_ADDR); // set initial value
 		  portErr[0] = I2CStatus;              // record 0 for success, err code for fail
 		  if (!I2CStatus) {
-			  // HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
+			  // HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
 			  iprintf("Found module on port 4\r\n");
 		  }
 		  closeI2Cssbus();
@@ -3110,7 +3110,7 @@ Initialization stuff
 		  I2CStatus = writeBEX(BEXINIT, BEX_ADDR); // set initial value
 		  portErr[1] = I2CStatus;              // record 0 for success, err code for fail
 		  if (!I2CStatus) {
-			  // HNC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
+			  // HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
 			  iprintf("Found module on port 5\r\n");
 		  }
 		  closeI2Cssbus();
