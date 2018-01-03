@@ -18,7 +18,7 @@
 #include "i2cmulti.h"
 //Overwrite values in 12cmulti.h
 #define I2C_RX_TX_TIMEOUT (5)   // Ticks allowed before timeout of a single byte transmission; default 5
-#define I2C_START_TIMEOUT (20)  // Ticks allowed before timeout when attempting start on I2C bus; default 20    
+#define I2C_START_TIMEOUT (20)  // Ticks allowed before timeout when attempting start on I2C bus; default 20
 
 #include <pins.h>  // individual pin manipulation
 
@@ -2124,15 +2124,27 @@ struct dcm2switches {
 	BYTE sb[NRX];     // for subbus
 	BYTE ssba[NRX];   // for subsbubus, Bank A
 	BYTE ssbb[NRX];   // for subsubbus, Bank B
-} dcm2sw = {
+};
+
+#if 0   // set to 1 for normal operation
+struct dcm2switches dcm2sw = {
 	{0x10, 0x10, 0x10, 0x10, 0x08, 0x08, 0x08, 0x08, 0x04, 0x04, 0x04, 0x04,
-			0x02, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01, 0x01},
+				0x02, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01, 0x01},
 	{0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01,
 			    0x08, 0x04, 0x02, 0x01, 0x08, 0x04, 0x02, 0x01},
 	{0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10,
 			    0x80, 0x40, 0x20, 0x10, 0x80, 0x40, 0x20, 0x10}
 };
-
+#else
+struct dcm2switches dcm2sw = {  // all channels point to 20A
+	{0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+			0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01},
+	{0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+			0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01},
+	{0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+			0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01}
+};
+#endif
 
 /*******************************************************************/
 /**
@@ -2912,14 +2924,14 @@ int dcm2_init(void)
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Apar.status[m] = writeBEX(BEXINIT, BEX_ADDR);  // zero if BEX responds to init
-		configBEX(BEXCONF, BEX_ADDR);                      // configure bus extender
-	    // select, configure, and initialize A bank; keep track in status element
+		dcm2Apar.status[m] = (BYTE)writeBEX(BEXINIT, BEX_ADDR);     // zero if BEX responds to init
+		configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
+	    // select, configure, and initialize B bank; keep track in status element
 		address = 0x73;
-		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
+		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Bpar.status[m] = writeBEX(BEXINIT, BEX_ADDR);  // zero if BEX responds to init
-		configBEX(BEXCONF, BEX_ADDR);                      // configure bus extender
+		dcm2Bpar.status[m] = (BYTE)writeBEX(BEXINIT, BEX_ADDR);       // zero if BEX responds to init
+		configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
 	}
 
 	// Configure and initialize BEX on main board
