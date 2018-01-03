@@ -83,10 +83,11 @@ extern int  dcm2_setAtten(int m, char *ab, char *iq, float atten);
 extern int  dcm2_setAllAttens(float atten);
 extern int  dcm2_ampPow(char *inp);
 extern int  dcm2_ledOnOff(char *inp);
-extern int  dcm2_readADC(void);
+extern int  dcm2_readMBadc(void);
 extern int  dcm2_readMBtemp(void);
 extern int  dcm2_readAllModTemps(void);
 extern int  dcm2_readAllModTotPwr();
+extern int  dcm2_blockMod(char *ch, char *ab);
 
 /**************************************************************************/
 

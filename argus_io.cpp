@@ -2112,8 +2112,8 @@ int argus_test(int foo, float bar)
 	float powDetQ[NRX]; // nominal power in dBm, Q channel
 	float bTemp[NRX];   // board temperature, C
 };*/
-struct dcm2params dcm2Apar;  // structure for IF bank A parameters
-struct dcm2params dcm2Bpar;  // structure for IF bank B barameters
+struct dcm2params dcm2Apar; // structure for IF bank A parameters
+struct dcm2params dcm2Bpar; // structure for IF bank B parameters
 
 // Vector to store on-board ADC values: Ain3, Ain2, Ain1, Ain0, MonP12, MonP8, GND, GND
 float dcm2MBpar[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
@@ -2256,7 +2256,7 @@ int closeI2Cssbus(void)
 /**
   \brief Configure bus expander (BEX)
 
-  This function configures a TCA6408A bus expander; which pins will be set as
+  This function configures a TCA6408A bus expander for which pins will be set as
   inputs and which as outputs.
 
   \param  conf configuration register content byte.
@@ -2287,7 +2287,7 @@ int writeBEX(BYTE val, BYTE addr)
 {
 	address = addr;    // I2C address for BEX chip on board
 	buffer[0] = 0x01;  // output port register
-	buffer[1] = val;  // conf = 0x01 for warm IF tester, LSB only reads
+	buffer[1] = val;   // conf = 0x01 for warm IF tester, LSB only reads
 	I2CStat = I2CSEND2;
 
 	return (I2CStat);
@@ -2320,7 +2320,7 @@ BYTE readBEX(BYTE addr)
 
   \return Zero on success, else (9000 + NB I2C error code) for latest bus error.
 */
-int dcm2_readADC(void)
+int dcm2_readMBadc(void)
 {
 
 	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
@@ -2668,7 +2668,6 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
 int dcm2_readAllModTotPwr(void)
 {
 
-	const float vdd = 3.3;
 	// check for freeze?
 	//if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
@@ -2688,15 +2687,15 @@ int dcm2_readAllModTotPwr(void)
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Apar.powDetI[m] =  AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, vdd, BEX_ADDR);
-		dcm2Apar.powDetQ[m] =  AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, vdd, BEX_ADDR);
+		dcm2Apar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
+		dcm2Apar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
 
 		// select, configure, then read powDets B bank
 		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Bpar.powDetI[m] =  AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, vdd, BEX_ADDR);
-		dcm2Bpar.powDetQ[m] =  AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, vdd, BEX_ADDR);
+		dcm2Bpar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
+		dcm2Bpar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
 	}
 
 	// close switches and release bus
@@ -2775,6 +2774,7 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	return ( I2CStat );
 
 }
+
 /********************************************************************/
 /**
   \brief Set all DCM2 attenuators.
@@ -2836,6 +2836,39 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 
 	// close up and return
 	return (closeI2Cssbus());
+}
+
+/********************************************************************/
+/**
+  \brief Block DCM2 module.
+
+  This command writes a non-zero value to the appropriate status byte of the DCM2 parameters structure.
+
+  \param  m    mth receiver.
+  \param  ab   A or B channel
+  \return Zero
+*/
+int dcm2_blockMod(char *ch, char *ab)
+{
+
+	int m;
+	sscanf(ch, "%d", &m);
+	m -= 1;   // change to ones-based counting
+	// check for out-of-range channel number
+	if (m > NRX) return -10;
+
+	// select band A or B, set pointer to correct parameter structure
+	if (!strcasecmp(ab, "a")) {
+		dcm2parPtr = &dcm2Apar;
+	} else if (!strcasecmp(ab, "b")){
+		dcm2parPtr = &dcm2Bpar;
+	} else {
+		return -20;
+	}
+
+	dcm2parPtr->status[m] = 8;
+
+	return (0);
 }
 
 /*******************************************************************************************/
@@ -2900,7 +2933,7 @@ int dcm2_setAllAttens(float atten)
 
   \return Zero.
 */
-int dcm2_init(void)
+int init_dcm2(void)
 {
 
 	/*
@@ -2924,14 +2957,16 @@ int dcm2_init(void)
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
+		dcm2Apar.status[m] = 0;
 		dcm2Apar.status[m] = (BYTE)writeBEX(BEXINIT, BEX_ADDR);     // zero if BEX responds to init
-		configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
+		if (!dcm2Apar.status[m]) configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
 	    // select, configure, and initialize B bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
+		dcm2Bpar.status[m] = 0;
 		dcm2Bpar.status[m] = (BYTE)writeBEX(BEXINIT, BEX_ADDR);       // zero if BEX responds to init
-		configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
+		if (!dcm2Bpar.status[m]) configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
 	}
 
 	// Configure and initialize BEX on main board
@@ -2983,6 +3018,7 @@ void argus_init(const flash_t *flash)
 	J2[28].set();  // reset
 	OSTimeDly(1);
 	J2[28].clr();  // enable I2C switches
+
 
 	// shut down LNA power if it is on
 	// may take a while if lnaPwrState is high but PIOs aren't initialized,
@@ -3056,65 +3092,12 @@ void argus_init(const flash_t *flash)
 		}
 	}
 
-	dcm2_init();  // initialize dcm2 control board
+	init_dcm2();  // initialize dcm2 control board
 
     // release I2C bus
 	i2cBusBusy = 0;
 
 }
 
-
-
-/*******************************************************************************************
-
-Initialization stuff
-
-		  //// Hardware initialization at startup
-		  // Initialize and pulse I2C switch reset line
-		  J2[28].function (PINJ2_28_GPIO);  // configure pin J2-28 for GPIO
-		  OSTimeDly (5);
-		  J2[28].set();  // send reset pulse out at start
-		  OSTimeDly (5);
-		  J2[28].clr();  // set pin low to enable IF board I2C switches
-		  // Configure system and turn on LED on completion
-		  openI2Csbus(I2C_SB7);
-		  configBEX(BEXCONF0, BEX_ADDR0);
-		  writeBEX(BEXINIT0, BEX_ADDR0);
-		  printf("\r\nTest board temperature = %.2f\r\n\r\n",
-				  AD7814_SPI_bitbang(SPI_CLK0_M, SPI_DAT0_M, SPI_CSB1_M, BEX_ADDR0));
-		  readDCM2adc();
-		  printf("ADC values: %f, %f, %f, %f, %f, %f, %f, %f\r\n\r\n",
-				  adcVal[0], adcVal[1], adcVal[2], adcVal[3], adcVal[4], adcVal[5], adcVal[6], adcVal[7]);
-		  closeI2Csbus();
-		  ledOn();
-		  // report on switch settings
-		  iprintf("sb = 0x%02x, ssba = 0x%02x, ssbb = 0x%02x\r\n", I2C_SB0, I2C_SSB5, I2C_SSB4);
-
-
-                  // Detect connected DCM2 modules
-
-		  // Try configuring BEX on downconverter board attached to P4, record error state
-		  openI2Cssbus(I2C_SB0, I2C_SSB4);
-		  configBEX(BEXCONF, BEX_ADDR);           // configure bus extender
-		  I2CStatus = writeBEX(BEXINIT, BEX_ADDR); // set initial value
-		  portErr[0] = I2CStatus;              // record 0 for success, err code for fail
-		  if (!I2CStatus) {
-			  // HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
-			  iprintf("Found module on port 4\r\n");
-		  }
-		  closeI2Cssbus();
-
-		  // Try configuring BEX on downconverter board attached to P5, record error state
-		  openI2Cssbus(I2C_SB0, I2C_SSB5);
-		  configBEX(BEXCONF, BEX_ADDR);           // configure bus extender
-		  I2CStatus = writeBEX(BEXINIT, BEX_ADDR); // set initial value
-		  portErr[1] = I2CStatus;              // record 0 for success, err code for fail
-		  if (!I2CStatus) {
-			  // HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), 40, BEX_ADDR);
-			  iprintf("Found module on port 5\r\n");
-		  }
-		  closeI2Cssbus();
-
-*/
 
 

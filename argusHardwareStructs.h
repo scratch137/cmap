@@ -197,6 +197,10 @@ struct chRead2 { // read ADCs
 
 /***************************************************************************/
 /* DCM2 definitions */
+#define DBMSCALE -45.5   // scale factor for power detector conversion to dBm
+#define DBMOFFSET 20     // offset value for power detector conversion to dBm
+#define ADCVREF 3.3      // reference voltage for 16-bit ADCs
+
 // subbus switch setting for DCM2 main board peripherals
 #define DCM2PERIPH_SBADDR 0x80
 
