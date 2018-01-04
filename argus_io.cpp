@@ -2112,8 +2112,22 @@ int argus_test(int foo, float bar)
 	float powDetQ[NRX]; // nominal power in dBm, Q channel
 	float bTemp[NRX];   // board temperature, C
 };*/
-struct dcm2params dcm2Apar; // structure for IF bank A parameters
-struct dcm2params dcm2Bpar; // structure for IF bank B parameters
+struct dcm2params dcm2Apar = {
+		{9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9},
+		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
+		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
+		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
+		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
+		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99}
+}; // structure for IF bank A parameters
+struct dcm2params dcm2Bpar  = {
+		{9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9},
+		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
+		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
+		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
+		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
+		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99}
+}; // structure for IF bank B parameters
 
 // Vector to store on-board ADC values: Ain3, Ain2, Ain1, Ain0, MonP12, MonP8, GND, GND
 float dcm2MBpar[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
@@ -2416,7 +2430,7 @@ int dcm2_ledOnOff(char *inp)
   previous single call to initialize interface chip.
 
   \param  val  value to convert and send
-  \return voltage, or (9000 + NB I2C error code) for bus errors.
+  \return voltage, or (990 + NB I2C error code) for bus errors.
 */
 float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE addr)
 {
@@ -2498,7 +2512,7 @@ float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE ad
 	buffer[1] = x;
 	I2CStat = I2CSEND2;
 
-	return ( I2CStat ? (float)(9000+I2CStat) : (float)val*0.25 );
+	return ( I2CStat ? (float)(990+I2CStat) : (float)val*0.25 );
 }
 
 /*******************************************************************/
@@ -2869,27 +2883,43 @@ int dcm2_setAllAttens(float atten)
 	int I2CStat = 0;
 	BYTE attenBits;
 
+	// do this one atten at a time for error tracking
 	for (m=0; m<NRX; m++){
 		// first set addresses to select a and b channels of DCM2 modules
 		address = 0x77;        // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
 		I2CSEND1;
-		address = 0x73;        // I2C switch address 0x73 for second-level switch
-		buffer[0] = dcm2sw.ssba[m] | dcm2sw.ssbb[m];  // Select a and b channels simultaneously
+
+		address = 0x73;        // I2C switch address 0x73 for second-level switch, band A
+		buffer[0] = dcm2sw.ssba[m];
 		I2CSEND1;
-		// write to Q and I for both cards
-		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, (Q_ATTEN_LE | I_ATTEN_LE), atten, BEX_ADDR, &attenBits);
-		// no cleanup since switches will be reset at next loop
+		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 		if (!I2CStat) {
 			dcm2Apar.attenI[m] = attenBits;  // store command bits for atten
-			dcm2Apar.attenQ[m] = attenBits;
-			dcm2Bpar.attenI[m] = attenBits;
-			dcm2Bpar.attenQ[m] = attenBits;
 		} else {
-			dcm2Apar.attenI[m] = 0xff;
-			dcm2Apar.attenQ[m] = 0xff;
-			dcm2Bpar.attenI[m] = 0xff;
-			dcm2Bpar.attenQ[m] = 0xff;
+			dcm2Apar.attenI[m] = 198;
+		}
+		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+		if (!I2CStat) {
+			dcm2Apar.attenQ[m] = attenBits;  // store command bits for atten
+		} else {
+			dcm2Apar.attenQ[m] = 198;
+		}
+
+		address = 0x73;        // I2C switch address 0x73 for second-level switch, band B
+		buffer[0] = dcm2sw.ssbb[m];
+		I2CSEND1;
+		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+		if (!I2CStat) {
+			dcm2Bpar.attenI[m] = attenBits;  // store command bits for atten
+		} else {
+			dcm2Bpar.attenI[m] = 198;
+		}
+		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+		if (!I2CStat) {
+			dcm2Bpar.attenQ[m] = attenBits;  // store command bits for atten
+		} else {
+			dcm2Bpar.attenQ[m] = 198;
 		}
 	}
 
@@ -2950,34 +2980,37 @@ int init_dcm2(void)
 	 */
 	// DCM2 setups
 
-
-		// Configure and initialize BEXs on DCM2 modules
+    // Configure and initialize BEXs on DCM2 modules
 	int m;  // loop counter
-	for (m=0; m<20; m++){
+	for (m=0; m<NRX; m++){
+
 		// first set addresses to select A band DCM2 module
 		address = 0x77;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-
 		// select, configure, and initialize A bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
-		/*J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-		OSTimeDly(1);
-		J2[28].clr();  // enable I2C switches */
 		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
 		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches
 
+		// first set addresses to select A band DCM2 module
+		address = 0x77;            // I2C switch address 0x77 for top-level switch
+		buffer[0] = dcm2sw.sb[m];  // pick subbus
+		I2CSEND1;
 		// select, configure, and initialize B bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
-		/*J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-		OSTimeDly(1);
-		J2[28].clr();  // enable I2C switches */
 		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
 		if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches
 	}
 
 	// Configure and initialize BEX on main board
@@ -3104,6 +3137,13 @@ void argus_init(const flash_t *flash)
 	}
 
 	init_dcm2();  // initialize dcm2 control board
+
+	// Configure and initialize BEX on main board
+	closeI2Cssbus();
+	openI2Csbus(DCM2PERIPH_SBADDR);
+	configBEX(BEXCONF0, BEX_ADDR0);
+	writeBEX(BEXINIT0, BEX_ADDR0);
+	dcm2_ledOnOff("on");
 
     // release I2C bus
 	i2cBusBusy = 0;

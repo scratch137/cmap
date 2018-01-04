@@ -1512,7 +1512,7 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 		  }
 	  }
 	} else {
-		init_dcm2();
+		//init_dcm2();
       rtn = dcm2_readMBadc();
       rtn += dcm2_readMBtemp();
       rtn += dcm2_readAllModTemps();
