@@ -86,8 +86,9 @@ extern int  dcm2_ledOnOff(char *inp);
 extern int  dcm2_readMBadc(void);
 extern int  dcm2_readMBtemp(void);
 extern int  dcm2_readAllModTemps(void);
-extern int  dcm2_readAllModTotPwr();
+extern int  dcm2_readAllModTotPwr(void);
 extern int  dcm2_blockMod(char *ch, char *ab);
+extern int  init_dcm2(void);
 
 /**************************************************************************/
 

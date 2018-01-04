@@ -1477,17 +1477,17 @@ void Correlator::execDCM2(return_type status, argument_type arg)
       "    KEYWORD   VALUE    VALUE:\r\n"
 	  "    amp       on/off             turns amplifier power on/off\r\n"
 	  "    led       on/off             turns led on/off\r\n"
-	  "  block       ch_no    AB        blocks DCM2 channel\r\n" ;
+	  "    block     ch_no    AB        blocks DCM2 channel\r\n" ;
 
   int rtn = 0;
 
   if (!arg.help) {
 	  if (arg.str) {
 	  // Command called with one or more arguments.
-	  char kw[4] = {0};
+	  char kw[10] = {0};
 	  char val[4] = {0};
 	  char val2[4] = {0};
-	  int narg = sscanf(arg.str, "%3s%3s%3s", kw, val, val2);
+	  int narg = sscanf(arg.str, "%9s %3s %3s", kw, val, val2);
 
 	  if (narg == 2) {
 	      // Execute the command.
@@ -1503,28 +1503,29 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 		      longHelp(status, usage, &Correlator::execDCM2);
 	      }
 	  } else if (narg == 3){
-		  if (!strcasecmp(kw, "blo")) {
+		  if (!strcasecmp(kw, "block")) {
 			  rtn = dcm2_blockMod(val, val2);
 			  sprintf(status, "%sdcm2_blockMod(%s, %s) returned with status %d\r\n",
 			  		  (!rtn ? statusOK : statusERR), val, val2, rtn);
-			  //sprintf(status, "dcm2 block stub\r\n");
 		  } else {
 			  longHelp(status, usage, &Correlator::execDCM2);
 		  }
 	  }
 	} else {
+		init_dcm2();
       rtn = dcm2_readMBadc();
       rtn += dcm2_readMBtemp();
       rtn += dcm2_readAllModTemps();
       rtn += dcm2_readAllModTotPwr();
 
+#define ACHAN 0  // active channel to display
       sprintf(status, "%sdcm2_readADC() returned with status %d:\r\n"
     		  "Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n"
     		  "Status B:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
     		  "Status A:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
     		  "Temps A: %.3f  B: %.3f\r\n"
-    		  "Attens I: 0x%02x, %.1f   Q: 0x%02x, %.1f\r\n"
-    		  "PowDets A: %.3f, %.3f  B: %.3f, %.3f\r\n",
+    		  "Attens A I/Q: %.1f/%.1f   B I/Q: %.1f/%.1f\r\n"
+    		  "PowDets A: %.1f, %.1f  B: %.1f, %.1f\r\n",
     		  (!rtn ? statusOK : statusERR), rtn,
     		  dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3],
     		  dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
@@ -1539,10 +1540,12 @@ void Correlator::execDCM2(return_type status, argument_type arg)
     		  dcm2Apar.status[12], dcm2Apar.status[13], dcm2Apar.status[14], dcm2Apar.status[15],
     		  dcm2Apar.status[16], dcm2Apar.status[17], dcm2Apar.status[18], dcm2Apar.status[19],
 
-    		  dcm2Apar.bTemp[19], dcm2Bpar.bTemp[19],
-    		  dcm2Apar.attenI[19], (float)dcm2Apar.attenI[19]/2.,
-    		  dcm2Bpar.attenQ[19], (float)dcm2Bpar.attenQ[19]/2.,
-    		  dcm2Apar.powDetI[19], dcm2Apar.powDetQ[19], dcm2Bpar.powDetI[19], dcm2Bpar.powDetQ[19]);
+    		  dcm2Apar.bTemp[ACHAN], dcm2Bpar.bTemp[ACHAN],
+    		  (float)dcm2Apar.attenI[ACHAN]/2.,
+    		  (float)dcm2Apar.attenQ[ACHAN]/2.,
+    		  (float)dcm2Bpar.attenI[ACHAN]/2.,
+    		  (float)dcm2Bpar.attenQ[ACHAN]/2.,
+    		  dcm2Apar.powDetI[ACHAN], dcm2Apar.powDetQ[ACHAN], dcm2Bpar.powDetI[ACHAN], dcm2Bpar.powDetQ[ACHAN]);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execDCM2);

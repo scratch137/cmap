@@ -2126,7 +2126,7 @@ struct dcm2switches {
 	BYTE ssbb[NRX];   // for subsubbus, Bank B
 };
 
-#if 1   // set to 1 for normal operation
+#if 1   // set to 1 for normal operation, 0 for all ports to connect to ch 20, band A
 struct dcm2switches dcm2sw = {
 	{0x10, 0x10, 0x10, 0x10, 0x08, 0x08, 0x08, 0x08, 0x04, 0x04, 0x04, 0x04,
 				0x02, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01, 0x01},
@@ -2687,15 +2687,19 @@ int dcm2_readAllModTotPwr(void)
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Apar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
-		dcm2Apar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
+		dcm2Apar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
+		dcm2Apar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
+		dcm2Apar.powDetI[m] = (dcm2Apar.powDetI[m] < ADCVREF ? dcm2Apar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
+		dcm2Apar.powDetQ[m] = (dcm2Apar.powDetQ[m] < ADCVREF ? dcm2Apar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
 
 		// select, configure, then read powDets B bank
 		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Bpar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
-		dcm2Bpar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR)*DBMSCALE + DBMOFFSET;
+		dcm2Bpar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
+		dcm2Bpar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
+		dcm2Bpar.powDetI[m] = (dcm2Bpar.powDetI[m] < ADCVREF ? dcm2Bpar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
+		dcm2Bpar.powDetQ[m] = (dcm2Bpar.powDetQ[m] < ADCVREF ? dcm2Bpar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
 	}
 
 	// close switches and release bus
@@ -2804,15 +2808,16 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 	if (!strcasecmp(ab, "a")) {
 		ssb = dcm2sw.ssba[m];
 		dcm2parPtr = &dcm2Apar;
-	} else if (!strcasecmp(ab, "b")){
+	} else if (!strcasecmp(ab, "b")) {
 		ssb = dcm2sw.ssbb[m];
 		dcm2parPtr = &dcm2Bpar;
 	} else {
 		return -20;
 	}
 
-	// open communication to DCM2 card
+	// open communication to DCM2 module
 	openI2Cssbus(dcm2sw.sb[m], ssb);
+
 	// send command
 	// select I or Q input on card
 	if (!strcasecmp(iq, "i")) {
@@ -2836,39 +2841,6 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 
 	// close up and return
 	return (closeI2Cssbus());
-}
-
-/********************************************************************/
-/**
-  \brief Block DCM2 module.
-
-  This command writes a non-zero value to the appropriate status byte of the DCM2 parameters structure.
-
-  \param  m    mth receiver.
-  \param  ab   A or B channel
-  \return Zero
-*/
-int dcm2_blockMod(char *ch, char *ab)
-{
-
-	int m;
-	sscanf(ch, "%d", &m);
-	m -= 1;   // change to ones-based counting
-	// check for out-of-range channel number
-	if (m > NRX) return -10;
-
-	// select band A or B, set pointer to correct parameter structure
-	if (!strcasecmp(ab, "a")) {
-		dcm2parPtr = &dcm2Apar;
-	} else if (!strcasecmp(ab, "b")){
-		dcm2parPtr = &dcm2Bpar;
-	} else {
-		return -20;
-	}
-
-	dcm2parPtr->status[m] = 8;
-
-	return (0);
 }
 
 /*******************************************************************************************/
@@ -2925,6 +2897,38 @@ int dcm2_setAllAttens(float atten)
 	return (closeI2Cssbus());
 }
 
+/********************************************************************/
+/**
+  \brief Block DCM2 module.
+
+  This command writes a non-zero value to the appropriate status byte of the DCM2 parameters structure.
+
+  \param  m    mth receiver.
+  \param  ab   A or B channel
+  \return Zero
+*/
+int dcm2_blockMod(char *ch, char *ab)
+{
+
+	int m;
+	sscanf(ch, "%d", &m);     // convert channel from string to int
+	m -= 1;                   // change to ones-based counting
+	if (m > NRX) return -10;  // trap out-of-range channel number
+
+	// select band A or B, set pointer to correct parameter structure
+	if (!strcasecmp(ab, "a")) {
+		dcm2parPtr = &dcm2Apar;
+	} else if (!strcasecmp(ab, "b")){
+		dcm2parPtr = &dcm2Bpar;
+	} else {
+		return -20;
+	}
+
+	dcm2parPtr->status[m] = 8;
+
+	return (0);
+}
+
 /*******************************************************************************************/
 /**
   \brief Send DCM2 init string.
@@ -2949,7 +2953,7 @@ int init_dcm2(void)
 
 		// Configure and initialize BEXs on DCM2 modules
 	int m;  // loop counter
-	for (m=0; m<NRX; m++){
+	for (m=0; m<20; m++){
 		// first set addresses to select A band DCM2 module
 		address = 0x77;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
@@ -2959,27 +2963,21 @@ int init_dcm2(void)
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
-		/*dcm2Apar.status[m] = 0;
-		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
-		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // configure bus extender */
 		/*J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
 		OSTimeDly(1);
 		J2[28].clr();  // enable I2C switches */
 		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
-		writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
 
 		// select, configure, and initialize B bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
-		/*dcm2Bpar.status[m] = 0;
-		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
-		if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // configure bus extender */
 		/*J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
 		OSTimeDly(1);
 		J2[28].clr();  // enable I2C switches */
 		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
-		writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
 	}
 
 	// Configure and initialize BEX on main board
