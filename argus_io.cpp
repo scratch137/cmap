@@ -2112,22 +2112,22 @@ int argus_test(int foo, float bar)
 	float powDetQ[NRX]; // nominal power in dBm, Q channel
 	float bTemp[NRX];   // board temperature, C
 };*/
-struct dcm2params dcm2Apar = {
+struct dcm2params dcm2Apar = {  // structure for IF bank A parameters
 		{9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9},
-		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
-		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
+		{198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198},
+		{198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198},
 		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
 		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
-		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99}
-}; // structure for IF bank A parameters
-struct dcm2params dcm2Bpar  = {
+		{999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999}
+};
+struct dcm2params dcm2Bpar  = {  // structure for IF bank B parameters
 		{9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9},
-		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
-		{98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98},
+		{198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198},
+		{198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198},
 		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
 		{-99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99},
-		{99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99}
-}; // structure for IF bank B parameters
+		{999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999}
+};
 
 // Vector to store on-board ADC values: Ain3, Ain2, Ain1, Ain0, MonP12, MonP8, GND, GND
 float dcm2MBpar[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
@@ -2558,25 +2558,30 @@ int dcm2_readAllModTemps(void)
 
 	int m;  // loop counter
 	for (m=0; m<NRX; m++){
-		// first set addresses to select A band DCM2 module
-		address = 0x77;            // I2C switch address 0x77 for top-level switch
-		buffer[0] = dcm2sw.sb[m];  // pick subbus
-		I2CSEND1;
+		// read temperatures A band
+		if (!dcm2Apar.status[m]) {
+			address = 0x77;            // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];  // pick subbus
+			I2CSEND1;
+			// select, then read temperature A bank
+			address = 0x73;
+			buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
+			I2CSEND1;
+			dcm2Apar.bTemp[m] = AD7814_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, BOARD_T_CS, BEX_ADDR);
+		}
 
-	    // select, then read temperature A bank
-		address = 0x73;
-		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
-		I2CSEND1;
-		dcm2Apar.bTemp[m] = AD7814_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, BOARD_T_CS, BEX_ADDR);
-
-	    // select, then read temperature A bank
-		address = 0x73;
-		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
-		I2CSEND1;
-		dcm2Bpar.bTemp[m] = AD7814_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, BOARD_T_CS, BEX_ADDR);
+		// read temperatures B band
+		if (!dcm2Bpar.status[m]) {
+			address = 0x77;            // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];  // pick subbus
+			I2CSEND1;
+			address = 0x73;
+			buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
+			I2CSEND1;
+			dcm2Bpar.bTemp[m] = AD7814_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, BOARD_T_CS, BEX_ADDR);
+		}
 	}
-
-	// close switches at end just to be tidy
+	// close switches
 	int I2CStat = closeI2Cssbus();
 	// release I2C bus
 	i2cBusBusy = 0;
@@ -2692,28 +2697,35 @@ int dcm2_readAllModTotPwr(void)
 
 	int m;  // loop counter
 	for (m=0; m<NRX; m++){
-		// first set addresses to select A band DCM2 module
-		address = 0x77;            // I2C switch address 0x77 for top-level switch
-		buffer[0] = dcm2sw.sb[m];  // pick subbus
-		I2CSEND1;
+		if (!dcm2Apar.status[m]) {
+			// first set addresses to select A band DCM2 module
+			address = 0x77;            // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];  // pick subbus
+			I2CSEND1;
+			// select, then read powDets A bank
+			address = 0x73;
+			buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
+			I2CSEND1;
+			dcm2Apar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
+			dcm2Apar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
+			dcm2Apar.powDetI[m] = (dcm2Apar.powDetI[m] < ADCVREF ? dcm2Apar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
+			dcm2Apar.powDetQ[m] = (dcm2Apar.powDetQ[m] < ADCVREF ? dcm2Apar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
+		}
 
-	    // select, then read powDets A bank
-		address = 0x73;
-		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
-		I2CSEND1;
-		dcm2Apar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
-		dcm2Apar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
-		dcm2Apar.powDetI[m] = (dcm2Apar.powDetI[m] < ADCVREF ? dcm2Apar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
-		dcm2Apar.powDetQ[m] = (dcm2Apar.powDetQ[m] < ADCVREF ? dcm2Apar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
-
-		// select, configure, then read powDets B bank
-		address = 0x73;
-		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
-		I2CSEND1;
-		dcm2Bpar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
-		dcm2Bpar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
-		dcm2Bpar.powDetI[m] = (dcm2Bpar.powDetI[m] < ADCVREF ? dcm2Bpar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
-		dcm2Bpar.powDetQ[m] = (dcm2Bpar.powDetQ[m] < ADCVREF ? dcm2Bpar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
+		if (!dcm2Bpar.status[m]) {
+			// first set addresses to select A band DCM2 module
+			address = 0x77;            // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];  // pick subbus
+			I2CSEND1;
+			// select, configure, then read powDets B bank
+			address = 0x73;
+			buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
+			I2CSEND1;
+			dcm2Bpar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
+			dcm2Bpar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
+			dcm2Bpar.powDetI[m] = (dcm2Bpar.powDetI[m] < ADCVREF ? dcm2Bpar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
+			dcm2Bpar.powDetQ[m] = (dcm2Bpar.powDetQ[m] < ADCVREF ? dcm2Bpar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
+		}
 	}
 
 	// close switches and release bus
@@ -2829,6 +2841,8 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 		return -20;
 	}
 
+	if (dcm2parPtr->status) return -30;  // return if channel is blocked
+
 	// open communication to DCM2 module
 	openI2Cssbus(dcm2sw.sb[m], ssb);
 
@@ -2885,46 +2899,57 @@ int dcm2_setAllAttens(float atten)
 
 	// do this one atten at a time for error tracking
 	for (m=0; m<NRX; m++){
-		// first set addresses to select a and b channels of DCM2 modules
-		address = 0x77;        // I2C switch address 0x77 for top-level switch
-		buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
-		I2CSEND1;
 
-		address = 0x73;        // I2C switch address 0x73 for second-level switch, band A
-		buffer[0] = dcm2sw.ssba[m];
-		I2CSEND1;
-		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
-		if (!I2CStat) {
-			dcm2Apar.attenI[m] = attenBits;  // store command bits for atten
-		} else {
-			dcm2Apar.attenI[m] = 198;
-		}
-		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
-		if (!I2CStat) {
-			dcm2Apar.attenQ[m] = attenBits;  // store command bits for atten
-		} else {
-			dcm2Apar.attenQ[m] = 198;
+		if (!dcm2Apar.status[m]) {
+			// first set addresses to select a and b channels of DCM2 modules
+			address = 0x77;        // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
+			I2CSEND1;
+			address = 0x73;        // I2C switch address 0x73 for second-level switch, band A
+			buffer[0] = dcm2sw.ssba[m];
+			I2CSEND1;
+
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2Apar.attenI[m] = attenBits;  // store command bits for atten
+			} else {
+				dcm2Apar.attenI[m] = 198;
+			}
+
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2Apar.attenQ[m] = attenBits;  // store command bits for atten
+			} else {
+				dcm2Apar.attenQ[m] = 198;
+			}
 		}
 
-		address = 0x73;        // I2C switch address 0x73 for second-level switch, band B
-		buffer[0] = dcm2sw.ssbb[m];
-		I2CSEND1;
-		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
-		if (!I2CStat) {
-			dcm2Bpar.attenI[m] = attenBits;  // store command bits for atten
-		} else {
-			dcm2Bpar.attenI[m] = 198;
-		}
-		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
-		if (!I2CStat) {
-			dcm2Bpar.attenQ[m] = attenBits;  // store command bits for atten
-		} else {
-			dcm2Bpar.attenQ[m] = 198;
+		if (!dcm2Bpar.status[m]) {
+			// first set addresses to select a and b channels of DCM2 modules
+			address = 0x77;        // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];   // I2C channel address  0x01 for second-level switch
+			I2CSEND1;
+			address = 0x73;        // I2C switch address 0x73 for second-level switch, band A
+			buffer[0] = dcm2sw.ssbb[m];
+			I2CSEND1;
+
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2Bpar.attenI[m] = attenBits;  // store command bits for atten
+			} else {
+				dcm2Bpar.attenI[m] = 198;
+			}
+
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2Bpar.attenQ[m] = attenBits;  // store command bits for atten
+			} else {
+				dcm2Bpar.attenQ[m] = 198;
+			}
 		}
 	}
-
-	// close up and return
-	return (closeI2Cssbus());
+	    // close up and return
+		return (closeI2Cssbus());
 }
 
 /********************************************************************/
@@ -2954,7 +2979,7 @@ int dcm2_blockMod(char *ch, char *ab)
 		return -20;
 	}
 
-	dcm2parPtr->status[m] = 8;
+	dcm2parPtr->status[m] = 7;
 
 	return (0);
 }

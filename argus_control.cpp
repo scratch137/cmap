@@ -1477,7 +1477,7 @@ void Correlator::execDCM2(return_type status, argument_type arg)
       "    KEYWORD   VALUE    VALUE:\r\n"
 	  "    amp       on/off             turns amplifier power on/off\r\n"
 	  "    led       on/off             turns led on/off\r\n"
-	  "    block     ch_no    AB        blocks DCM2 channel\r\n" ;
+	  "    block     ch_no    ab        blocks DCM2 channel, ab A or B\r\n" ;
 
   int rtn = 0;
 
@@ -1510,42 +1510,143 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 		  } else {
 			  longHelp(status, usage, &Correlator::execDCM2);
 		  }
+	  } else {
+		  longHelp(status, usage, &Correlator::execDCM2);
 	  }
 	} else {
-		//init_dcm2();
       rtn = dcm2_readMBadc();
       rtn += dcm2_readMBtemp();
       rtn += dcm2_readAllModTemps();
       rtn += dcm2_readAllModTotPwr();
 
 #define ACHAN 0  // active channel to display
-      sprintf(status, "%sdcm2_readADC() returned with status %d:\r\n"
+      sprintf(status, "%sDCM2 parameters:\r\n"
     		  "Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n"
-    		  "Status B:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
-    		  "Status A:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
-    		  "Temps A: %.3f  B: %.3f\r\n"
-    		  "Attens A I/Q: %.1f/%.1f   B I/Q: %.1f/%.1f\r\n"
-    		  "PowDets A: %.1f, %.1f  B: %.1f, %.1f\r\n",
-    		  (!rtn ? statusOK : statusERR), rtn,
+    		  "Ch  1: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  2: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  3: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  4: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  5: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  6: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  7: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  8: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch  9: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 10: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 11: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 12: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 13: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 14: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 15: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 16: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 17: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 18: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 19: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
+    		  "Ch 20: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n",
+    		  (!rtn ? statusOK : statusERR),
     		  dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3],
     		  dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
-    		  dcm2Bpar.status[0], dcm2Bpar.status[1], dcm2Bpar.status[2], dcm2Bpar.status[3],
-    		  dcm2Bpar.status[4], dcm2Bpar.status[5], dcm2Bpar.status[6], dcm2Bpar.status[7],
-    		  dcm2Bpar.status[8], dcm2Bpar.status[9], dcm2Bpar.status[10], dcm2Bpar.status[11],
-    		  dcm2Bpar.status[12], dcm2Bpar.status[13], dcm2Bpar.status[14], dcm2Bpar.status[15],
-    		  dcm2Bpar.status[16], dcm2Bpar.status[17], dcm2Bpar.status[18], dcm2Bpar.status[19],
-    		  dcm2Apar.status[0], dcm2Apar.status[1], dcm2Apar.status[2], dcm2Apar.status[3],
-    		  dcm2Apar.status[4], dcm2Apar.status[5], dcm2Apar.status[6], dcm2Apar.status[7],
-    		  dcm2Apar.status[8], dcm2Apar.status[9], dcm2Apar.status[10], dcm2Apar.status[11],
-    		  dcm2Apar.status[12], dcm2Apar.status[13], dcm2Apar.status[14], dcm2Apar.status[15],
-    		  dcm2Apar.status[16], dcm2Apar.status[17], dcm2Apar.status[18], dcm2Apar.status[19],
 
-    		  dcm2Apar.bTemp[ACHAN], dcm2Bpar.bTemp[ACHAN],
-    		  (float)dcm2Apar.attenI[ACHAN]/2.,
-    		  (float)dcm2Apar.attenQ[ACHAN]/2.,
-    		  (float)dcm2Bpar.attenI[ACHAN]/2.,
-    		  (float)dcm2Bpar.attenQ[ACHAN]/2.,
-    		  dcm2Apar.powDetI[ACHAN], dcm2Apar.powDetQ[ACHAN], dcm2Bpar.powDetI[ACHAN], dcm2Bpar.powDetQ[ACHAN]);
+    		  dcm2Apar.status[0], (float)dcm2Apar.attenI[0]/2., (float)dcm2Apar.attenI[0]/2.,
+       		  dcm2Apar.powDetI[0], dcm2Apar.powDetQ[0], dcm2Apar.bTemp[0],
+       		  dcm2Bpar.status[0], (float)dcm2Bpar.attenI[0]/2., (float)dcm2Bpar.attenI[0]/2.,
+       		  dcm2Bpar.powDetI[0], dcm2Bpar.powDetQ[0], dcm2Bpar.bTemp[0],
+
+    		  dcm2Apar.status[1], (float)dcm2Apar.attenI[1]/2., (float)dcm2Apar.attenI[1]/2.,
+       		  dcm2Apar.powDetI[1], dcm2Apar.powDetQ[1], dcm2Apar.bTemp[1],
+       		  dcm2Bpar.status[1], (float)dcm2Bpar.attenI[1]/2., (float)dcm2Bpar.attenI[1]/2.,
+       		  dcm2Bpar.powDetI[1], dcm2Bpar.powDetQ[1], dcm2Bpar.bTemp[1],
+
+    		  dcm2Apar.status[2], (float)dcm2Apar.attenI[2]/2., (float)dcm2Apar.attenI[2]/2.,
+       		  dcm2Apar.powDetI[2], dcm2Apar.powDetQ[2], dcm2Apar.bTemp[2],
+       		  dcm2Bpar.status[2], (float)dcm2Bpar.attenI[2]/2., (float)dcm2Bpar.attenI[2]/2.,
+       		  dcm2Bpar.powDetI[2], dcm2Bpar.powDetQ[2], dcm2Bpar.bTemp[2],
+
+    		  dcm2Apar.status[3], (float)dcm2Apar.attenI[3]/2., (float)dcm2Apar.attenI[3]/2.,
+       		  dcm2Apar.powDetI[3], dcm2Apar.powDetQ[3], dcm2Apar.bTemp[3],
+       		  dcm2Bpar.status[3], (float)dcm2Bpar.attenI[3]/2., (float)dcm2Bpar.attenI[3]/2.,
+       		  dcm2Bpar.powDetI[3], dcm2Bpar.powDetQ[3], dcm2Bpar.bTemp[3],
+
+    		  dcm2Apar.status[4], (float)dcm2Apar.attenI[4]/2., (float)dcm2Apar.attenI[4]/2.,
+       		  dcm2Apar.powDetI[4], dcm2Apar.powDetQ[4], dcm2Apar.bTemp[4],
+       		  dcm2Bpar.status[4], (float)dcm2Bpar.attenI[4]/2., (float)dcm2Bpar.attenI[4]/2.,
+       		  dcm2Bpar.powDetI[4], dcm2Bpar.powDetQ[4], dcm2Bpar.bTemp[4],
+
+    		  dcm2Apar.status[5], (float)dcm2Apar.attenI[5]/2., (float)dcm2Apar.attenI[5]/2.,
+       		  dcm2Apar.powDetI[5], dcm2Apar.powDetQ[5], dcm2Apar.bTemp[5],
+       		  dcm2Bpar.status[5], (float)dcm2Bpar.attenI[5]/2., (float)dcm2Bpar.attenI[5]/2.,
+       		  dcm2Bpar.powDetI[5], dcm2Bpar.powDetQ[5], dcm2Bpar.bTemp[5],
+
+    		  dcm2Apar.status[6], (float)dcm2Apar.attenI[6]/2., (float)dcm2Apar.attenI[6]/2.,
+       		  dcm2Apar.powDetI[6], dcm2Apar.powDetQ[6], dcm2Apar.bTemp[6],
+       		  dcm2Bpar.status[6], (float)dcm2Bpar.attenI[6]/2., (float)dcm2Bpar.attenI[6]/2.,
+       		  dcm2Bpar.powDetI[6], dcm2Bpar.powDetQ[6], dcm2Bpar.bTemp[6],
+
+    		  dcm2Apar.status[7], (float)dcm2Apar.attenI[7]/2., (float)dcm2Apar.attenI[7]/2.,
+       		  dcm2Apar.powDetI[7], dcm2Apar.powDetQ[7], dcm2Apar.bTemp[7],
+       		  dcm2Bpar.status[7], (float)dcm2Bpar.attenI[7]/2., (float)dcm2Bpar.attenI[7]/2.,
+       		  dcm2Bpar.powDetI[7], dcm2Bpar.powDetQ[7], dcm2Bpar.bTemp[7],
+
+    		  dcm2Apar.status[8], (float)dcm2Apar.attenI[8]/2., (float)dcm2Apar.attenI[8]/2.,
+       		  dcm2Apar.powDetI[8], dcm2Apar.powDetQ[8], dcm2Apar.bTemp[8],
+       		  dcm2Bpar.status[8], (float)dcm2Bpar.attenI[8]/2., (float)dcm2Bpar.attenI[8]/2.,
+       		  dcm2Bpar.powDetI[8], dcm2Bpar.powDetQ[8], dcm2Bpar.bTemp[8],
+
+    		  dcm2Apar.status[9], (float)dcm2Apar.attenI[9]/2., (float)dcm2Apar.attenI[9]/2.,
+       		  dcm2Apar.powDetI[9], dcm2Apar.powDetQ[9], dcm2Apar.bTemp[9],
+       		  dcm2Bpar.status[9], (float)dcm2Bpar.attenI[9]/2., (float)dcm2Bpar.attenI[9]/2.,
+       		  dcm2Bpar.powDetI[9], dcm2Bpar.powDetQ[9], dcm2Bpar.bTemp[9],
+
+    		  dcm2Apar.status[10], (float)dcm2Apar.attenI[10]/2., (float)dcm2Apar.attenI[10]/2.,
+       		  dcm2Apar.powDetI[10], dcm2Apar.powDetQ[10], dcm2Apar.bTemp[10],
+       		  dcm2Bpar.status[10], (float)dcm2Bpar.attenI[10]/2., (float)dcm2Bpar.attenI[10]/2.,
+       		  dcm2Bpar.powDetI[10], dcm2Bpar.powDetQ[10], dcm2Bpar.bTemp[10],
+
+    		  dcm2Apar.status[11], (float)dcm2Apar.attenI[11]/2., (float)dcm2Apar.attenI[11]/2.,
+       		  dcm2Apar.powDetI[11], dcm2Apar.powDetQ[11], dcm2Apar.bTemp[11],
+       		  dcm2Bpar.status[11], (float)dcm2Bpar.attenI[11]/2., (float)dcm2Bpar.attenI[11]/2.,
+       		  dcm2Bpar.powDetI[11], dcm2Bpar.powDetQ[11], dcm2Bpar.bTemp[11],
+
+    		  dcm2Apar.status[12], (float)dcm2Apar.attenI[12]/2., (float)dcm2Apar.attenI[12]/2.,
+       		  dcm2Apar.powDetI[12], dcm2Apar.powDetQ[12], dcm2Apar.bTemp[12],
+       		  dcm2Bpar.status[12], (float)dcm2Bpar.attenI[12]/2., (float)dcm2Bpar.attenI[12]/2.,
+       		  dcm2Bpar.powDetI[12], dcm2Bpar.powDetQ[12], dcm2Bpar.bTemp[12],
+
+    		  dcm2Apar.status[13], (float)dcm2Apar.attenI[13]/2., (float)dcm2Apar.attenI[13]/2.,
+       		  dcm2Apar.powDetI[13], dcm2Apar.powDetQ[13], dcm2Apar.bTemp[13],
+       		  dcm2Bpar.status[13], (float)dcm2Bpar.attenI[13]/2., (float)dcm2Bpar.attenI[13]/2.,
+       		  dcm2Bpar.powDetI[13], dcm2Bpar.powDetQ[13], dcm2Bpar.bTemp[13],
+
+    		  dcm2Apar.status[14], (float)dcm2Apar.attenI[14]/2., (float)dcm2Apar.attenI[14]/2.,
+       		  dcm2Apar.powDetI[14], dcm2Apar.powDetQ[14], dcm2Apar.bTemp[14],
+       		  dcm2Bpar.status[14], (float)dcm2Bpar.attenI[14]/2., (float)dcm2Bpar.attenI[14]/2.,
+       		  dcm2Bpar.powDetI[14], dcm2Bpar.powDetQ[14], dcm2Bpar.bTemp[14],
+
+    		  dcm2Apar.status[15], (float)dcm2Apar.attenI[15]/2., (float)dcm2Apar.attenI[15]/2.,
+       		  dcm2Apar.powDetI[15], dcm2Apar.powDetQ[15], dcm2Apar.bTemp[15],
+       		  dcm2Bpar.status[15], (float)dcm2Bpar.attenI[15]/2., (float)dcm2Bpar.attenI[15]/2.,
+       		  dcm2Bpar.powDetI[15], dcm2Bpar.powDetQ[15], dcm2Bpar.bTemp[15],
+
+    		  dcm2Apar.status[16], (float)dcm2Apar.attenI[16]/2., (float)dcm2Apar.attenI[16]/2.,
+       		  dcm2Apar.powDetI[16], dcm2Apar.powDetQ[16], dcm2Apar.bTemp[16],
+       		  dcm2Bpar.status[16], (float)dcm2Bpar.attenI[16]/2., (float)dcm2Bpar.attenI[16]/2.,
+       		  dcm2Bpar.powDetI[16], dcm2Bpar.powDetQ[16], dcm2Bpar.bTemp[16],
+
+    		  dcm2Apar.status[17], (float)dcm2Apar.attenI[17]/2., (float)dcm2Apar.attenI[17]/2.,
+       		  dcm2Apar.powDetI[17], dcm2Apar.powDetQ[17], dcm2Apar.bTemp[17],
+       		  dcm2Bpar.status[17], (float)dcm2Bpar.attenI[17]/2., (float)dcm2Bpar.attenI[17]/2.,
+       		  dcm2Bpar.powDetI[17], dcm2Bpar.powDetQ[17], dcm2Bpar.bTemp[17],
+
+    		  dcm2Apar.status[18], (float)dcm2Apar.attenI[18]/2., (float)dcm2Apar.attenI[18]/2.,
+       		  dcm2Apar.powDetI[18], dcm2Apar.powDetQ[18], dcm2Apar.bTemp[18],
+       		  dcm2Bpar.status[18], (float)dcm2Bpar.attenI[18]/2., (float)dcm2Bpar.attenI[18]/2.,
+       		  dcm2Bpar.powDetI[18], dcm2Bpar.powDetQ[18], dcm2Bpar.bTemp[18],
+
+       		  dcm2Apar.status[19], (float)dcm2Apar.attenI[19]/2., (float)dcm2Apar.attenI[19]/2.,
+       		  dcm2Apar.powDetI[19], dcm2Apar.powDetQ[19], dcm2Apar.bTemp[19],
+       		  dcm2Bpar.status[19], (float)dcm2Bpar.attenI[19]/2., (float)dcm2Bpar.attenI[19]/2.,
+       		  dcm2Bpar.powDetI[19], dcm2Bpar.powDetQ[19], dcm2Bpar.bTemp[19]);
+
+
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execDCM2);
