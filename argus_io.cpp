@@ -2946,27 +2946,40 @@ int init_dcm2(void)
 	 */
 	// DCM2 setups
 
-	// Configure and initialize BEXs on DCM2 modules
+
+		// Configure and initialize BEXs on DCM2 modules
 	int m;  // loop counter
 	for (m=0; m<NRX; m++){
 		// first set addresses to select A band DCM2 module
 		address = 0x77;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-	    // select, configure, and initialize A bank; keep track in status element
+
+		// select, configure, and initialize A bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Apar.status[m] = 0;
-		dcm2Apar.status[m] = (BYTE)writeBEX(BEXINIT, BEX_ADDR);     // zero if BEX responds to init
-		if (!dcm2Apar.status[m]) configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
-	    // select, configure, and initialize B bank; keep track in status element
+		/*dcm2Apar.status[m] = 0;
+		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
+		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // configure bus extender */
+		/*J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches */
+		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
+		writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+
+		// select, configure, and initialize B bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
-		dcm2Bpar.status[m] = 0;
-		dcm2Bpar.status[m] = (BYTE)writeBEX(BEXINIT, BEX_ADDR);       // zero if BEX responds to init
-		if (!dcm2Bpar.status[m]) configBEX(BEXCONF, BEX_ADDR);  // configure bus extender
+		/*dcm2Bpar.status[m] = 0;
+		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
+		if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // configure bus extender */
+		/*J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches */
+		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
+		writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
 	}
 
 	// Configure and initialize BEX on main board

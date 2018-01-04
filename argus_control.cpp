@@ -1502,48 +1502,48 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	      } else {
 		      longHelp(status, usage, &Correlator::execDCM2);
 	      }
-	  /*} else if (narg == 3){
+	  } else if (narg == 3){
 		  if (!strcasecmp(kw, "blo")) {
-			  //rtn = dcm2_blockMod(val, val2);
+			  rtn = dcm2_blockMod(val, val2);
 			  sprintf(status, "%sdcm2_blockMod(%s, %s) returned with status %d\r\n",
 			  		  (!rtn ? statusOK : statusERR), val, val2, rtn);
 			  //sprintf(status, "dcm2 block stub\r\n");
 		  } else {
 			  longHelp(status, usage, &Correlator::execDCM2);
-		  } */
+		  }
 	  }
-	  } else {
-    	rtn = dcm2_readMBadc();
-    	rtn += dcm2_readMBtemp();
-    	rtn += dcm2_readAllModTemps();
-    	rtn += dcm2_readAllModTotPwr();
+	} else {
+      rtn = dcm2_readMBadc();
+      rtn += dcm2_readMBtemp();
+      rtn += dcm2_readAllModTemps();
+      rtn += dcm2_readAllModTotPwr();
 
-        sprintf(status, "%sdcm2_readADC() returned with status %d:\r\n"
-        		"Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n"
-        		"Status B:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
-        		"Status A:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
-        		"Temps A: %.3f  B: %.3f\r\n"
-        		"Attens I: 0x%02x, %.1f   Q: 0x%02x, %.1f\r\n"
-        		"PowDets A: %.3f, %.3f  B: %.3f, %.3f\r\n",
-        		(!rtn ? statusOK : statusERR), rtn,
-        		dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3],
-        		dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
-        		dcm2Bpar.status[0], dcm2Bpar.status[1], dcm2Bpar.status[2], dcm2Bpar.status[3],
-        		dcm2Bpar.status[4], dcm2Bpar.status[5], dcm2Bpar.status[6], dcm2Bpar.status[7],
-        		dcm2Bpar.status[8], dcm2Bpar.status[9], dcm2Bpar.status[10], dcm2Bpar.status[11],
-        		dcm2Bpar.status[12], dcm2Bpar.status[13], dcm2Bpar.status[14], dcm2Bpar.status[15],
-        		dcm2Bpar.status[16], dcm2Bpar.status[17], dcm2Bpar.status[18], dcm2Bpar.status[19],
-        		dcm2Apar.status[0], dcm2Apar.status[1], dcm2Apar.status[2], dcm2Apar.status[3],
-        		dcm2Apar.status[4], dcm2Apar.status[5], dcm2Apar.status[6], dcm2Apar.status[7],
-        		dcm2Apar.status[8], dcm2Apar.status[9], dcm2Apar.status[10], dcm2Apar.status[11],
-        		dcm2Apar.status[12], dcm2Apar.status[13], dcm2Apar.status[14], dcm2Apar.status[15],
-        		dcm2Apar.status[16], dcm2Apar.status[17], dcm2Apar.status[18], dcm2Apar.status[19],
+      sprintf(status, "%sdcm2_readADC() returned with status %d:\r\n"
+    		  "Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n"
+    		  "Status B:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
+    		  "Status A:   %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n"
+    		  "Temps A: %.3f  B: %.3f\r\n"
+    		  "Attens I: 0x%02x, %.1f   Q: 0x%02x, %.1f\r\n"
+    		  "PowDets A: %.3f, %.3f  B: %.3f, %.3f\r\n",
+    		  (!rtn ? statusOK : statusERR), rtn,
+    		  dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3],
+    		  dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
+    		  dcm2Bpar.status[0], dcm2Bpar.status[1], dcm2Bpar.status[2], dcm2Bpar.status[3],
+    		  dcm2Bpar.status[4], dcm2Bpar.status[5], dcm2Bpar.status[6], dcm2Bpar.status[7],
+    		  dcm2Bpar.status[8], dcm2Bpar.status[9], dcm2Bpar.status[10], dcm2Bpar.status[11],
+    		  dcm2Bpar.status[12], dcm2Bpar.status[13], dcm2Bpar.status[14], dcm2Bpar.status[15],
+    		  dcm2Bpar.status[16], dcm2Bpar.status[17], dcm2Bpar.status[18], dcm2Bpar.status[19],
+    		  dcm2Apar.status[0], dcm2Apar.status[1], dcm2Apar.status[2], dcm2Apar.status[3],
+    		  dcm2Apar.status[4], dcm2Apar.status[5], dcm2Apar.status[6], dcm2Apar.status[7],
+    		  dcm2Apar.status[8], dcm2Apar.status[9], dcm2Apar.status[10], dcm2Apar.status[11],
+    		  dcm2Apar.status[12], dcm2Apar.status[13], dcm2Apar.status[14], dcm2Apar.status[15],
+    		  dcm2Apar.status[16], dcm2Apar.status[17], dcm2Apar.status[18], dcm2Apar.status[19],
 
-        		dcm2Apar.bTemp[19], dcm2Bpar.bTemp[19],
-        		dcm2Apar.attenI[19], (float)dcm2Apar.attenI[19]/2.,
-        		dcm2Bpar.attenQ[19], (float)dcm2Bpar.attenQ[19]/2.,
-        		dcm2Apar.powDetI[19], dcm2Apar.powDetQ[19], dcm2Bpar.powDetI[19], dcm2Bpar.powDetQ[19]);
-	  }
+    		  dcm2Apar.bTemp[19], dcm2Bpar.bTemp[19],
+    		  dcm2Apar.attenI[19], (float)dcm2Apar.attenI[19]/2.,
+    		  dcm2Bpar.attenQ[19], (float)dcm2Bpar.attenQ[19]/2.,
+    		  dcm2Apar.powDetI[19], dcm2Apar.powDetQ[19], dcm2Bpar.powDetI[19], dcm2Bpar.powDetQ[19]);
+	}
   } else {
 	  longHelp(status, usage, &Correlator::execDCM2);
   }
