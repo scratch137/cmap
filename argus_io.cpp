@@ -2758,7 +2758,7 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	BYTE attenBits, attenBits_m;    // binary value word and mask
 
 	if (atten < 0.) atten = 0.;
-	if (atten > 31.5) atten = 31.5;
+	if (atten > MAXATTEN) atten = MAXATTEN;
     attenBits = (BYTE)round(atten*2);
  	*bits = attenBits;
 
@@ -2979,7 +2979,7 @@ int dcm2_blockMod(char *ch, char *ab)
 		return -20;
 	}
 
-	dcm2parPtr->status[m] = 7;
+	dcm2parPtr->status[m] = 1;
 
 	return (0);
 }
@@ -3044,6 +3044,9 @@ int init_dcm2(void)
 	configBEX(BEXCONF0, BEX_ADDR0);
 	writeBEX(BEXINIT0, BEX_ADDR0);
 	dcm2_ledOnOff("on");
+
+	// Max atten
+	dcm2_setAllAttens(MAXATTEN);
 
 	return 0;
 }

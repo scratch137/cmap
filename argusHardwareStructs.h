@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180103"
+#define VER "comap_20180105"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -89,7 +89,7 @@ AH 2014.07.01
 #define MAXELEXT 60.   // Maximum warm electronics temperature [C]
 
 //Warm IF limits
-#define MAXATTEN 31  // max attenuation, 5-bit, 1 dB/step, including 0
+#define MAXATTEN 31.5  // max attenuation, 5-bit, 1 dB/step, including 0
 
 //Vane definitions
 #define VANESTOP 0x01      // lock vane motion

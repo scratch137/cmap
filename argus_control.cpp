@@ -425,7 +425,7 @@ void Correlator::execArgusLimits(return_type status, argument_type arg)
 		  ;
 
   if (!arg.help) {
-	  sprintf(status, "%s %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %d \r\n",
+	  sprintf(status, "%s %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %f \r\n",
 	      				statusOK, VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX, VMMIN, VMMAX,
 	      				IDMIN, IDMAX, IMMIN, IMMAX, MAXATTEN);
   } else {
@@ -1519,29 +1519,32 @@ void Correlator::execDCM2(return_type status, argument_type arg)
       rtn += dcm2_readAllModTemps();
       rtn += dcm2_readAllModTotPwr();
 
-#define ACHAN 0  // active channel to display
+	  //"       x xxxx xxxx xxxxx xxxxx xxxxxx | x xxxx xxxx xxxxx xxxxx xxxxxx\r\n"
       sprintf(status, "%sDCM2 parameters:\r\n"
-    		  "Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n"
-    		  "Ch  1: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  2: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  3: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  4: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  5: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  6: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  7: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  8: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch  9: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 10: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 11: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 12: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 13: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 14: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 15: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 16: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 17: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 18: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 19: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n"
-    		  "Ch 20: %d %3.1f %3.1f %5.1f %5.1f %5.2f | %d %3.1f %3.1f %5.1f %5.1f %5.2f\r\n",
+    		  "Main board: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.1f [C]\r\n"
+    		  "DCM2 modules:\r\n"
+    		  "                 Band A               |           Band B\r\n"
+    		  "      Bl AttI AttQ  TPwI  TPwQ   T[C] |Bl AttI AttQ  TPwI  TPwQ   T[C]\r\n"
+    		  "Ch  1: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  2: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  3: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  4: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  5: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  6: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  7: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  8: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch  9: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 10: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 11: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 12: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 13: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 14: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 15: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 16: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 17: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 18: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 19: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
+    		  "Ch 20: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n",
     		  (!rtn ? statusOK : statusERR),
     		  dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3],
     		  dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
