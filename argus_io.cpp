@@ -3045,8 +3045,14 @@ int init_dcm2(void)
 	writeBEX(BEXINIT0, BEX_ADDR0);
 	dcm2_ledOnOff("on");
 
-	// Max atten
+	// Set to max atten
 	dcm2_setAllAttens(MAXATTEN);
+	// Read out once to initialize
+	dcm2_readMBadc();
+    dcm2_readMBtemp();
+    dcm2_readAllModTemps();
+    dcm2_readAllModTotPwr();
+
 
 	return 0;
 }
