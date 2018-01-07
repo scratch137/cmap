@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180106"
+#define VER "comap_20180107"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -200,6 +200,7 @@ struct chRead2 { // read ADCs
 #define DBMSCALE -45.5   // scale factor for power detector conversion to dBm
 #define DBMOFFSET 20     // offset value for power detector conversion to dBm
 #define ADCVREF 3.3      // reference voltage for 16-bit ADCs
+#define PLLLOCKTHRESH 0.5   // voltage threshold for 4 and 8 GHz PLL lock indication
 
 // subbus switch setting for DCM2 main board peripherals
 #define DCM2PERIPH_SBADDR 0x80
@@ -216,7 +217,7 @@ struct chRead2 { // read ADCs
 #define BEX_ADDR0 0x21   // Bus expander addresses for DCM2 main board
 // BEX init values for main board
 #define BEXCONF0 SPI_DAT0_M  // read P0, write P1..P7 for on-board TCA6408A
-#define BEXINIT0 SPI_CSB1_M | DCM2_AMPPOW  // init: set CS and amp pow high, others X
+#define BEXINIT0 SPI_CSB1_M & ~DCM2_AMPPOW  // init: set CS high, amp low, others X
 
 // SPI masks for downconverter cards
 #define QLOG_CS 0x01

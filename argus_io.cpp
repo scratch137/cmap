@@ -2346,8 +2346,8 @@ int dcm2_readMBadc(void)
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 	//
 
-	//Read all channels of ADC
-	for (i = 0 ;  i < 8 ; i++) {
+	//Read all channels of ADC (only 6 are connected, but keep usual structure)
+	for (i = 0 ;  i < 6 ; i++) {
 		address = (BYTE)0x08;    // ADC device address on I2C bus
 		buffer[0] = (BYTE)pcRead.add[i];        // internal address for channel
 		I2CStat = I2CSEND1;  // send command for conversion
@@ -2382,9 +2382,9 @@ int dcm2_ampPow(char *inp)
 	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
-		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | DCM2_AMPPOW, BEX_ADDR0); // high for on
+		I2CStatus = writeBEX(readBEX(BEX_ADDR0) & ~DCM2_AMPPOW, BEX_ADDR0);  // low for on
 	} else {
-		I2CStatus = writeBEX(readBEX(BEX_ADDR0) & ~DCM2_AMPPOW, BEX_ADDR0);  // low for off
+		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | DCM2_AMPPOW, BEX_ADDR0); // high for off
 	}
 
 	closeI2Csbus();
@@ -3009,11 +3009,10 @@ int init_dcm2(void)
 	int m;  // loop counter
 	for (m=0; m<NRX; m++){
 
-		// first set addresses to select A band DCM2 module
+		// select, configure, and initialize A bank; keep track in status element
 		address = 0x77;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-		// select, configure, and initialize A bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
@@ -3023,11 +3022,10 @@ int init_dcm2(void)
 		OSTimeDly(1);
 		J2[28].clr();  // enable I2C switches
 
-		// first set addresses to select A band DCM2 module
+		// select, configure, and initialize B bank; keep track in status element
 		address = 0x77;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-		// select, configure, and initialize B bank; keep track in status element
 		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
@@ -3037,13 +3035,12 @@ int init_dcm2(void)
 		OSTimeDly(1);
 		J2[28].clr();  // enable I2C switches
 	}
+	closeI2Cssbus();
 
 	// Configure and initialize BEX on main board
-	closeI2Cssbus();
 	openI2Csbus(DCM2PERIPH_SBADDR);
 	configBEX(BEXCONF0, BEX_ADDR0);
 	writeBEX(BEXINIT0, BEX_ADDR0);
-	dcm2_ledOnOff("on");
 
 	// Set to max atten
 	dcm2_setAllAttens(MAXATTEN);
@@ -3052,6 +3049,9 @@ int init_dcm2(void)
     dcm2_readMBtemp();
     dcm2_readAllModTemps();
     dcm2_readAllModTotPwr();
+
+    // LED on when init is complete
+    dcm2_ledOnOff("on");
 
 
 	return 0;
