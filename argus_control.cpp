@@ -1548,8 +1548,8 @@ void Correlator::execDCM2(return_type status, argument_type arg)
     		  "Ch 20: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n",
     		  (!rtn ? statusOK : statusERR),
     		  dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[7],
-    		  (dcm2MBpar[0] > PLLLOCKTHRESH ? "locked" : "unlocked"),
-    		  (dcm2MBpar[1] > PLLLOCKTHRESH ? "locked" : "unlocked"),
+    		  (dcm2MBpar[0] > PLLLOCKTHRESH ? "locked" : "UNLOCKED"),
+    		  (dcm2MBpar[1] > PLLLOCKTHRESH ? "locked" : "UNLOCKED"),
 
     		  dcm2Apar.status[0], (float)dcm2Apar.attenI[0]/2., (float)dcm2Apar.attenI[0]/2.,
        		  dcm2Apar.powDetI[0], dcm2Apar.powDetQ[0], dcm2Apar.bTemp[0],
