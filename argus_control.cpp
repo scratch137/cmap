@@ -1521,7 +1521,7 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 
 	  //"       x xxxx xxxx xxxxx xxxxx xxxxxx | x xxxx xxxx xxxxx xxxxx xxxxxx\r\n"
       sprintf(status, "%sDCM2 parameters:\r\n"
-    		  "DCM2 7 & 12 V supply voltages: %.3f V, %.3f V, fanout board temp.: %.1f C\r\n"
+    		  "DCM2 7 & 12 V supply voltages: %.1f V, %.1f V, fanout board temp.: %.1f C\r\n"
     		  "4 GHz PLL: %s, 8 GHz PLL: %s\r\n"
     		  "Individual DCM2 modules:\r\n"
     		  "                 Band A               |           Band B\r\n"
