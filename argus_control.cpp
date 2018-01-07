@@ -1521,9 +1521,9 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 
 	  //"       x xxxx xxxx xxxxx xxxxx xxxxxx | x xxxx xxxx xxxxx xxxxx xxxxxx\r\n"
       sprintf(status, "%sDCM2 parameters:\r\n"
-    		  "DCM2 voltages: %.3f V, %.3f V, fanout board temp. %.1f C\r\n"
-    		  "4 GHz PLL %s, 8 GHz Pll %s\r\n"
-    		  "DCM2 modules:\r\n"
+    		  "DCM2 7 & 12 V supply voltages: %.3f V, %.3f V, fanout board temp.: %.1f C\r\n"
+    		  "4 GHz PLL: %s, 8 GHz PLL: %s\r\n"
+    		  "Individual DCM2 modules:\r\n"
     		  "                 Band A               |           Band B\r\n"
     		  "      Bl AttI AttQ  TPwI  TPwQ   T[C] |Bl AttI AttQ  TPwI  TPwQ   T[C]\r\n"
     		  "Ch  1: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n"
@@ -1548,8 +1548,8 @@ void Correlator::execDCM2(return_type status, argument_type arg)
     		  "Ch 20: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n",
     		  (!rtn ? statusOK : statusERR),
     		  dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[7],
-    		  (dcm2MBpar[0] > PLLLOCKTHRESH ? "locked" : "UNLOCKED"),
-    		  (dcm2MBpar[1] > PLLLOCKTHRESH ? "locked" : "UNLOCKED"),
+    		  (dcm2MBpar[0] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"),
+    		  (dcm2MBpar[1] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"),
 
     		  dcm2Apar.status[0], (float)dcm2Apar.attenI[0]/2., (float)dcm2Apar.attenI[0]/2.,
        		  dcm2Apar.powDetI[0], dcm2Apar.powDetQ[0], dcm2Apar.bTemp[0],
