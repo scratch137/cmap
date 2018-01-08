@@ -1519,6 +1519,7 @@ void Correlator::execDCM2(return_type status, argument_type arg)
       rtn += dcm2_readAllModTemps();
       rtn += dcm2_readAllModTotPwr();
 
+#if 1
 	  //"       x xxxx xxxx xxxxx xxxxx xxxxxx | x xxxx xxxx xxxxx xxxxx xxxxxx\r\n"
       sprintf(status, "%sDCM2 parameters:\r\n"
     		  "DCM2 7 & 12 V supply voltages: %.1f V, %.1f V, fanout board temp.: %.1f C\r\n"
@@ -1650,6 +1651,37 @@ void Correlator::execDCM2(return_type status, argument_type arg)
        		  dcm2Apar.powDetI[19], dcm2Apar.powDetQ[19], dcm2Apar.bTemp[19],
        		  dcm2Bpar.status[19], (float)dcm2Bpar.attenI[19]/2., (float)dcm2Bpar.attenI[19]/2.,
        		  dcm2Bpar.powDetI[19], dcm2Bpar.powDetQ[19], dcm2Bpar.bTemp[19]);
+# else
+      char outStr[2048] = {0};
+      int n = 0;
+      int i;
+
+ 	  //"       x xxxx xxxx xxxxx xxxxx xxxxxx | x xxxx xxxx xxxxx xxxxx xxxxxx\r\n"
+      n = sprintf(&outStr[0],
+    		  "%sDCM2 parameters:\r\n"
+    		  "DCM2 7 & 12 V supply voltages: %.1f V, %.1f V, fanout board temp.: %.1f C\r\n"
+    		  "4 GHz PLL: %s, 8 GHz PLL: %s\r\n"
+    		  "Individual DCM2 modules:\r\n"
+    		  "                 Band A               |           Band B\r\n"
+    		  "      Bl AttI AttQ  TPwI  TPwQ   T[C] |Bl AttI AttQ  TPwI  TPwQ   T[C]\r\n",
+    		  (!rtn ? statusOK : statusERR),
+    		  dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[7],
+    		  (dcm2MBpar[0] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"),
+    		  (dcm2MBpar[1] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"));
+      for (i=0; i<NRX; i++) {
+    	  n += sprintf(&outStr[n],
+		     "Ch %2d: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n",
+		     i+1, dcm2Apar.status[i], 
+		     (float)dcm2Apar.attenI[i]/2., (float)dcm2Apar.attenI[i]/2.,
+		     dcm2Apar.powDetI[i], dcm2Apar.powDetQ[i], 
+		     dcm2Apar.bTemp[i],
+		     dcm2Bpar.status[i], 
+		     (float)dcm2Bpar.attenI[i]/2., (float)dcm2Bpar.attenI[i]/2.,
+		     dcm2Bpar.powDetI[i], dcm2Bpar.powDetQ[i], 
+		     dcm2Bpar.bTemp[i]);
+      }
+      sprintf(status, outStr);
+#endif
 
 
 	}
