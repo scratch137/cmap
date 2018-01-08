@@ -54,7 +54,7 @@ unsigned int vaneErr;                      // vane motion has failed if vaneErr 
 //Pointer defs
 struct chSet *chSetPtr; // pointer to structure of form chSet
 struct chRead *chReadPtr; // pointer to structure of form chRead
-struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
+//struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
 
 // control bits within power control board PIO
 BYTE ctlVDS = 0x01;
@@ -2342,7 +2342,7 @@ int dcm2_readMBadc(void)
 	short i;
 	unsigned short int rawu;
 	const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-	const float scale[8] = {4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3};
+	const float scale[8] = {4.3, 4.3, 4.3, 4.3, 33.95, 4.3, 4.3, 4.3};
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 	//
 
@@ -2382,9 +2382,9 @@ int dcm2_ampPow(char *inp)
 	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
-		I2CStatus = writeBEX(readBEX(BEX_ADDR0) & ~DCM2_AMPPOW, BEX_ADDR0);  // low for on
+		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | DCM2_AMPPOW, BEX_ADDR0);
 	} else {
-		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | DCM2_AMPPOW, BEX_ADDR0); // high for off
+		I2CStatus = writeBEX(readBEX(BEX_ADDR0) & ~DCM2_AMPPOW, BEX_ADDR0);
 	}
 
 	closeI2Csbus();
@@ -2824,12 +2824,16 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 	BYTE ssb;         // subsubbus address
 	BYTE attenBits;   // attenuator command bits
 	                  // dcm2parPtr defined globally
+	struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
 
 	// check for freeze
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
 	// check for out-of-range channel number
-	if (m > NRX) return -10;
+	if (m > NRX) {
+		closeI2Cssbus();
+		return -10;
+	}
 	// select card for band A or B, set pointer to correct parameter structure
 	if (!strcasecmp(ab, "a")) {
 		ssb = dcm2sw.ssba[m];
@@ -2838,10 +2842,14 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 		ssb = dcm2sw.ssbb[m];
 		dcm2parPtr = &dcm2Bpar;
 	} else {
+		closeI2Cssbus();
 		return -20;
 	}
 
-	if (dcm2parPtr->status) return -30;  // return if channel is blocked
+	if (!dcm2parPtr->status) {
+		closeI2Cssbus();
+		return -30;  // return if channel is blocked
+	}
 
 	// open communication to DCM2 module
 	openI2Cssbus(dcm2sw.sb[m], ssb);
@@ -2853,14 +2861,14 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 		if (!I2CStat) {
 			dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
 		} else {
-			dcm2parPtr->attenI[m] = 0xff;
+			dcm2parPtr->attenI[m] = 198;
 		}
 	} else if (!strcasecmp(iq, "q")){
 		I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 		if (!I2CStat) {
 			dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
 		} else {
-			dcm2parPtr->attenQ[m] = 0xff;
+			dcm2parPtr->attenQ[m] = 198;
 		}
 	} else {  // invalid choice for IQ channels
 		closeI2Cssbus();
@@ -2965,6 +2973,7 @@ int dcm2_setAllAttens(float atten)
 int dcm2_blockMod(char *ch, char *ab)
 {
 
+	struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
 	int m;
 	sscanf(ch, "%d", &m);     // convert channel from string to int
 	m -= 1;                   // change to ones-based counting
@@ -3042,13 +3051,13 @@ int init_dcm2(void)
 	configBEX(BEXCONF0, BEX_ADDR0);
 	writeBEX(BEXINIT0, BEX_ADDR0);
 
-	// Set to max atten
-	dcm2_setAllAttens(MAXATTEN);
 	// Read out once to initialize
 	dcm2_readMBadc();
     dcm2_readMBtemp();
     dcm2_readAllModTemps();
     dcm2_readAllModTotPwr();
+	// Set to max atten
+	dcm2_setAllAttens(MAXATTEN);
 
     // LED on when init is complete
     dcm2_ledOnOff("on");

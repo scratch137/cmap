@@ -243,5 +243,4 @@ struct dcm2params {
 	float bTemp[NRX];   // board temperature, C
 };
 
-
 #endif
