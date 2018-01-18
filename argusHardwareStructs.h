@@ -45,7 +45,6 @@ AH 2014.07.01
 #define NBCMP 2     // number of monitor point sets for each bias card
 #define NBIASC 5    // number of bias cards (should get from length of address vector, really)
 #define NMIX 0      // number of mixers in each receiver
-#define NWIFBOX 0   // number of warm IF chassis; set to zero if none
 
 // Software limits for bias settings
 #define VDGMAX 1.7    // Max drain-gate voltage [V]
@@ -73,15 +72,6 @@ AH 2014.07.01
 #define MAXVDSV MAXVCCV    // Min drain supply voltage
 #define MINAMPV 10.0       // Min amplifier supply voltage (absolute)
 #define MAXAMPV 15.5       // Max amplifier supply voltage (absolute)
-#define MINCIFV 1.6        // Min cold IF supply voltage
-#define MAXCIFV 2.         // Max cold IF supply voltage
-#define CIFNOMCURR 0.4     // nominal CIF current [A]
-#define CIFMAXCURRDEV 0.1  // Allowable CIF current deviation
-#define MINCSV 26.         // Minimum cal sys voltage (28V nom)
-#define MAXCSV 29.         // Maximum cal sys voltage (28V nom, 30V abs max)
-#define MINIFPWRDETV {1.1, 1.02, 0.94, 1.15, 1.15, 1.06, 1.00, 1.12, 0.65, 0.60, 0.62, 0.59, 0.56, 0.66, 0.69, 0.53}
-                           // Minimum IF totpwr detector voltages for operation (set to voltage with LO off + 0.1 V)
-#define MAXIFPWRDETV 3.    // Maximum valid IF totpwr detector voltage
 
 // Over-temperature limits
 #define MAXCOLDT 40.   // Maximum nom 20K temperature [K]
@@ -90,22 +80,6 @@ AH 2014.07.01
 
 //Warm IF limits
 #define MAXATTEN 31.5  // max attenuation, 5-bit, 1 dB/step, including 0
-
-//Vane definitions
-#define VANESTOP 0x01      // lock vane motion
-#define VANERUN 0x02       // run continuously
-#define VANEINBEAM 0x04    // vane blocks beam
-#define VANECLEAR 0x00     // vane clear of beam, stowed
-#define VANENMAX 2300      // max no ADC readouts before timeout; 2300 is about 5.5s timeout
-#define VANEDELTA 0.10     // delta in volts that means "close enough" to target
-#define VANEANGLEADC 0     // angle ADC channel
-#define VANECURRADC 1      // motor current ADC channel
-#define VANETEMPADC 2      // vane temperature ADC channel
-#define VANEVINOFFS 10.5   // vane input voltage offse
-#define VANECALPOSV 3.3    // nominal angle encoder voltage for vane in cal position
-#define VANEOBSPOSV 1.6    // nominal angle encoder voltage for vane in cal position
-#define VANEPOSERRLIM 0.2  // error limit on angle encoder voltage
-#define VANEPOSERR 0x0010  // vane position error flag
 
 // I2C bus and switch mapping
 #define I2CSWITCH_BP 0x77      // low bus nos. on micro, Argus warm elex chassis backplane
@@ -122,12 +96,7 @@ AH 2014.07.01
 #define BCARD_I2CADDR {0x08, 0x04, 0x02, 0x01, 0x80} // bias card addresses, 0..4
 #define ALLBCARD_I2CADDR 0x8f // all bias card addresses, off backplane
 #define I2CSWITCH_VMUB 0x00   // Vane and muBox switch addresses (sub-bus)
-#define MUBOX_I2CADDR 0x00    // muBox sub-bus from vane/muBox interface card in backplane
-#define VANE_I2CADDR 0x00     // vane sub bus from vane/muBox interface card in backplane
-#define CALSY_I2CADDR 0x00    // dummy for cal sys
 
-//I2C mapping for subbuses from I2CSSB card
-#define SADDLEBAG_I2CADDR {0x00, 0x00, 0x00, 0x00}
 
 /****************************************/
 // Parameter structure definitions
@@ -241,6 +210,17 @@ struct dcm2params {
 	float powDetI[NRX]; // nominal power in dBm, I channel
 	float powDetQ[NRX]; // nominal power in dBm, Q channel
 	float bTemp[NRX];   // board temperature, C
+};
+
+/***************************************************************************/
+/* Saddlebag definitions */
+//#define I2CSSB_I2CADDR 0x20 // I2C subbusses switches
+//I2C mapping for subbuses from I2CSSB card
+#define SADDLEBAG_I2CADDR {0x00, 0x00, 0x00, 0x00}
+
+// order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
+struct saddlebagParams {
+	float v[8];
 };
 
 #endif

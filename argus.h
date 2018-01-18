@@ -25,7 +25,8 @@ extern struct chRead *chReadPtr;
 extern float dcm2MBpar[];
 extern struct dcm2params dcm2Apar;
 extern struct dcm2params dcm2Bpar;
-
+// saddlebag defs
+extern struct saddlebagParams sbPar[];
 
 extern "C" {
 #endif
@@ -61,16 +62,8 @@ extern int  argus_readBCpsV(void);
 extern int  argus_readThermADCs(void);
 extern int  argus_LNApresets(const flash_t *flash);
 extern unsigned char argus_lnaPowerPIO(void);
-extern int  argus_readWIFpsADCs(void);
-extern int  argus_setWIFswitches(char *term, int m, char val, unsigned char busyOverride);
-extern int  argus_setAllWIFswitches(char *inp, char val);
-extern int  argus_readWIF(void);
 extern int  argus_openSubbusC(BYTE addr);
 extern int  argus_closeSubbusC(void);
-extern int  readCalSysADC(int ch);
-extern int  argus_readAllCalSysADC(void);
-extern int  argus_setVaneBits(BYTE cmd);
-extern int  argus_driveVane(BYTE cmd, short int nmax, float stopv, float deltastop);
 extern int  argus_clearBus(void);
 extern int  argus_readAllSystemADCs(void);
 extern int  argus_biasCheck(void);
@@ -90,8 +83,9 @@ extern int  dcm2_readAllModTotPwr(void);
 extern int  dcm2_blockMod(char *ch, char *ab);
 extern int  init_dcm2(void);
 
-extern int  sb_ampPow(char *inp);
-extern int  sb_ledOnOff(char *inp);
+extern int  sb_ampPow(char *inp, int sbNum);
+extern int  sb_ledOnOff(char *inp, int sbNum);
+extern int  sb_readADC(int sbNum);
 
 /**************************************************************************/
 

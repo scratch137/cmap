@@ -198,115 +198,6 @@ void Correlator::execArgusRxHealth(return_type status, argument_type arg)
 }
 
 /**
-  \brief Argus vane control.
-
-  This method covers the vane and cal sys control.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-void Correlator::execArgusVane(return_type status, argument_type arg)
-{
-  static const char *usage =
-  "[KEYWORD] \r\n"
-  "  KEYWORD  A keyword, either CAL, OBS, STOP, or STATS.\r\n";
-
-  int rtn = 0;
-  if (!arg.help) {
-    if (arg.str) {
-
-      // Command called with one or more arguments.
-    	char kw[15] = {0};
-        int narg = sscanf(arg.str, "%s", kw);
-        if (narg == 1) {
-          // Execute the command.
-        	int rtn = 0;
-         	if (!strcasecmp(kw, "obs")) {
-        		// uses vmax from either cal or stats
-         		OSTimeDly(CMDDELAY);
-          		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			// first find max, min angles
-        			rtn += argus_driveVane(VANERUN, VANENMAX, 0., VANEDELTA);
-        			// then drive to obs position
-        			rtn += argus_driveVane(VANERUN, VANENMAX, calSysPar.maxAngle, VANEDELTA);
-        			rtn += readCalSysADC(VANEANGLEADC);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane to obs position: %s, angle = %.2f (status %d).\r\n",
-        				(rtn==0 ? statusOK : statusERR), calSysPar.state, calSysPar.maxAngle, rtn);
-        			if (!strcmp(calSysPar.state, "found")) calSysPar.state = "obs";
-        		}
-         	}
-        	else if (!strcasecmp(kw, "cal")) {
-        		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			// first find max, min angles
-        			rtn += argus_driveVane(VANERUN, VANENMAX, 0., VANEDELTA);
-        			// then drive to cal position
-        			// multiply by fudge factor to get vane centered over aperture
-        			// changed from 1.15 to 1.07 17.01.25 AH
-        			rtn += argus_driveVane(VANERUN, VANENMAX, calSysPar.minAngle*1.07, VANEDELTA);
-        			rtn += readCalSysADC(VANEANGLEADC);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane to cal position: %s, angle = %.2f (status %d).\r\n",
-        				(rtn==0 ? statusOK : statusERR), calSysPar.state, calSysPar.minAngle, rtn);
-        			if (!strcmp(calSysPar.state, "found")) calSysPar.state = "cal";
-        		}
-        	}
-        	else if (!strcasecmp(kw, "stop")) {
-        		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			rtn += argus_setVaneBits(VANESTOP);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane stop: stop, angle = %.2f (status %d).\r\n",
-         				(rtn==0 ? statusOK : statusERR), calSysPar.adcv[VANEANGLEADC], rtn);
-        		}
-        	}
-        	else if (!strcasecmp(kw, "stats")) {
-        		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			rtn += argus_driveVane(VANERUN, VANENMAX, 0., VANEDELTA);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane stats: %s (status %d).\r\n",
-         				(rtn==0 ? statusOK : statusERR), calSysPar.state, rtn);
-        		}
-        	}
-        	else {
-        		longHelp(status, usage, &Correlator::execArgusVane);
-        	}
-      	} else {
-        // Wrong number of arguments; return help string.
-      		longHelp(status, usage, &Correlator::execArgusVane);
-      	}
-    } else {
-    	// first update angle, current, temp:
-    	rtn = argus_readAllCalSysADC();
-    	sprintf(status, "%sVane parameters:\r\n"
-    			"Temperature: %.1f [C] \r\nState: %s \r\n"
-    			"Angle: %.3f; min: %.3f, max: %.3f [V] \r\n"
-    			"Curr: %.2f; mean: %.2f, max: %.2f, stdev: %.2f [A] \r\n"
-    			"Supply to interface: %.2f (%.2f extrapolated)\r\n",
-    			( (rtn==0 && calSysPar.adcv[0] < 10.) ? statusOK : statusERR),  // check for ADC 99s
-     		   calSysPar.adcv[2], calSysPar.state,
-    		   calSysPar.adcv[0], calSysPar.minAngle, calSysPar.maxAngle,
-    		   calSysPar.adcv[1], calSysPar.meanCurr, calSysPar.maxCurr, sqrt(calSysPar.varCurr),
-    		   calSysPar.adcv[3], calSysPar.adcv[3]+VANEVINOFFS);
-   }
-  } else {
-    longHelp(status, usage, &Correlator::execArgusVane);
-  }
-}
-
-/**
   \brief Set engineering options.
 
   Set engineering options such as power supply limit bypass for Argus.
@@ -324,8 +215,8 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
   "    bypassLNApsLims  x   magic number x to bypass LNA power supply limits.\r\n"
 //  "    bypassCIFpsLim  x   magic number x bypass cold IF power supply limits.\r\n"
   "    bypassLNAlims   y   magic number y to bypass soft limits on LNA biases.\r\n"
-  "    stopVaneOnStall x   0 to ignore vane auto-stop when vane stalled.\r\n"
-  "    sendVane        z   send vane drive hardware integer z.\r\n"
+//  "    stopVaneOnStall x   0 to ignore vane auto-stop when vane stalled.\r\n"
+//  "    sendVane        z   send vane drive hardware integer z.\r\n"
   "    dec             n   n decimal places for MON LNA, MON MIX, MON SETS display\r\n"
   "    clearBus            clear I2C bus busy bit, open main bus switches.\r\n"
   "    clrCtr              clear counters for I2C bus and freeze/thaw.\r\n"
@@ -343,14 +234,14 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
       	if (!strcasecmp(kw, "bypassLNApsLims")) lnaPSlimitsBypass = (val == 37 ? 1 : 0);
 //      	else if (!strcasecmp(kw, "bypassCIFpsLim")) cifPSlimitsBypass = (val == 37 ? 1 : 0);
       	else if (!strcasecmp(kw, "bypassLNAlims"))  lnaLimitsBypass = (val == 74 ? 1 : 0);
-      	else if (!strcasecmp(kw, "stopVaneOnStall"))  lnaLimitsBypass = (val == 0 ? 0 : 1);
-      	else if (!strcasecmp(kw, "sendVane")) {
+      	//else if (!strcasecmp(kw, "stopVaneOnStall"))  lnaLimitsBypass = (val == 0 ? 0 : 1);
+      	/*else if (!strcasecmp(kw, "sendVane")) {
       		OSTimeDly(CMDDELAY);
       		if (!argus_openSubbusC(VANE_I2CADDR)) {
-      			argus_setVaneBits((BYTE)(val-200));
+      			//argus_setVaneBits((BYTE)(val-200));
       			argus_closeSubbusC();
       		}
-      	}
+      	}*/
       	else if (!strcasecmp(kw, "dec")) {
     		if (val > 2) {
     			d1 = d2 = val;
@@ -391,14 +282,13 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
     		"  bypassLNApsLim = %d\r\n"
     		"  bypassCIFpsLim = %d\r\n"
        		"  bypassLNAlims = %d\r\n"
-       		"  stopVaneOnStall = %d\r\n"
-    		"  decimal points: %d, %d\r\n"
+     		"  decimal points: %d, %d\r\n"
        		"  power control PIO byte = 0x%02x\r\n"
     		"  version %s\r\n",
     		statusOK, i2cBusBusy, freezeSys,
     		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
     		lnaPSlimitsBypass, cifPSlimitsBypass, lnaLimitsBypass,
-    		stopVaneOnStall, d1, d2, argus_lnaPowerPIO(), VER);
+    		d1, d2, argus_lnaPowerPIO(), VER);
     }
   } else {
 	  longHelp(status, usage, &Correlator::execArgusEngr);
@@ -1305,19 +1195,6 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	      			  //(float)flashData.atten[32]/2., (float)flashData.atten[33]/2., (float)flashData.atten[34]/2., (float)flashData.atten[35]/2.,
 	      			  //(float)flashData.atten[36]/2., (float)flashData.atten[37]/2., (float)flashData.atten[38]/2., (float)flashData.atten[39]/2.);
 
-
-	       } else if (!strcasecmp(state, "vane")) {
-	    	OSTimeDly(CMDDELAY);
-	      	rtn = argus_readAllCalSysADC();
-	      	sprintf(status, "%sVane parameters:\r\n"
-	      			"Temperature: %.1f [C] \r\nState: %s \r\n"
-	      			"Angle: %.3f [V] \r\n"
-	      			"Curr: %.2f [A] \r\n",
-	      			( (rtn==0 && calSysPar.adcv[0] < 10.) ? statusOK : statusERR),  // check for ADC 99s
-	       		   calSysPar.adcv[2], calSysPar.state,
-	      		   calSysPar.adcv[0],
-	      		   calSysPar.adcv[1]);
-
 		      } else { // no valid argument; list options
 		    	  longHelp(status, usage, &Correlator::execArgusMonPts);
 		      }
@@ -1585,14 +1462,19 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 	  char val2[4] = {0};
 	  int narg = sscanf(arg.str, "%9s %d %3s", kw, &val, val2);
 
-	  if (narg == 2) {
+	  if (narg == 3) {
 	      // Execute the command.
+		  if (val > 4 || val < 0) {
+			  sprintf(status, "*** Error: invalid saddlebag number ***\r\n");
+		  }
+		  val -= 1; // convert from human to index
+
 	      if (!strcasecmp(kw, "amps")) {
-	    	  rtn = sb_ampPow(val2);
+	    	  rtn = sb_ampPow(val2, val);
 	    	  sprintf(status, "%ssb_ampPow(%s) returned with status %d\r\n",
 	    			  (!rtn ? statusOK : statusERR), val2, rtn);
 	      } else if (!strcasecmp(kw, "led")) {
-	    	  rtn = sb_ledOnOff(val2);
+	    	  rtn = sb_ledOnOff(val2, val);
 	    	  sprintf(status, "%ssb_ledOnOff(%s) returned with status %d\r\n",
 	    			  (!rtn ? statusOK : statusERR), val2, rtn);
 	      } else {
@@ -1602,8 +1484,15 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execSaddlebag);
 	  }
 	} else {
-      //rtn = sb_readADC();
-      sprintf(status, "%sSaddlebag parameters return stub\r\n", statusOK);
+	  rtn = 0;
+	  int i;
+	  int m = 0; // sb number for testing
+
+      for (i=0; i<4; i++) rtn += sb_readADC(i);
+      sprintf(status, "%sADC: %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f\r\n",
+    		  (!rtn ? statusOK : statusERR),
+    		  sbPar[m].v[0], sbPar[m].v[1], sbPar[m].v[2], sbPar[m].v[3],
+    		  sbPar[m].v[4], sbPar[m].v[5], sbPar[m].v[6], sbPar[m].v[7]);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execSaddlebag);
@@ -1668,28 +1557,10 @@ void Correlator::execArgusLock(return_type status, argument_type arg)
 	  rtn = argus_readLNAbiasADCs("im");
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readLNAbiasADCs(im);\r\n", i2cBusBusy, rtn);
 
-	  i2cBusBusy = busy;
-	  rtn = argus_readAllCalSysADC();
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readAllCalSysADC();\r\n", i2cBusBusy, rtn);
-
-	  i2cBusBusy = busy;
-	  i2cBusBusy = busy;
-	  rtn = argus_readWIF();
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readWIF()\r\n", i2cBusBusy, rtn);
-
-	  i2cBusBusy = busy;
-	  rtn = argus_setAllWIFswitches("a", 10);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setAllWIFswitches(a, 10)\r\n", i2cBusBusy, rtn);
-
 	  lnaPwrState = lnaps;
 	  i2cBusBusy = busy;
 	  rtn = argus_setLNAbias("d", 2, 1, .5, 0);
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setLNAbias(d, 2, 1, .5, 0)\r\n", i2cBusBusy, rtn);
-
-	  lnaPwrState = lnaps;
-	  i2cBusBusy = busy;
-	  rtn = argus_setLNAbias("g", 2, 1, .5, 0);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setLNAbias(g, 2, 1, .5, 0)\r\n", i2cBusBusy, rtn);
 
 	  lnaPwrState = lnaps;
 	  i2cBusBusy = busy;
