@@ -1461,7 +1461,7 @@ void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
 }
 
 /**
-  \brief DCM2 test area.
+  \brief DCM2 control.
 
   This method controls DCM2 and readouts.
 
@@ -1554,6 +1554,59 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execDCM2);
+  }
+}
+
+/**
+  \brief Saddlebag control.
+
+  This method controls the saddlebag card contols and readouts.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execSaddlebag(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[KEYWORD VALUE [VALUE]]\r\n"
+      "  Saddlebag commands.\r\n"
+      "    KEYWORD  VALUE  VALUE:\r\n"
+	  "    amps     m      on/off    turns amplifier power for saddlebag m on/off\r\n"
+	  "    led      m      on/off    turns led for saddlebag m on/off\r\n";
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  int val;
+	  char val2[4] = {0};
+	  int narg = sscanf(arg.str, "%9s %d %3s", kw, &val, val2);
+
+	  if (narg == 2) {
+	      // Execute the command.
+	      if (!strcasecmp(kw, "amps")) {
+	    	  rtn = sb_ampPow(val2);
+	    	  sprintf(status, "%ssb_ampPow(%s) returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), val2, rtn);
+	      } else if (!strcasecmp(kw, "led")) {
+	    	  rtn = sb_ledOnOff(val2);
+	    	  sprintf(status, "%ssb_ledOnOff(%s) returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), val2, rtn);
+	      } else {
+	    	  longHelp(status, usage, &Correlator::execSaddlebag);
+	      }
+	  } else {
+		  longHelp(status, usage, &Correlator::execSaddlebag);
+	  }
+	} else {
+      //rtn = sb_readADC();
+      sprintf(status, "%sSaddlebag parameters return stub\r\n", statusOK);
+	}
+  } else {
+	  longHelp(status, usage, &Correlator::execSaddlebag);
   }
 }
 

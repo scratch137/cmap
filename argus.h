@@ -90,6 +90,9 @@ extern int  dcm2_readAllModTotPwr(void);
 extern int  dcm2_blockMod(char *ch, char *ab);
 extern int  init_dcm2(void);
 
+extern int  sb_ampPow(char *inp);
+extern int  sb_ledOnOff(char *inp);
+
 /**************************************************************************/
 
 

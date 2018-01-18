@@ -308,6 +308,7 @@ public:
   void execCOMAPjlna(return_type status, argument_type arg);
   void execCOMAPjcryo(return_type status, argument_type arg);
   void execDCM2(return_type status, argument_type arg);
+  void execSaddlebag(return_type status, argument_type arg);
 
 private:
   /// Alias map container type.

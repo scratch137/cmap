@@ -3066,6 +3066,60 @@ int init_dcm2(void)
 	return 0;
 }
 
+/*******************************************************************/
+/**
+  \brief Turn on/off Saddlebag amplifier power.
+
+  This function turns on the software-controlled power supply for the DCM2.  Default is to
+  turn the amplifier power supply on.
+
+  \par inp  string: "off" or "0" for off, else on
+
+  \return NB error code for write to BEX.
+*/
+int sb_ampPow(char *inp)
+{
+	int I2CStatus;
+
+	//openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
+
+	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
+		I2CStatus = 0;
+	} else {
+		I2CStatus = 0;
+	}
+
+	//closeI2Csbus();
+	return(I2CStatus);
+}
+
+/*******************************************************************/
+/**
+  \brief Turn on/off Saddlebag indicator LED.
+
+  This function turns on the software-controlled power supply for the DCM2.  Default is to
+  turn the amplifier power supply on.
+
+  \par inp  string: "off" or "0" for off, else on
+
+  \return NB error code for write to BEX.
+*/
+int sb_ledOnOff(char *inp)
+{
+	int I2CStatus;
+
+	//openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
+
+	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
+		I2CStatus = 0; // high for off
+	} else {
+		I2CStatus = 0;  // low for on
+	}
+
+	//closeI2Csbus();
+	return(I2CStatus);
+}
+
 /**************************************************************************/
 
 /**

@@ -133,6 +133,7 @@ void initCommandShell()
       ::zpecShell["jlna"]      = &Correlator::execCOMAPjlna;
       ::zpecShell["jcryo"]     = &Correlator::execCOMAPjcryo;
       ::zpecShell["dcm2"]      = &Correlator::execDCM2;
+      ::zpecShell["sb"]        = &Correlator::execSaddlebag;
       break;
 
     default:
