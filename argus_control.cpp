@@ -20,6 +20,9 @@ char *cnames[] = {"T0:", "T1:", "T2:", "T3:", "T4:", "T5:", "Pressure:"};
 		          "Card cage:     ",
 		          "Pressure:      "}; */
 
+// names for saddlebag test points
+char *sbnames[] = {"  +12V [V]", "    -8V [V]", " Fan 1 [Hz]", " Fan 2 [Hz]",
+		  " Temp 1 [C]", " Temp 2 [C]", " Temp 3 [C]", " Temp 4 [C]"};
 
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
@@ -280,14 +283,13 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
             "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
             "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
     		"  bypassLNApsLim = %d\r\n"
-    		"  bypassCIFpsLim = %d\r\n"
        		"  bypassLNAlims = %d\r\n"
      		"  decimal points: %d, %d\r\n"
        		"  power control PIO byte = 0x%02x\r\n"
     		"  version %s\r\n",
     		statusOK, i2cBusBusy, freezeSys,
     		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
-    		lnaPSlimitsBypass, cifPSlimitsBypass, lnaLimitsBypass,
+    		lnaPSlimitsBypass, lnaLimitsBypass,
     		d1, d2, argus_lnaPowerPIO(), VER);
     }
   } else {
@@ -781,132 +783,6 @@ void Correlator::execArgusPwrCtrl(return_type status, argument_type arg)
   }
 }
 
-/**
-  \brief Argus cold IF power control.
-
-  Turn cold IF power on and off for Argus.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-void Correlator::execArgusCIFPwrCtrl(return_type status, argument_type arg)
-{
-  static const char *usage =
-  "[STATE]\r\n"
-  "  Turn cold IF power on or off.\r\n"
-  "  STATE  1 or ON to turn cold IF power on.\r\n"
-  "         0 or OFF to turn cold IF power off.\r\n"
-  "  No argument returns power supply state.\r\n"
-		  ;
-
-  if (!arg.help) {
-	  if (arg.str) {  // argument present, set new state.
-		  char state[5] = {0};
-
-      // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%4s", state);
-      if (narg < 1) {
-        // Too few arguments; return help string.
-        longHelp(status, usage, &Correlator::execArgusCIFPwrCtrl);
-      } else {
-        // Execute the command.
-    	if (lnaPwrState) {
-            sprintf(status, "%sNo change in state allowed with LNA bias on.\r\n",
-                             statusERR);
-    	} else {
-    		if (!strcmp(state, "1") || !strcasecmp(state, "ON")) {
-    			OSTimeDly(CMDDELAY);
-    			int rtn = argus_cifPower(1);
-    			sprintf(status, "%sCold IF power commanded on, status %d.\r\n",
-                             (rtn==0 ? statusOK : statusERR), rtn);
-    		}
-    		else if (!strcmp(state, "0") || !strcasecmp(state, "OFF")) {
-    			OSTimeDly(CMDDELAY);
-    			int rtn = argus_cifPower(0);
-    			sprintf(status, "%sCold IF power commanded off, status %d.\r\n",
-                             (rtn==0 ? statusOK : statusERR), rtn);
-    		} else {
-    			longHelp(status, usage, &Correlator::execArgusCIFPwrCtrl);
-    		}
-    	}
-      }
-    } else {
-      // Command called without arguments; echo power state and key values
-      OSTimeDly(CMDDELAY);
-      int rtn = argus_readPwrADCs();
-      sprintf(status, "%sCold IF power state %s.\r\n"
-	          "Supply voltage:  %6.2f V\r\n"
-	          "Output voltage:  %6.2f V, current: %6.2f A\r\n",
-    		  (rtn==0 ? statusOK : statusERR), (cifPwrState==1 ? "ON" : "OFF"),
-    		  pwrCtrlPar[5], pwrCtrlPar[6], pwrCtrlPar[7]);
-    }
-  } else {
-    longHelp(status, usage, &Correlator::execArgusCIFPwrCtrl);
-  }
-
-}
-/**
-  \brief Argus warm IF monitor.
-
-  Get and list status of the Argus warm IF system.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-/*void Correlator::execArgusWIFCtrl(return_type status, argument_type arg)
-{
-  static const char *usage =
-	"\r\n"
-	"  Read all warm IF monitor points, return values to screen.\r\n"
- 		  ;
-
-  if (!arg.help) {
-	  OSTimeDly(CMDDELAY);
-	  int rtn = argus_readWIF();     // update total power and temperature in status table
-      rtn += argus_readWIFpsADCs();  // update power supply voltage in status table
-      sprintf(status, "%sWarm IF:\r\n"
-    		  "Supply voltages: %5.2f V, %5.2f V\r\n"
-    		  "Ch    TotPow       Atten    SB    Card T\r\n"
-    		  " 1   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 2   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 3   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 4   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 5   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 6   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 7   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 8   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 9   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "10   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "11   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "12   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "13   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "14   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "15   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "16   %8.4f V    %2d dB    %1d    %5.1f C\r\n",
-    		  (rtn==0 ? statusOK : statusERR), wifPar.psv[0], wifPar.psv[1],
-    		  wifPar.totPow[0], wifPar.atten[0], wifPar.sb[0], wifPar.cardTemp[0],
-    		  wifPar.totPow[1], wifPar.atten[1], wifPar.sb[1], wifPar.cardTemp[1],
-    		  wifPar.totPow[2], wifPar.atten[2], wifPar.sb[2], wifPar.cardTemp[2],
-    		  wifPar.totPow[3], wifPar.atten[3], wifPar.sb[3], wifPar.cardTemp[3],
-    		  wifPar.totPow[4], wifPar.atten[4], wifPar.sb[4], wifPar.cardTemp[4],
-    		  wifPar.totPow[5], wifPar.atten[5], wifPar.sb[5], wifPar.cardTemp[5],
-    		  wifPar.totPow[6], wifPar.atten[6], wifPar.sb[6], wifPar.cardTemp[6],
-    		  wifPar.totPow[7], wifPar.atten[7], wifPar.sb[7], wifPar.cardTemp[7],
-    		  wifPar.totPow[8], wifPar.atten[8], wifPar.sb[8], wifPar.cardTemp[8],
-    		  wifPar.totPow[9], wifPar.atten[9], wifPar.sb[9], wifPar.cardTemp[9],
-    		  wifPar.totPow[10], wifPar.atten[10], wifPar.sb[10], wifPar.cardTemp[10],
-    		  wifPar.totPow[11], wifPar.atten[11], wifPar.sb[11], wifPar.cardTemp[11],
-    		  wifPar.totPow[12], wifPar.atten[12], wifPar.sb[12], wifPar.cardTemp[12],
-    		  wifPar.totPow[13], wifPar.atten[13], wifPar.sb[13], wifPar.cardTemp[13],
-    		  wifPar.totPow[14], wifPar.atten[14], wifPar.sb[14], wifPar.cardTemp[14],
-    		  wifPar.totPow[15], wifPar.atten[15], wifPar.sb[15], wifPar.cardTemp[15]);
-  } else {
-    longHelp(status, usage, &Correlator::execArgusWIFCtrl);
-  }
-}
-*/
 /**
   \brief Read and display Argus monitor points.
 
@@ -1486,13 +1362,32 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 	} else {
 	  rtn = 0;
 	  int i;
-	  int m = 0; // sb number for testing
 
-      for (i=0; i<4; i++) rtn += sb_readADC(i);
-      sprintf(status, "%sADC: %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f\r\n",
-    		  (!rtn ? statusOK : statusERR),
-    		  sbPar[m].v[0], sbPar[m].v[1], sbPar[m].v[2], sbPar[m].v[3],
-    		  sbPar[m].v[4], sbPar[m].v[5], sbPar[m].v[6], sbPar[m].v[7]);
+      for (i=0; i<4; i++) {
+    	  rtn += sb_readADC(i);
+    	  sbPar[i].pll = sb_readPLLmon(i);
+      }
+      sprintf(status, "%s%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "PLL: %u, %u, %u, %u\r\n"
+    		  "Amp power: %u, %u, %u, %u\r\n",
+    	  	  (!rtn ? statusOK : statusERR),
+    	  	  sbnames[0], sbPar[0].adcv[0], sbPar[1].adcv[0], sbPar[2].adcv[0], sbPar[3].adcv[0],
+    	  	  sbnames[1], sbPar[0].adcv[1], sbPar[1].adcv[1], sbPar[2].adcv[1], sbPar[3].adcv[1],
+    	  	  sbnames[2], sbPar[0].adcv[2], sbPar[1].adcv[2], sbPar[2].adcv[2], sbPar[3].adcv[2],
+    	  	  sbnames[3], sbPar[0].adcv[3], sbPar[1].adcv[3], sbPar[2].adcv[3], sbPar[3].adcv[3],
+    	  	  sbnames[4], sbPar[0].adcv[4], sbPar[1].adcv[4], sbPar[2].adcv[4], sbPar[3].adcv[4],
+    	  	  sbnames[5], sbPar[0].adcv[5], sbPar[1].adcv[5], sbPar[2].adcv[5], sbPar[3].adcv[5],
+    	  	  sbnames[6], sbPar[0].adcv[6], sbPar[1].adcv[6], sbPar[2].adcv[6], sbPar[3].adcv[6],
+    	  	  sbnames[7], sbPar[0].adcv[7], sbPar[1].adcv[7], sbPar[2].adcv[7], sbPar[3].adcv[7],
+    	  	  sbPar[0].pll, sbPar[1].pll, sbPar[2].pll, sbPar[3].pll,
+    	  	  sbPar[0].ampPwr, sbPar[1].ampPwr, sbPar[2].ampPwr, sbPar[3].ampPwr);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execSaddlebag);
@@ -1576,11 +1471,6 @@ void Correlator::execArgusLock(return_type status, argument_type arg)
 	  i2cBusBusy = busy;
 	  rtn = argus_lnaPower(1);
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_lnaPower(1)\r\n", i2cBusBusy, rtn);
-
-	  lnaPwrState = lnaps;
-	  i2cBusBusy = busy;
-	  rtn = argus_cifPower(1);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_cifPower(1)\r\n", i2cBusBusy, rtn);
 
 	  sprintf(status, "# I2C bus lock test results output to UART0.\r\n");
 

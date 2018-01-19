@@ -35,9 +35,8 @@ int I2CStat = 0;
 
 //Initialize Argus-global state flags and variables
 char lnaPwrState = 0;
-char cifPwrState = 0;
+BYTE sbAmpState = 0x01;
 unsigned char lnaPSlimitsBypass = BYPASS;  // bypass LNA power supply limits when = 1
-unsigned char cifPSlimitsBypass = BYPASS;  // bypass cold IF power supply limits when = 1
 unsigned char lnaLimitsBypass = BYPASS;    // bypass soft limits on LNA bias when = 1
 float gvdiv;
 unsigned char i2cBusBusy = 1;              // set to 1 when I2C bus is busy (clears in argus_init())
@@ -186,13 +185,17 @@ BYTE wifChan_i2caddr[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
 /*
 struct saddlebagParams {
+	float adcv[8];
+	BYTE pll;
+	BYTE ampPwr;
+};
 	float v[8];
 }; */
 struct saddlebagParams sbPar[] = {
-		  {{99., -99., 999., 999., 999., 999., 999., 999.}},
-		  {{99., -99., 999., 999., 999., 999., 999., 999.}},
-		  {{99., -99., 999., 999., 999., 999., 999., 999.}},
-		  {{99., -99., 999., 999., 999., 999., 999., 999.}}
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 1},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 1},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 1},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 1}
 };
 
 
@@ -987,75 +990,6 @@ int argus_lnaPower(short state)
 	return (I2CStat);
 }
 
-/**************************************************************************************/
-/**
-  \brief Cold IF power control.
-
-  This command turns the cold IF power on and off.  It will not change power state if
-  the LNAs are powered.
-
-  \param  state Power state (char; 1=on, else off).
-  \return Zero on success; else for power supply voltage out of range:
-               9993 too low
-               9994 too high
-          or -10 if LNA power is on
-          */
-int argus_cifPower(short state)
-{
-	BYTE pioState;
-
-	// don't do anything if LNA power is on
-	if (lnaPwrState) return -10;
-
-	// check power supplies
-	I2CStat = argus_readPwrADCs();
-
-	// check for freeze
-	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
-
-    // check that I2C bus is available, else return
-	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
-	i2cBusBusy = 1;
-	busLockCtr += 1;
-
-	// set I2C bus switch for power control card in backplane
-	address = I2CSWITCH_BP;
-	buffer[0] = PWCTL_I2CADDR;
-	I2CStat = I2CSEND1;
-
-	// Read port register to establish present state;
-	// store byte for later modification
-	address = 0x21;  // PIO I2C address
-	buffer[0] = 0x00;
-	I2CStat += I2CSEND1;
-	I2CREAD1;
-	pioState = buffer[0];
-
-	// control power
-	if (state==1 && cifPwrState==0) {
-		 // turn on cold IF
-		buffer[0] = 0x01;
-		buffer[1] = pioState = pioState | ctlVIF;
-		I2CStat += I2CSEND2;
-		cifPwrState = 1;  // set state flag
-	} else if (state==0 && cifPwrState==1) {
-		// turn off cold IF
-		buffer[0] = 0x01;
-		buffer[1] = pioState = pioState & 0xff^ctlVIF;
-		I2CStat += I2CSEND2;
-		cifPwrState = 0;  // clear state flag
-	}
-
-	// Disconnect I2C sub-bus
-	address = I2CSWITCH_BP;
-	buffer[0] = 0;
-	I2CStat = I2CSEND1;
-
-    // release I2C bus
-	i2cBusBusy = 0;
-
-	return (I2CStat);
-}
 
 /****************************************************************************************/
 
@@ -1765,7 +1699,7 @@ int writeBEX(BYTE val, BYTE addr)
 BYTE readBEX(BYTE addr)
 {
 	address = addr;    // I2C address for BEX chip on board
-	buffer[0] = 0x01;  // output port register
+	buffer[0] = 0x00;  // input port register
 	I2CSEND1;
 	I2CREAD1;
 
@@ -2526,15 +2460,21 @@ int sb_ampPow(char *inp, int sbNum)
 {
 	int I2CStatus;
 
-	openI2Cssbus(I2CSSB_I2CADDR, 0x00);  // get control of I2C bus
+	openI2Cssbus(I2CSSB_I2CADDR, 0x0f);  // subsubbuses 0:3 for 0x0f
+
+	configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
-		I2CStatus = 0;
+		configBEX(0x02, SBBEX_ADDR);                                          // make control pin write
+		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
+		sbPar[sbNum].ampPwr = 0x00;                                              // record power state
 	} else {
-		I2CStatus = 0;
+		I2CStatus = configBEX(0x03, SBBEX_ADDR);                  		// make control pin high-Z
+		sbPar[sbNum].ampPwr = 0x01;                                    			// record power state
 	}
 
 	closeI2Cssbus();
+
 	return(I2CStatus);
 }
 
@@ -2552,17 +2492,41 @@ int sb_ampPow(char *inp, int sbNum)
 int sb_ledOnOff(char *inp, int sbNum)
 {
 	int I2CStatus;
+	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
-	openI2Cssbus(I2CSSB_I2CADDR, 0x00);  // get control of I2C bus
+	openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum]);  // open subsubbus
+
+	configBEX(0x02 | (sbPar[sbNum].ampPwr>0 ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
-		I2CStatus = 0; // high for off
+		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) | 0x80, SBBEX_ADDR); // high for off
 	} else {
-		I2CStatus = 0;  // low for on
+		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~0x80, SBBEX_ADDR); // low for on
 	}
 
 	closeI2Cssbus();
 	return(I2CStatus);
+}
+
+/*******************************************************************/
+/**
+  \brief Read saddlebag PLL bit.
+
+  This function reads the saddlebag's PLL monitor bit.
+
+  \par inp  string: "off" or "0" for off, else on
+
+  \return PLL bit value.
+*/
+BYTE sb_readPLLmon(int sbNum)
+{
+	openI2Cssbus(I2CSSB_I2CADDR, (BYTE)sbNum);
+
+	BYTE pllState = readBEX(SBBEX_ADDR) << 1;
+
+	closeI2Cssbus();
+
+	return(pllState);
 }
 
 /*******************************************************************/
@@ -2577,29 +2541,31 @@ int sb_readADC(int sbNum)
 {
 	short i;
 	unsigned short int rawu;
-	BYTE sbaddr[] = SADDLEBAG_I2CADDR;
+	BYTE sbaddr[] = SADDLEBAG_SWADDR;
 
-	openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum]);  // get control of I2C bus
+	// Scale and offset for ADC channels
 	// order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
 	const float offset[8] = {0, 0, 0, 0, -50., -50., -50., -50.};
 	const float scale[8] = {10.362, 10.362, 60., 60., 104.5, 104.5, 104.5, 104.5};
 	//const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // for calibration
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 
-	//Read all channels of ADC (only 6 are connected, but keep usual structure)
+	// get control of I2C bus
+	openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum]);
+	//Read all channels of ADC
 	for (i = 0 ;  i < 8 ; i++) {
-		address = (BYTE)0x08;    // ADC device address on I2C bus
-		buffer[0] = (BYTE)pcRead.add[i];        // internal address for channel
-		I2CStat = I2CSEND1;  // send command for conversion
-		I2CREAD2;  // read device buffer back
+		address = SBADC_ADDR;               // ADC device address on I2C bus
+		buffer[0] = (BYTE)pcRead.add[i];    // internal address for channel
+		I2CStat = I2CSEND1;                 // send command for conversion
+		I2CREAD2;                           // read device buffer back
 		if (I2CStat == 0) {
 			rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
-			sbPar[sbNum].v[i] = rawu*scale[i]*4.096/65535 + offset[i];
+			sbPar[sbNum].adcv[i] = rawu*scale[i]*4.096/65535 + offset[i];
 		}
-		else sbPar[sbNum].v[i] = 9999.;  // error condition
+		else sbPar[sbNum].adcv[i] = 9999.;  // error condition
 	}
-
-	closeI2Cssbus();  // release I2C bus
+	// release I2C bus
+	closeI2Cssbus();
 
 	return (I2CStat);
 }

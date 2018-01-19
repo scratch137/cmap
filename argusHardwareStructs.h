@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180118"
+#define VER "comap_20180119"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -215,12 +215,16 @@ struct dcm2params {
 /***************************************************************************/
 /* Saddlebag definitions */
 //#define I2CSSB_I2CADDR 0x20 // I2C subbusses switches
-//I2C mapping for subbuses from I2CSSB card
-#define SADDLEBAG_I2CADDR {0x00, 0x00, 0x00, 0x00}
+//I2C switch addresses on I2C subbus card
+#define SADDLEBAG_SWADDR {0x01, 0x02, 0x04, 0x08}
+#define SBBEX_ADDR 0x21
+#define SBADC_ADDR 0x08
 
-// order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
+// ADC order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
 struct saddlebagParams {
-	float v[8];
+	float adcv[8];
+	BYTE pll;
+	BYTE ampPwr;
 };
 
 #endif

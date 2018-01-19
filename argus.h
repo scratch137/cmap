@@ -34,7 +34,7 @@ extern "C" {
 /* All C declarations in this region. */
 
 extern char lnaPwrState;  // LNA power supply state
-extern char cifPwrState;  // Cold IF power state
+extern BYTE sbAmpState;   // Saddlebag amplifiers power state
 extern unsigned char lnaPSlimitsBypass; // bypass LNA power supply limits when = 1
 extern unsigned char cifPSlimitsBypass; // bypass cold IF power supply limits when = 1
 extern unsigned char lnaLimitsBypass;   // bypass soft limits on LNA bias when = 1
@@ -86,6 +86,7 @@ extern int  init_dcm2(void);
 extern int  sb_ampPow(char *inp, int sbNum);
 extern int  sb_ledOnOff(char *inp, int sbNum);
 extern int  sb_readADC(int sbNum);
+extern BYTE sb_readPLLmon(int sbNum);
 
 /**************************************************************************/
 
