@@ -21,16 +21,16 @@ char *cnames[] = {"T0", "T1", "T2", "T3", "T4", "T5", "Pressure"};
 		          "Pressure:      "}; */
 
 // names for saddlebag test points
-char *sbnames[] = {"  +12V [V]",
-		           "   -8V [V]",
+char *sbnames[] = {"+12V   [V]",
+		           "-8V    [V]",
 		           "Fan 1 [Hz]",
 		           "Fan 2 [Hz]",
 		           "Temp 1 [C]",
 		           "Temp 2 [C]",
 		           "Temp 3 [C]",
 		           "Temp 4 [C]",
-				   "       PLL",
-                   " Amp Power"};
+				   "PLL lock  ",
+                   "Amp on    "};
 
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
@@ -1382,7 +1382,8 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     	  rtn += sb_readADC(i);
     	  sbPar[i].pll = sb_readPLLmon(i);
       }
-      sprintf(status, "%s%s : %.1f, %.1f, %.1f, %.1f\r\n"
+      sprintf(status, "%sSaddlebags:   (status %d)\r\n"
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
     		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
     		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
     		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
@@ -1392,7 +1393,7 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
     		  "%s: %u, %u, %u, %u\r\n"
     		  "%s: %u, %u, %u, %u\r\n",
-    	  	  (!rtn ? statusOK : statusERR),
+    	  	  (!rtn ? statusOK : statusERR), rtn,
     	  	  sbnames[0], sbPar[0].adcv[0], sbPar[1].adcv[0], sbPar[2].adcv[0], sbPar[3].adcv[0],
     	  	  sbnames[1], sbPar[0].adcv[1], sbPar[1].adcv[1], sbPar[2].adcv[1], sbPar[3].adcv[1],
     	  	  sbnames[2], sbPar[0].adcv[2], sbPar[1].adcv[2], sbPar[2].adcv[2], sbPar[3].adcv[2],

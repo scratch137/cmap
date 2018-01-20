@@ -1203,23 +1203,6 @@ int argus_clearBus(void)
 	J2[42].function (PINJ2_42_SCL);  // configure SCL as GPIO
 	J2[39].function (PINJ2_39_SDA);  // configure SDA as GPIO
 
-	// now work on main bus
-	BYTE wifaddr[] = I2CSWITCH_WIF;
-	int I2CStat = 0;
-	// check, then clear I2C bus lock bit
-	if (i2cBusBusy) I2CStat += 1;
-	i2cBusBusy = 0;
-	// try opening all switches
-	buffer[0] = 0x00;  // open switches command
-	address = I2CSWITCH_SP;    // I2C address for spare switch
-	if(I2CSEND1) I2CStat += 2; // write to switch
-	address = I2CSWITCH_BP;    // I2C address for backplane
-	if(I2CSEND1) I2CStat += 4;     // write to switch
-	address = wifaddr[0];      // I2C address for warm IF chassis #1
-	if(I2CSEND1) I2CStat += 8;     // write to switch
-	address = wifaddr[1];      // I2C address for warm IF chassis #2
-	if(I2CSEND1) I2CStat += 16;     // write to switch
-
 	// hardware reset, main sub-bus switch
 	OSTimeDly(1); // needs a delay to make the pulse the right width, otherwise lots of jitter
 	J2[28].set();
@@ -2463,7 +2446,7 @@ int sb_ampPow(char *inp, int sbNum)
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                 // check for freeze
-	if (openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
@@ -2503,7 +2486,7 @@ int sb_setAllAmps(int v)
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}    // check for freeze
 
 	for (i=0; i<NSBG; i++) {
-		if (openI2Cssbus(I2CSSB_I2CADDR, swaddr[i])) return (I2CBUSERRVAL);  // get bus control
+		if (!openI2Cssbus(I2CSSB_I2CADDR, swaddr[i])) return (I2CBUSERRVAL);  // get bus control
         configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
         if (v) {
         	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
@@ -2536,7 +2519,7 @@ int sb_ledOnOff(char *inp, int sbNum)
 	int I2CStatus;
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
-	if (openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	configBEX(0x02 | (sbPar[sbNum].ampPwr>0 ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
@@ -2565,7 +2548,7 @@ BYTE sb_readPLLmon(int sbNum)
 {
 	BYTE sbaddr[] = SADDLEBAG_SWADDR;
 
-	if (openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	BYTE pllState = readBEX(SBBEX_ADDR) << 1;
 
@@ -2598,7 +2581,14 @@ int sb_readADC(int sbNum)
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 
 	// get control of I2C bus
-	if (openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
+	// ZZZZ hardcode for testing
+	//if (!openI2Csbus(I2CSSB_I2CADDR)) return (I2CBUSERRVAL);  // get bus control
+	address = 0x77;
+	buffer[0] = 0x20;
+	I2CStat = I2CSEND1;
+	address = 0x74;
+	buffer[0] = 0xff; //sbaddr[sbNum];
+	I2CStat = I2CSEND1;
 
 	//Read all channels of ADC
 	for (i = 0 ;  i < 8 ; i++) {
@@ -2613,7 +2603,14 @@ int sb_readADC(int sbNum)
 		else sbPar[sbNum].adcv[i] = 9999.;  // error condition
 	}
 	// release I2C bus
-	closeI2Cssbus();
+	address = 0x74;
+	buffer[0] = 0;
+	I2CStat = I2CSEND1;
+	address = 0x77;
+	buffer[0] = 0;
+	I2CStat = I2CSEND1;
+
+	closeI2Csbus();
 
 	return (I2CStat);
 }
@@ -2686,7 +2683,8 @@ void argus_init(const flash_t *flash)
 	buffer[0] = 0;
 	I2CStat = I2CSEND1;
 
-	init_dcm2();  // initialize dcm2 control board
+	//ZZZ comment out for testing
+	//init_dcm2();  // initialize dcm2 control board
 
 	/*  below seems to be redundant with init_dcm2
 	// Configure and initialize BEX on main board

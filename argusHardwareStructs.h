@@ -84,15 +84,13 @@ AH 2014.07.01
 // I2C bus and switch mapping
 #define I2CSWITCH_BP 0x77      // low bus nos. on micro, Argus warm elex chassis backplane
 #define I2CSWITCH_SP 0x73      // high bus nos. on micro  (unused hardware)
-#define I2CSSB {0x74, 0x75}    // addresses for I2C subsubbus switches
-#define I2CSWITCH_WIF {0x00, 0x00} // Warm IF switch addresses (jumper selectable)
-#define I2CADC_WIF {0x00, 0x00}    // Warm IF power mon ADC  (jumper selectable)
+#define I2CSSB_L 0x74          // high addresses for I2C subsubbus switches
+#define I2CSSB_H 0x75          // high addresses for I2C subsubbus switches
 
 //I2C mapping off warm electronics chassis backplane
 #define THERM_I2CADDR 0x10 // thermometry
 #define I2CSSB_I2CADDR 0x20 // I2C subbusses switches
 #define PWCTL_I2CADDR 0x40 //power control
-//#define BCARD_I2CADDR {0x80, 0x01, 0x02, 0x04, 0x08} // bias card addresses, 0..4
 #define BCARD_I2CADDR {0x08, 0x04, 0x02, 0x01, 0x80} // bias card addresses, 0..4
 #define ALLBCARD_I2CADDR 0x8f // all bias card addresses, off backplane
 #define I2CSWITCH_VMUB 0x00   // Vane and muBox switch addresses (sub-bus)
