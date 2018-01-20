@@ -1652,6 +1652,7 @@ int closeI2Cssbus(void)
 
   This function configures a TCA6408A bus expander for which pins will be set as
   inputs and which as outputs.
+  NOTE: This function must be called when externally protected for I2C bus busy
 
   \param  conf configuration register content byte.
   \param  addr I2C address for BEX chip
@@ -1672,6 +1673,7 @@ int configBEX(BYTE conf, BYTE addr)
   \brief Write to bus expander (BEX) output pins.
 
   This function sets values on TCA6408A bus expander output pins.
+  NOTE: This function must be called when externally protected for I2C bus busy
 
   \param  val output content byte.
   \param  addr I2C address for BEX chip
@@ -1692,6 +1694,7 @@ int writeBEX(BYTE val, BYTE addr)
   \brief Read bus expander (BEX) input pins.
 
   This function reads values on TCA6408A bus expander input pins.
+  NOTE: This function must be called when externally protected for I2C bus busy
 
   \param  addr I2C address for BEX chip
   \return byte with input value.
@@ -1717,14 +1720,14 @@ BYTE readBEX(BYTE addr)
 int dcm2_readMBadc(void)
 {
 
-	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
-
 	short i;
 	unsigned short int rawu;
 	const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	const float scale[8] = {4.3, 4.3, 4.3, 4.3, 33.95, 4.3, 4.3, 4.3};
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 	//
+
+	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
 
 	//Read all channels of ADC (only 6 are connected, but keep usual structure)
 	for (i = 0 ;  i < 6 ; i++) {
@@ -1759,7 +1762,7 @@ int dcm2_ampPow(char *inp)
 {
 	int I2CStatus;
 
-	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
+	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | DCM2_AMPPOW, BEX_ADDR0);
@@ -1786,7 +1789,7 @@ int dcm2_ledOnOff(char *inp)
 {
 	int I2CStatus;
 
-	openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
+	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | (DCM2_BD_LED | DCM2_FP_LED), BEX_ADDR0); // high for off
@@ -1907,10 +1910,11 @@ float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE ad
 int dcm2_readMBtemp(void)
 {
 
-	int I2CStat = openI2Csbus(DCM2PERIPH_SBADDR);  // get control of I2C bus
-	if (I2CStat) return (I2CStat);  // ZZZ need better cleanup here in case bus is locked
-    // read thermometer
+	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
+
+	// read thermometer
 	dcm2MBpar[7] = AD7814_SPI_bitbang(SPI_CLK0_M, SPI_DAT0_M, SPI_CSB1_M, BEX_ADDR0);
+
 	I2CStat = closeI2Csbus();  // release I2C bus
 
 	return (I2CStat);
@@ -1928,8 +1932,6 @@ int dcm2_readMBtemp(void)
 int dcm2_readAllModTemps(void)
 {
 
-	// check for freeze?
-	//if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
 	// check that I2C bus is available, else return
 	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
@@ -2066,9 +2068,6 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
 */
 int dcm2_readAllModTotPwr(void)
 {
-
-	// check for freeze?
-	//if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
 	// check that I2C bus is available, else return
 	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
@@ -2232,7 +2231,7 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 	}
 
 	// open communication to DCM2 module
-	openI2Cssbus(dcm2sw.sb[m], ssb);
+	if (openI2Cssbus(dcm2sw.sb[m], ssb)) return (I2CBUSERRVAL); // get bus control
 
 	// send command
 	// select I or Q input on card
@@ -2452,6 +2451,8 @@ int init_dcm2(void)
   This function turns on the software-controlled power supply for the DCM2.  Default is to
   turn the amplifier power supply on.
 
+  Function does not check for out of range saddlebag index number.
+
   \par inp  string: "off" or "0" for off, else on
 
   \return NB error code for write to BEX.
@@ -2459,18 +2460,20 @@ int init_dcm2(void)
 int sb_ampPow(char *inp, int sbNum)
 {
 	int I2CStatus;
+	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
-	openI2Cssbus(I2CSSB_I2CADDR, 0x0f);  // subsubbuses 0:3 for 0x0f
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                 // check for freeze
+	if (openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
-		configBEX(0x02, SBBEX_ADDR);                                          // make control pin write
-		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
-		sbPar[sbNum].ampPwr = 0x00;                                              // record power state
+		writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
+		I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
+		sbPar[sbNum].ampPwr = 0x00;                         // record power state
 	} else {
-		I2CStatus = configBEX(0x03, SBBEX_ADDR);                  		// make control pin high-Z
-		sbPar[sbNum].ampPwr = 0x01;                                    			// record power state
+		I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
+		sbPar[sbNum].ampPwr = 0x01;                       	// record power state
 	}
 
 	closeI2Cssbus();
@@ -2480,13 +2483,52 @@ int sb_ampPow(char *inp, int sbNum)
 
 /*******************************************************************/
 /**
+  \brief Turn on/off Saddlebag amplifier power.
+
+  This function turns on the software-controlled power supply for the DCM2.  Default is to
+  turn the amplifier power supply on.
+
+  Function does not check for out of range saddlebag index number.
+
+  \par inp  string: "off" or "0" for off, else on
+
+  \return NB error code for write to BEX.
+*/
+int sb_setAllAmps(int v)
+{
+	int I2CStatus;
+	int i;
+	BYTE swaddr[] = SADDLEBAG_SWADDR;
+
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}    // check for freeze
+
+	for (i=0; i<NSBG; i++) {
+		if (openI2Cssbus(I2CSSB_I2CADDR, swaddr[i])) return (I2CBUSERRVAL);  // get bus control
+        configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
+        if (v) {
+        	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
+        	sbPar[i].ampPwr = 0x01;                       	    // record power state
+        } else {
+        	writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
+        	I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
+        	sbPar[i].ampPwr = 0x00;                             // record power state
+        }
+	}
+
+	return(I2CStatus);
+}
+
+
+/*******************************************************************/
+/**
   \brief Turn on/off Saddlebag indicator LED.
 
   This function turns on the software-controlled power supply for the DCM2.  Default is to
   turn the amplifier power supply on.
 
-  \par inp  string: "off" or "0" for off, else on
+  Function does not check for out of range saddlebag index number.
 
+  \par inp  string: "off" or "0" for off, else on
   \return NB error code for write to BEX.
 */
 int sb_ledOnOff(char *inp, int sbNum)
@@ -2494,7 +2536,7 @@ int sb_ledOnOff(char *inp, int sbNum)
 	int I2CStatus;
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
-	openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum]);  // open subsubbus
+	if (openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	configBEX(0x02 | (sbPar[sbNum].ampPwr>0 ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
@@ -2514,13 +2556,16 @@ int sb_ledOnOff(char *inp, int sbNum)
 
   This function reads the saddlebag's PLL monitor bit.
 
-  \par inp  string: "off" or "0" for off, else on
+  Function does not check for out of range saddlebag index number.
 
+  \par inp  string: "off" or "0" for off, else on
   \return PLL bit value.
 */
 BYTE sb_readPLLmon(int sbNum)
 {
-	openI2Cssbus(I2CSSB_I2CADDR, (BYTE)sbNum);
+	BYTE sbaddr[] = SADDLEBAG_SWADDR;
+
+	if (openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	BYTE pllState = readBEX(SBBEX_ADDR) << 1;
 
@@ -2534,6 +2579,8 @@ BYTE sb_readPLLmon(int sbNum)
   \brief Read all channels of the saddlebag ADC.
 
   This function reads values from all channels of the DCM2 LTC2309 ADC.
+
+   Function does not check for out of range saddlebag index number.
 
   \return Zero on success, else (9000 + NB I2C error code) for latest bus error.
 */
@@ -2551,7 +2598,8 @@ int sb_readADC(int sbNum)
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 
 	// get control of I2C bus
-	openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum]);
+	if (openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
+
 	//Read all channels of ADC
 	for (i = 0 ;  i < 8 ; i++) {
 		address = SBADC_ADDR;               // ADC device address on I2C bus

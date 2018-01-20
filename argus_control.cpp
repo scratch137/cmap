@@ -11,7 +11,7 @@
 #include "math.h"
 
 // names for cryostat test points
-char *cnames[] = {"T0:", "T1:", "T2:", "T3:", "T4:", "T5:", "Pressure:"};
+char *cnames[] = {"T0", "T1", "T2", "T3", "T4", "T5", "Pressure"};
 /*char *cnames[] = {"20K cold head: ",
 		          "NC:            ",
 		          "20K plate:     ",
@@ -21,8 +21,16 @@ char *cnames[] = {"T0:", "T1:", "T2:", "T3:", "T4:", "T5:", "Pressure:"};
 		          "Pressure:      "}; */
 
 // names for saddlebag test points
-char *sbnames[] = {"  +12V [V]", "    -8V [V]", " Fan 1 [Hz]", " Fan 2 [Hz]",
-		  " Temp 1 [C]", " Temp 2 [C]", " Temp 3 [C]", " Temp 4 [C]"};
+char *sbnames[] = {"  +12V [V]",
+		           "   -8V [V]",
+		           "Fan 1 [Hz]",
+		           "Fan 2 [Hz]",
+		           "Temp 1 [C]",
+		           "Temp 2 [C]",
+		           "Temp 3 [C]",
+		           "Temp 4 [C]",
+				   "       PLL",
+                   " Amp Power"};
 
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
@@ -552,6 +560,7 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
+  "    S  saddlebag amp power [1/0].\r\n"
   "  Value V or dB is the set value.\r\n"
 		  ;
 
@@ -566,12 +575,18 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
         // Too few arguments; return help string.
         longHelp(status, usage, &Correlator::execArgusSetAll);
       } else if (!strcmp(inp, "a")) {
-    	// Set atten, sb
+    	// Set atten
    		OSTimeDly(CMDDELAY);
         int rtn = dcm2_setAllAttens(v);
 		sprintf(status, "%sdcm2_setAllAttens(%f) returned status %d.\r\n",
 					(rtn==0 ? statusOK : statusERR), v, rtn);
-      } else {
+      } else if (!strcmp(inp, "s")) {
+      	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
+     		OSTimeDly(CMDDELAY);
+          int rtn = sb_setAllAmps((int)v);
+  		sprintf(status, "%ssb_setAllAmps(%d) returned status %d.\r\n",
+  					(rtn==0 ? statusOK : statusERR), (int)v, rtn);
+        } else {
         // Set G, D, M biases
     	OSTimeDly(CMDDELAY);
     	int rtn = argus_setAllBias(inp, v, 0);
@@ -612,8 +627,8 @@ void Correlator::execArgusCryo(return_type status, argument_type arg)
   if (!arg.help) {
 	OSTimeDly(CMDDELAY);
    	int rtn = argus_readThermADCs();
-    sprintf(status, "%sCryostat:\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n"
-    			    "%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1e Torr (%4.3f V)\r\n",
+    sprintf(status, "%sCryostat:\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n"
+    			    "%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1e Torr (%4.3f V)\r\n",
     		(rtn==0 ? statusOK : statusERR), cnames[0], cryoPar.cryoTemps[0], cnames[1], cryoPar.cryoTemps[1],
     		cnames[2], cryoPar.cryoTemps[2], cnames[3], cryoPar.cryoTemps[3], cnames[4], cryoPar.cryoTemps[4],
     		cnames[5], cryoPar.cryoTemps[5], cnames[6],
@@ -975,8 +990,8 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	  } else if (!strcasecmp(state, "cryo")) {
 	    		  OSTimeDly(CMDDELAY);
 	    		  rtn = argus_readThermADCs();
-	    		  sprintf(status, "%sCryostat:\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n"
-	    		    			   "%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1e Torr (%4.3f V)\r\n",
+	    		  sprintf(status, "%sCryostat:\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n"
+	    		    			   "%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1e Torr (%4.3f V)\r\n",
 	    		    	    (rtn==0 ? statusOK : statusERR), cnames[0], cryoPar.cryoTemps[0], cnames[1], cryoPar.cryoTemps[1],
 	    		    		cnames[2], cryoPar.cryoTemps[2], cnames[3], cryoPar.cryoTemps[3], cnames[4], cryoPar.cryoTemps[4],
 	    		    		cnames[5], cryoPar.cryoTemps[5],
@@ -1339,8 +1354,8 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 	  int narg = sscanf(arg.str, "%9s %d %3s", kw, &val, val2);
 
 	  if (narg == 3) {
-	      // Execute the command.
-		  if (val > 4 || val < 0) {
+	      // Check for valid saddlebag index number; this is the only place this happens
+		  if (val > NSBG || val < 0) {
 			  sprintf(status, "*** Error: invalid saddlebag number ***\r\n");
 		  }
 		  val -= 1; // convert from human to index
@@ -1368,15 +1383,15 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     	  sbPar[i].pll = sb_readPLLmon(i);
       }
       sprintf(status, "%s%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s : %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "PLL: %u, %u, %u, %u\r\n"
-    		  "Amp power: %u, %u, %u, %u\r\n",
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
+    		  "%s: %u, %u, %u, %u\r\n"
+    		  "%s: %u, %u, %u, %u\r\n",
     	  	  (!rtn ? statusOK : statusERR),
     	  	  sbnames[0], sbPar[0].adcv[0], sbPar[1].adcv[0], sbPar[2].adcv[0], sbPar[3].adcv[0],
     	  	  sbnames[1], sbPar[0].adcv[1], sbPar[1].adcv[1], sbPar[2].adcv[1], sbPar[3].adcv[1],
@@ -1386,8 +1401,8 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     	  	  sbnames[5], sbPar[0].adcv[5], sbPar[1].adcv[5], sbPar[2].adcv[5], sbPar[3].adcv[5],
     	  	  sbnames[6], sbPar[0].adcv[6], sbPar[1].adcv[6], sbPar[2].adcv[6], sbPar[3].adcv[6],
     	  	  sbnames[7], sbPar[0].adcv[7], sbPar[1].adcv[7], sbPar[2].adcv[7], sbPar[3].adcv[7],
-    	  	  sbPar[0].pll, sbPar[1].pll, sbPar[2].pll, sbPar[3].pll,
-    	  	  sbPar[0].ampPwr, sbPar[1].ampPwr, sbPar[2].ampPwr, sbPar[3].ampPwr);
+    	  	  sbnames[8], sbPar[0].pll, sbPar[1].pll, sbPar[2].pll, sbPar[3].pll,
+    	  	  sbnames[9], sbPar[0].ampPwr, sbPar[1].ampPwr, sbPar[2].ampPwr, sbPar[3].ampPwr);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execSaddlebag);
