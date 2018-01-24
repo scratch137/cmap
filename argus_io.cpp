@@ -2587,7 +2587,7 @@ int sb_readADC(int sbNum)
 	buffer[0] = 0x20;
 	I2CStat = I2CSEND1;
 	address = 0x74;
-	buffer[0] = 0xff; //sbaddr[sbNum];
+	buffer[0] = sbaddr[sbNum];
 	I2CStat = I2CSEND1;
 
 	//Read all channels of ADC
