@@ -2478,7 +2478,7 @@ int sb_setAllAmps(float v)
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}    // check for freeze
 
 	for (i=0; i<NSBG; i++) {
-		if (openI2Cssbus(0x77, 0x20, 0x74, swaddr[i])) return (I2CBUSERRVAL);  // get bus control
+		openI2Cssbus(0x77, 0x20, 0x74, swaddr[i]);  // get bus control
         configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
         if (v > 0.5) {
         	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
@@ -2488,9 +2488,9 @@ int sb_setAllAmps(float v)
         	I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
         	sbPar[i].ampPwr = 0x00;                             // record power state
         }
+    	closeI2Cssbus(0x77, 0x74);
 	}
 
-	closeI2Cssbus(0x77, 0x74);
 	return(I2CStatus);
 }
 
