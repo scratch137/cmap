@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180120"
+#define VER "comap_20180125"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -213,6 +213,7 @@ struct dcm2params {
 /***************************************************************************/
 /* Saddlebag definitions */
 
+//#define SADDLEBAG_SWADDR {0x08, 0x08, 0x08, 0x08}  //ZZZ for testing
 #define SADDLEBAG_SWADDR {0x01, 0x02, 0x04, 0x08}  //I2C switch addresses on I2C subbus card
 #define SBBEX_ADDR 0x21  // I2C bus address for saddlebag ADCs
 #define SBADC_ADDR 0x08  // I2C bus address for saddlebag bus expanders

@@ -1254,8 +1254,8 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	  // Command called with one or more arguments.
 	  char kw[10] = {0};
 	  char val[4] = {0};
-	  char val2[4] = {0};
-	  int narg = sscanf(arg.str, "%9s %3s %3s", kw, val, val2);
+	  char onoff[4] = {0};
+	  int narg = sscanf(arg.str, "%9s %3s %3s", kw, val, onoff);
 
 	  if (narg == 2) {
 	      // Execute the command.
@@ -1272,9 +1272,9 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	      }
 	  } else if (narg == 3){
 		  if (!strcasecmp(kw, "block")) {
-			  rtn = dcm2_blockMod(val, val2);
+			  rtn = dcm2_blockMod(val, onoff);
 			  sprintf(status, "%sdcm2_blockMod(%s, %s) returned with status %d\r\n",
-			  		  (!rtn ? statusOK : statusERR), val, val2, rtn);
+			  		  (!rtn ? statusOK : statusERR), val, onoff, rtn);
 		  } else {
 			  longHelp(status, usage, &Correlator::execDCM2);
 		  }
@@ -1340,7 +1340,7 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 	  "[KEYWORD VALUE [VALUE]]\r\n"
       "  Saddlebag commands.\r\n"
       "    KEYWORD  VALUE  VALUE:\r\n"
-	  "    amps     m      on/off    turns amplifier power for saddlebag m on/off\r\n"
+	  "    amp      m      on/off    turns amplifier power for saddlebag m on/off\r\n"
 	  "    led      m      on/off    turns led for saddlebag m on/off\r\n";
 
   int rtn = 0;
@@ -1349,25 +1349,23 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 	  if (arg.str) {
 	  // Command called with one or more arguments.
 	  char kw[10] = {0};
-	  int val;
-	  char val2[4] = {0};
-	  int narg = sscanf(arg.str, "%9s %d %3s", kw, &val, val2);
+	  int nSbg;
+	  char onoff[4] = {0};
+	  int narg = sscanf(arg.str, "%9s %d %3s", kw, &nSbg, onoff);
 
 	  if (narg == 3) {
-	      // Check for valid saddlebag index number; this is the only place this happens
-		  if (val > NSBG || val < 0) {
-			  sprintf(status, "*** Error: invalid saddlebag number ***\r\n");
-		  }
-		  val -= 1; // convert from human to index
+	      // Check for valid saddlebag index number; this is the only place this happens ZZZ doesn't catch error
+		  if (nSbg > NSBG || nSbg < 0) sprintf(status, "%s *** Invalid saddlebag number ***\r\n", "!");
+		  nSbg -= 1; // convert from human to index
 
-	      if (!strcasecmp(kw, "amps")) {
-	    	  rtn = sb_ampPow(val2, val);
-	    	  sprintf(status, "%ssb_ampPow(%s) returned with status %d\r\n",
-	    			  (!rtn ? statusOK : statusERR), val2, rtn);
+	      if (!strcasecmp(kw, "amp")) {
+	    	  rtn = sb_ampPow(onoff, nSbg);
+	    	  sprintf(status, "%ssb_ampPow(%s) for amp %d returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), onoff, nSbg+1, rtn);
 	      } else if (!strcasecmp(kw, "led")) {
-	    	  rtn = sb_ledOnOff(val2, val);
-	    	  sprintf(status, "%ssb_ledOnOff(%s) returned with status %d\r\n",
-	    			  (!rtn ? statusOK : statusERR), val2, rtn);
+	    	  rtn = sb_ledOnOff(onoff, nSbg);
+	    	  sprintf(status, "%ssb_ledOnOff(%s) for LED %d returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), onoff, nSbg+1, rtn);
 	      } else {
 	    	  longHelp(status, usage, &Correlator::execSaddlebag);
 	      }
@@ -1378,21 +1376,21 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 	  rtn = 0;
 	  int i;
 
-      for (i=0; i<4; i++) {
+      for (i=0; i<NSBG; i++) {
     	  rtn += sb_readADC(i);
     	  sbPar[i].pll = sb_readPLLmon(i);
       }
       sprintf(status, "%sSaddlebags:   (status %d)\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %.1f, %.1f, %.1f, %.1f\r\n"
-    		  "%s: %u, %u, %u, %u\r\n"
-    		  "%s: %u, %u, %u, %u\r\n",
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6u %6u %6u %6u\r\n"
+    		  "%s: %6u %6u %6u %6u\r\n",
     	  	  (!rtn ? statusOK : statusERR), rtn,
     	  	  sbnames[0], sbPar[0].adcv[0], sbPar[1].adcv[0], sbPar[2].adcv[0], sbPar[3].adcv[0],
     	  	  sbnames[1], sbPar[0].adcv[1], sbPar[1].adcv[1], sbPar[2].adcv[1], sbPar[3].adcv[1],
