@@ -2574,10 +2574,10 @@ int sb_readADC(int sbNum)
 
 	// Scale and offset for ADC channels
 	// order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
-	//const float offset[8] = {0, 0, 0, 0, -50., -50., -50., -50.};
-	//const float scale[8] = {9.856, -10.077, 60., 60., 104.5, 104.5, 104.5, 104.5};
-	const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // for calibration
-	const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
+	const float offset[8] = {0, 0, 0, 0, -50., -50., -50., -50.};
+	const float scale[8] = {10., -10., 60., 60., 100., 100., 100., 100.};
+	//const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // for calibration
+	//const float scale[8] = {1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000};  // for calibration, in mV
 
 	// get control of I2C bus
 	int I2CStatus = openI2Cssbus(0x77, 0x20, 0x74, sbaddr[sbNum]);
