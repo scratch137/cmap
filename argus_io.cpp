@@ -1578,23 +1578,27 @@ int closeI2Csbus(void)
   This function sets a sequential pair of TCA9548A I2C switches, first the
   subbus, then the subsubbus.
 
-  \param  addr_sb command byte to set the subbus switch.
-  \param  addr_ssb command byte to set the subsubbus switch.
+  Checks if the I2C bus is busy and if not sets the busy bit.
+
+  \param  addr_sb    I2C addresss of the subbus switch.
+  \param  swset_sb   Switch set command byte for the subbus switch.
+  \param  addr_ssb   I2C addresss of the subsubbus switch.
+  \param  swset_ssb  Switch set command byte for the subsubbus switch.
   \return Zero on success, else NB I2C error code for latest bus error.
 */
-int openI2Cssbus(BYTE addr_sb, BYTE addr_ssb, BYTE sw_addr)
+int openI2Cssbus(BYTE addr_sb, BYTE swset_sb, BYTE addr_ssb, BYTE swset_ssb)
 {
     // check that I2C bus is available, else return
 	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
 	i2cBusBusy = 1;
 	busLockCtr += 1;
 
-	address = 0x77;        // I2C switch address 0x77 for top-level switch
-	buffer[0] = addr_sb;   // I2C channel address  0x01 for second-level switch
+	address = addr_sb;      // I2C switch address
+	buffer[0] = swset_sb;   // I2C switch setting
 	I2CStat = I2CSEND1;
 
-	address = sw_addr;        // I2C switch address 0x73 for second-level switch
-	buffer[0] = addr_ssb;  // I2C channel address for device: 0x80 for test BEX, 0x04 for J4, 0x02 for J5
+	address = addr_ssb;     // I2C switch address
+	buffer[0] = swset_ssb;  // I2C switch setting
 	I2CStat = I2CSEND1;
 
 	if (I2CStat) i2cBusBusy = 0;  // clear bit if write errors on muBox bus
@@ -1604,24 +1608,26 @@ int openI2Cssbus(BYTE addr_sb, BYTE addr_ssb, BYTE sw_addr)
 
 /*******************************************************************/
 /**
-  \brief Set a pair of I2C subbus and subsubbus switches.
+  \brief Close a pair of I2C subbus and subsubbus switches.
 
-  This function sets a sequential pair of TCA9548A I2C switches, first the
+  This function closes a sequential pair of TCA9548A I2C switches, first the
   subbus, then the subsubbus.
 
-  \param  addr_sb command byte to set the subbus switch.
-  \param  addr_ssb command byte to set the subsubbus switch.
+  Then it clears the I2C bus busy bit.
+
+  \param  addr_sb    I2C addresss of the subbus switch.
+  \param  addr_ssb   I2C addresss of the subsubbus switch.
   \return Zero on success, else NB I2C error code for latest bus error.
 */
-int closeI2Cssbus(BYTE sw_addr)
+int closeI2Cssbus(BYTE addr_sb, BYTE addr_ssb)
 {
-	  address = sw_addr;    // I2C switch address 0x73 for second-level switch
-	  buffer[0] = 0x00;  // I2C channel address 0x00 to open all switches
-	  I2CStat = I2CSEND1;
+	address = addr_ssb;     // I2C switch address
+	buffer[0] = 0x00;       // I2C switch setting
+	I2CStat = I2CSEND1;
 
-	  address = 0x77;    // I2C switch address 0x77 for top-level switch
-	  buffer[0] = 0x00;  // I2C channel address 0x00 to open all switches
-	  I2CStat = I2CSEND1;
+	address = addr_sb;      // I2C switch address
+	buffer[0] = 0x00;       // I2C switch setting
+	I2CStat = I2CSEND1;
 
 	  // release I2C bus
 	  i2cBusBusy = 0;
@@ -1710,7 +1716,7 @@ int dcm2_readMBadc(void)
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 	//
 
-	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
 
 	//Read all channels of ADC (only 6 are connected, but keep usual structure)
 	for (i = 0 ;  i < 6 ; i++) {
@@ -1745,7 +1751,7 @@ int dcm2_ampPow(char *inp)
 {
 	int I2CStatus;
 
-	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | DCM2_AMPPOW, BEX_ADDR0);
@@ -1772,7 +1778,7 @@ int dcm2_ledOnOff(char *inp)
 {
 	int I2CStatus;
 
-	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
 
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | (DCM2_BD_LED | DCM2_FP_LED), BEX_ADDR0); // high for off
@@ -1893,7 +1899,7 @@ float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE ad
 int dcm2_readMBtemp(void)
 {
 
-	if (openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Csbus(DCM2PERIPH_SBADDR)) return (I2CBUSERRVAL);  // get bus control
 
 	// read thermometer
 	dcm2MBpar[7] = AD7814_SPI_bitbang(SPI_CLK0_M, SPI_DAT0_M, SPI_CSB1_M, BEX_ADDR0);
@@ -1947,7 +1953,7 @@ int dcm2_readAllModTemps(void)
 		}
 	}
 	// close switches
-	int I2CStat = closeI2Cssbus(0x73);
+	int I2CStat = closeI2Cssbus(0x77, 0x73);
 	// release I2C bus
 	i2cBusBusy = 0;
 
@@ -2091,7 +2097,7 @@ int dcm2_readAllModTotPwr(void)
 	}
 
 	// close switches and release bus
-	int I2CStat = closeI2Cssbus(0x73);
+	int I2CStat = closeI2Cssbus(0x77, 0x73);
 
 	return I2CStat;
 
@@ -2211,7 +2217,7 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 	}
 
 	// open communication to DCM2 module
-	if (openI2Cssbus(dcm2sw.sb[m], ssb, 0x73)) return (I2CBUSERRVAL); // get bus control
+	if (!openI2Cssbus(0x77, dcm2sw.sb[m], 0x73, ssb)) return (I2CBUSERRVAL); // get bus control
 
 	// send command
 	// select I or Q input on card
@@ -2230,12 +2236,12 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 			dcm2parPtr->attenQ[m] = 198;
 		}
 	} else {  // invalid choice for IQ channels
-		closeI2Cssbus(0x73);
+		closeI2Cssbus(0x77, 0x73);
 		return (-40);
 	}
 
 	// close up and return
-	return (closeI2Cssbus(0x73));
+	return (closeI2Cssbus(0x77, 0x73));
 }
 
 /*******************************************************************************************/
@@ -2316,7 +2322,7 @@ int dcm2_setAllAttens(float atten)
 		}
 	}
 	    // close up and return
-		return (closeI2Cssbus(0x73));
+		return (closeI2Cssbus(0x77, 0x73));
 }
 
 /********************************************************************/
@@ -2403,7 +2409,7 @@ int init_dcm2(void)
 		OSTimeDly(1);
 		J2[28].clr();  // enable I2C switches
 	}
-	closeI2Cssbus(0x73);
+	closeI2Cssbus(0x77, 0x73);
 
 	// Configure and initialize BEX on main board
 	openI2Csbus(DCM2PERIPH_SBADDR);
@@ -2442,8 +2448,8 @@ int sb_ampPow(char *inp, int sbNum)
 	int I2CStatus;
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
-	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                 // check for freeze
-	if (!openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum], 0x74)) return (I2CBUSERRVAL);  // get bus control
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                    // check for freeze
+	if (!openI2Cssbus(0x77, 0x20, 0x74, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
@@ -2456,7 +2462,7 @@ int sb_ampPow(char *inp, int sbNum)
 		sbPar[sbNum].ampPwr = 0x01;                       	// record power state
 	}
 
-	closeI2Cssbus(0x74);
+	closeI2Cssbus(0x77, 0x74);
 
 	return(I2CStatus);
 }
@@ -2483,7 +2489,7 @@ int sb_setAllAmps(int v)
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}    // check for freeze
 
 	for (i=0; i<NSBG; i++) {
-		if (!openI2Cssbus(I2CSSB_I2CADDR, swaddr[i], 0x74)) return (I2CBUSERRVAL);  // get bus control
+		if (!openI2Cssbus(0x77, 0x20, 0x74, swaddr[i])) return (I2CBUSERRVAL);  // get bus control
         configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
         if (v) {
         	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
@@ -2495,6 +2501,7 @@ int sb_setAllAmps(int v)
         }
 	}
 
+	closeI2Cssbus(0x77, 0x74);
 	return(I2CStatus);
 }
 
@@ -2516,7 +2523,7 @@ int sb_ledOnOff(char *inp, int sbNum)
 	int I2CStatus;
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
-	if (!openI2Cssbus(I2CSSB_I2CADDR, swaddr[sbNum], 0x74)) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Cssbus(0x77, 0x20, 0x74, swaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	configBEX(0x02 | (sbPar[sbNum].ampPwr>0 ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
 
@@ -2526,7 +2533,7 @@ int sb_ledOnOff(char *inp, int sbNum)
 		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~0x80, SBBEX_ADDR); // low for on
 	}
 
-	closeI2Cssbus(0x74);
+	closeI2Cssbus(0x77, 0x74);
 	return(I2CStatus);
 }
 
@@ -2545,11 +2552,11 @@ BYTE sb_readPLLmon(int sbNum)
 {
 	BYTE sbaddr[] = SADDLEBAG_SWADDR;
 
-	if (!openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum], 0x74)) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Cssbus(0x77, 0x20, 0x74, sbaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	BYTE pllState = readBEX(SBBEX_ADDR) << 1;
 
-	closeI2Cssbus(0x74);
+	closeI2Cssbus(0x77, 0x74);
 
 	return(pllState);
 }
@@ -2578,8 +2585,7 @@ int sb_readADC(int sbNum)
 	//const float scale[8] = {1, 1, 1, 1, 1, 1, 1, 1};  // for calibration
 
 	// get control of I2C bus
-	// ZZZZ hardcode for testing
-	if (!openI2Cssbus(I2CSSB_I2CADDR, sbaddr[sbNum], 0x74)) return (I2CBUSERRVAL);  // get bus control
+	if (!openI2Cssbus(0x77, 0x20, 0x74, sbaddr[sbNum])) return (I2CBUSERRVAL);  // get bus control
 
 	//Read all channels of ADC
 	for (i = 0 ;  i < 8 ; i++) {
@@ -2593,8 +2599,9 @@ int sb_readADC(int sbNum)
 		}
 		else sbPar[sbNum].adcv[i] = 9999.;  // error condition
 	}
+
 	// release I2C bus
-	closeI2Cssbus(0x74);
+	closeI2Cssbus(0x77, 0x74);
 
 	return (I2CStat);
 }
@@ -2669,15 +2676,6 @@ void argus_init(const flash_t *flash)
 
 	//ZZZ comment out for testing
 	//init_dcm2();  // initialize dcm2 control board
-
-	/*  below seems to be redundant with init_dcm2
-	// Configure and initialize BEX on main board
-	closeI2Cssbus(0x73);
-	openI2Csbus(DCM2PERIPH_SBADDR);
-	configBEX(BEXCONF0, BEX_ADDR0);
-	writeBEX(BEXINIT0, BEX_ADDR0);
-	dcm2_ledOnOff("on");
-    */
 
     // release I2C bus
 	i2cBusBusy = 0;
