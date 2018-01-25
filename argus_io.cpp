@@ -2469,7 +2469,7 @@ int sb_ampPow(char *inp, int sbNum)
 
   \return NB error code for write to BEX.
 */
-int sb_setAllAmps(int v)
+int sb_setAllAmps(float v)
 {
 	int I2CStatus;
 	int i;
@@ -2480,7 +2480,7 @@ int sb_setAllAmps(int v)
 	for (i=0; i<NSBG; i++) {
 		if (openI2Cssbus(0x77, 0x20, 0x74, swaddr[i])) return (I2CBUSERRVAL);  // get bus control
         configBEX(0x02 | sbAmpState, SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
-        if (v) {
+        if (v > 0.5) {
         	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
         	sbPar[i].ampPwr = 0x01;                       	    // record power state
         } else {

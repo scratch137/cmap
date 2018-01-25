@@ -560,17 +560,17 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
-  "    S  saddlebag amp power [1/0].\r\n"
+  "    S  saddlebag amp power on/off -> 1/0.\r\n"
   "  Value V or dB is the set value.\r\n"
 		  ;
 
   if (!arg.help) {
     float v = 0.0;
-    char inp[2] = {0};
+    char inp[10] = {0};
 
     if (arg.str) {
       // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%1s%f", inp, &v);
+      int narg = sscanf(arg.str, "%s %f", inp, &v);
       if (narg < 2) {
         // Too few arguments; return help string.
         longHelp(status, usage, &Correlator::execArgusSetAll);
@@ -583,7 +583,7 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
       } else if (!strcmp(inp, "s")) {
       	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
      		OSTimeDly(CMDDELAY);
-          int rtn = sb_setAllAmps((int)v);
+          int rtn = sb_setAllAmps(v);
   		sprintf(status, "%ssb_setAllAmps(%d) returned status %d.\r\n",
   					(rtn==0 ? statusOK : statusERR), (int)v, rtn);
         } else {
@@ -1355,7 +1355,7 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 
 	  if (narg == 3) {
 	      // Check for valid saddlebag index number; this is the only place this happens ZZZ doesn't catch error
-		  if (nSbg > NSBG || nSbg < 0) sprintf(status, "%s *** Invalid saddlebag number ***\r\n", "!");
+		  if (nSbg > NSBG || nSbg < 1) nSbg = NSBG+1;  // go to a null device
 		  nSbg -= 1; // convert from human to index
 
 	      if (!strcasecmp(kw, "amp")) {
