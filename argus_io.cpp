@@ -178,26 +178,6 @@ struct calSysParams calSysPar = {
 	{99., 99., 99., 99., 99., 99., 99., 99.}, 99., 99., 99., 99., 99., " "
 };
 
-
-// Warm IF channel ordering
-BYTE wifChan_i2caddr[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-
-/*
-struct saddlebagParams {
-	float adcv[8];
-	BYTE pll;
-	BYTE ampPwr;
-};
-	float v[8];
-}; */
-struct saddlebagParams sbPar[] = {
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9},
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9},
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9},
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9}
-};
-
-
 /**************************/
 // DACs
 
@@ -2419,6 +2399,21 @@ int init_dcm2(void)
 	return 0;
 }
 
+/*
+struct saddlebagParams {
+	float adcv[8];
+	BYTE pll;
+	BYTE ampPwr;
+};
+	float v[8];
+}; */
+struct saddlebagParams sbPar[] = {
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 9, 9}
+};
+
 /*******************************************************************/
 /**
   \brief Turn on/off Saddlebag amplifier power.
@@ -2549,7 +2544,7 @@ BYTE sb_readPLLmon(int sbNum)
 	int I2CStatus = openI2Cssbus(0x77, 0x20, 0x74, sbaddr[sbNum]);
 	if (I2CStatus) return (I2CStatus);
 
-	BYTE pllState = (readBEX(SBBEX_ADDR) << 1) & 0x01;
+	BYTE pllState = (readBEX(SBBEX_ADDR) & 0x02) >> 1;
 
 	closeI2Cssbus(0x77, 0x74);
 
@@ -2602,8 +2597,28 @@ int sb_readADC(int sbNum)
 	return (I2CStat);
 }
 
-/**************************************************************************/
+/*******************************************************************/
+/**
+  \brief Saddlebag initialization.
 
+  This function initializes saddlebag boards.
+  - Blinks LED or simply turns it on.
+  - Ensures amps are on
+
+  \return Nothing.
+*/
+
+void init_saddlebags(void)
+{
+	for (int i=0; i<NSBG; i++) sb_ledOnOff("off", i);
+	OSTimeDly(2);
+	for (int i=0; i<NSBG; i++) {
+		sb_ampPow("on", i);
+		sb_ledOnOff("on", i);
+	}
+}
+
+/**************************************************************************/
 /**
   \brief Initialize hardware.
 
@@ -2670,8 +2685,8 @@ void argus_init(const flash_t *flash)
 	buffer[0] = 0;
 	I2CStat = I2CSEND1;
 
-	//ZZZ commented out for testing
-	//init_dcm2();  // initialize dcm2 control board
+	init_dcm2();  // initialize dcm2 control board
+	init_saddlebags(); // initialize saddlebag interface boards
 
     // release I2C bus
 	i2cBusBusy = 0;
