@@ -49,6 +49,7 @@ extern unsigned int thawCtr;            // thaw request counter
 extern unsigned int freezeErrCtr;       // freeze error counter (access request while frozen)
 extern short unsigned int biasSatus[NRX]; // receiver status word, see argus_rxCheck(void)
 extern int i2cState[];                  // I2C bus SCL (0/1) and SDA (0/2) values
+extern int noDCM2;                      // 0 when DCM2 board is detected
 
 extern void argus_init(const flash_t *flash);
 extern int  argus_test(int foo, float bar);

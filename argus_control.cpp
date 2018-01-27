@@ -294,11 +294,12 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
        		"  bypassLNAlims = %d\r\n"
      		"  decimal points: %d, %d\r\n"
        		"  power control PIO byte = 0x%02x\r\n"
+    		"  DCM2 board detected: %s\r\n"
     		"  version %s\r\n",
     		statusOK, i2cBusBusy, freezeSys,
     		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
     		lnaPSlimitsBypass, lnaLimitsBypass,
-    		d1, d2, argus_lnaPowerPIO(), VER);
+    		d1, d2, argus_lnaPowerPIO(), (noDCM2 ? "no" : "yes"), VER);
     }
   } else {
 	  longHelp(status, usage, &Correlator::execArgusEngr);
@@ -1389,8 +1390,8 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
-    		  "%s: %6u %6u %6u %6u\r\n"
-    		  "%s: %6u %6u %6u %6u\r\n",
+    		  "%s: %6s %6s %6s %6s\r\n"
+    		  "%s: %6s %6s %6s %6s\r\n",
     	  	  (!rtn ? statusOK : statusERR), rtn,
     	  	  sbnames[0], sbPar[0].adcv[0], sbPar[1].adcv[0], sbPar[2].adcv[0], sbPar[3].adcv[0],
     	  	  sbnames[1], sbPar[0].adcv[1], sbPar[1].adcv[1], sbPar[2].adcv[1], sbPar[3].adcv[1],
@@ -1400,8 +1401,10 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     	  	  sbnames[5], sbPar[0].adcv[5], sbPar[1].adcv[5], sbPar[2].adcv[5], sbPar[3].adcv[5],
     	  	  sbnames[6], sbPar[0].adcv[6], sbPar[1].adcv[6], sbPar[2].adcv[6], sbPar[3].adcv[6],
     	  	  sbnames[7], sbPar[0].adcv[7], sbPar[1].adcv[7], sbPar[2].adcv[7], sbPar[3].adcv[7],
-    	  	  sbnames[8], sbPar[0].pll, sbPar[1].pll, sbPar[2].pll, sbPar[3].pll,
-    	  	  sbnames[9], sbPar[0].ampPwr, sbPar[1].ampPwr, sbPar[2].ampPwr, sbPar[3].ampPwr);
+    	  	  sbnames[8], (sbPar[0].pll ? "lock" : "UNLOCK"), (sbPar[1].pll ? "lock" : "UNLOCK"),
+    	  	  (sbPar[2].pll ? "lock" : "UNLOCK"), (sbPar[3].pll ? "lock" : "UNLOCK"),
+    	  	  sbnames[9], (sbPar[0].ampPwr ? "on" : "OFF"), (sbPar[1].ampPwr ? "on" : "OFF"),
+    	  	  (sbPar[2].ampPwr ? "on" : "OFF"), (sbPar[3].ampPwr ? "on" : "OFF"));
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execSaddlebag);

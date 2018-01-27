@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180126"
+#define VER "comap_20180127"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -164,10 +164,15 @@ struct chRead2 { // read ADCs
 
 /***************************************************************************/
 /* DCM2 definitions */
+#define NO_DCM2ERR -1     // No DCM2 present
 #define DBMSCALE -45.5   // scale factor for power detector conversion to dBm
 #define DBMOFFSET 20     // offset value for power detector conversion to dBm
 #define ADCVREF 3.3      // reference voltage for 16-bit ADCs
 #define PLLLOCKTHRESH 0.5   // voltage threshold for 4 and 8 GHz PLL lock indication
+
+// I2C subbus and subsubbus switch addresses
+#define DCM2_SBADDR 0x77
+#define DCM2_SSBADDR 0x73
 
 // subbus switch setting for DCM2 main board peripherals
 #define DCM2PERIPH_SBADDR 0x80
@@ -213,7 +218,11 @@ struct dcm2params {
 /***************************************************************************/
 /* Saddlebag definitions */
 
-//#define SADDLEBAG_SWADDR {0x08, 0x08, 0x08, 0x08, 0x00}  //ZZZ for testing
+// I2C subbus and subsubbus switch addresses
+#define SB_SBADDR 0x77
+#define SB_SSBADDR 0x74
+
+//#define SADDLEBAG_SWADDR {0x08, 0x08, 0x08, 0x08, 0x00}  // for testing, on SSC3/SSD3
 #define SADDLEBAG_SWADDR {0x01, 0x02, 0x04, 0x08, 0x00}  //I2C switch addresses on I2C subbus card
 #define SBBEX_ADDR 0x21  // I2C bus address for saddlebag ADCs
 #define SBADC_ADDR 0x08  // I2C bus address for saddlebag bus expanders
