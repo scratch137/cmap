@@ -1,0 +1,3 @@
+Get DCM2 attenuator settings into flash/sets/presets
+
+JSON versions of commands
