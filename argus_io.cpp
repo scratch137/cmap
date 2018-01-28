@@ -2436,6 +2436,8 @@ struct saddlebagParams sbPar[] = {
   This function turns on software-controlled power supply for a saddlebag amplifier.  Default is to
   turn the amplifier power supply on.
 
+  Bus expander should be configured in an init file
+
   Function does not check for out of range saddlebag index number.
 
   \par inp  string: "off" or "0" for off, else on
@@ -2451,20 +2453,18 @@ int sb_ampPow(char *inp, int sbNum)
 	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, swaddr[sbNum]);
 	if (I2CStatus) return (I2CStatus);
 
-	configBEX(0x02 | (sbPar[sbNum].ampPwr ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
-
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
 		I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
     	if (!I2CStatus) {
-    		sbPar[sbNum].ampPwr = 1; // record power state as on
+    		sbPar[sbNum].ampPwr = 0; // record power state as on
     	} else {
     		sbPar[sbNum].ampPwr = I2CStatus; // indeterminate power state
     	}
 	} else {
 		I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
     	if (!I2CStatus) {
-    		sbPar[sbNum].ampPwr = 0; // record power state as off
+    		sbPar[sbNum].ampPwr = 1; // record power state as off
     	} else {
     		sbPar[sbNum].ampPwr = I2CStatus; // indeterminate power state
     	}
@@ -2498,19 +2498,19 @@ int sb_setAllAmps(char *inp)
 		address = SB_SSBADDR;
 		buffer[0] = swaddr[i];      // set saddlebag selection switch
 		I2CSEND1;
-        configBEX(0x02|(sbPar[i].ampPwr ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
+        //configBEX(0x02|(sbPar[i].ampPwr ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
     	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
-        	writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
+        	writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // set pin value low
         	I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
         	if (!I2CStatus) {
-        		sbPar[i].ampPwr = 1; // record power state as on
+        		sbPar[i].ampPwr = 0; // record power state as off
         	} else {
         		sbPar[i].ampPwr = I2CStatus; // indeterminate power state
         	}
         } else {
         	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
         	if (!I2CStatus) {
-        		sbPar[i].ampPwr = 0; // record power state as off
+        		sbPar[i].ampPwr = 1; // record power state as on
         	} else {
         		sbPar[i].ampPwr = I2CStatus; // indeterminate power state
         	}
@@ -2548,7 +2548,7 @@ int sb_ledOnOff(char *inp, int sbNum)
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) | 0x80, SBBEX_ADDR); // high for off
 	} else {
-		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~0x80, SBBEX_ADDR); // low for on
+		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~0x81, SBBEX_ADDR); // low for on
 	}
 
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
@@ -2641,15 +2641,22 @@ int sb_readADC(int sbNum)
 void init_saddlebags(void)
 {
 
+	BYTE swaddr[] = SADDLEBAG_SWADDR;
 	int i;
+	int I2CStat;
 
 	for (i=0; i<NSBG; i++){
-		sb_ampPow("on", i);      // turn on amps (if off)
-		sb_ledOnOff("off", i);   // turn off LED (if on)
+		openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, swaddr[i]);  // get bus control
+		I2CStat = configBEX(0x03, SBBEX_ADDR);  // configure I/O, amplifiers on
+		sbPar[i].ampPwr = (I2CStat ? I2CStat : 1);
+		writeBEX(0x80, SBBEX_ADDR);   // turn off LED (if on)
+		closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 	}
 	OSTimeDly(2);                // perceptible off time for blink
 	for (i=0; i<NSBG; i++) {
-		sb_ledOnOff("on", i);    // turn on LED
+		openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, swaddr[i]);  // get bus control
+		writeBEX(0x00, SBBEX_ADDR);   // turn on LED
+		closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 	}
 }
 

@@ -1,3 +1,5 @@
+Check which commands should freeze, then check operation
+
 Get DCM2 attenuator settings into flash/sets/presets
 
 JSON versions of commands
