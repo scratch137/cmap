@@ -561,36 +561,39 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
-  "    S  saddlebag amp power on/off -> 1/0.\r\n"
-  "  Value V or dB is the set value.\r\n"
+  "    S  saddlebag amp power [on/off].\r\n"
+  "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
 		  ;
 
   if (!arg.help) {
     float v = 0.0;
     char inp[10] = {0};
+    char act[10] = {0};
 
     if (arg.str) {
       // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%s %f", inp, &v);
+      int narg = sscanf(arg.str, "%s %s", inp, act);
       if (narg < 2) {
         // Too few arguments; return help string.
         longHelp(status, usage, &Correlator::execArgusSetAll);
       } else if (!strcmp(inp, "a")) {
     	// Set atten
    		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
         int rtn = dcm2_setAllAttens(v);
 		sprintf(status, "%sdcm2_setAllAttens(%f) returned status %d.\r\n",
 					(rtn==0 ? statusOK : statusERR), v, rtn);
       } else if (!strcmp(inp, "s")) {
       	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
-     		OSTimeDly(CMDDELAY);
-          int rtn = sb_setAllAmps(v);
+     	OSTimeDly(CMDDELAY);
+        int rtn = sb_setAllAmps(act);
   		sprintf(status, "%ssb_setAllAmps(%d) returned status %d.\r\n",
   					(rtn==0 ? statusOK : statusERR), (int)v, rtn);
         } else {
         // Set G, D, M biases
     	OSTimeDly(CMDDELAY);
-    	int rtn = argus_setAllBias(inp, v, 0);
+   		sscanf(act, "%f", &v);
+   		int rtn = argus_setAllBias(inp, v, 0);
     	if (rtn == -10) {
         	sprintf(status, "%sLNA cards are not powered, returned status %d.\r\n",
         			statusERR, rtn);

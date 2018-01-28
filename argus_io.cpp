@@ -2431,9 +2431,9 @@ struct saddlebagParams sbPar[] = {
 
 /*******************************************************************/
 /**
-  \brief Turn on/off Saddlebag amplifier power.
+  \brief Turn on/off Saddlebag amplifier power for specified saddlebag.
 
-  This function turns on the software-controlled power supply for the DCM2.  Default is to
+  This function turns on software-controlled power supply for a saddlebag amplifier.  Default is to
   turn the amplifier power supply on.
 
   Function does not check for out of range saddlebag index number.
@@ -2456,10 +2456,18 @@ int sb_ampPow(char *inp, int sbNum)
 	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
 		I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
-		sbPar[sbNum].ampPwr = 0x00;                         // record power state
+    	if (!I2CStatus) {
+    		sbPar[sbNum].ampPwr = 1; // record power state as on
+    	} else {
+    		sbPar[sbNum].ampPwr = I2CStatus; // indeterminate power state
+    	}
 	} else {
 		I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
-		sbPar[sbNum].ampPwr = 0x01;                       	// record power state
+    	if (!I2CStatus) {
+    		sbPar[sbNum].ampPwr = 0; // record power state as off
+    	} else {
+    		sbPar[sbNum].ampPwr = I2CStatus; // indeterminate power state
+    	}
 	}
 
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
@@ -2469,18 +2477,16 @@ int sb_ampPow(char *inp, int sbNum)
 
 /*******************************************************************/
 /**
-  \brief Turn on/off Saddlebag amplifier power.
+  \brief Turn on/off Saddlebag amplifier power for all saddlebags.
 
-  This function turns on the software-controlled power supply for the DCM2.  Default is to
-  turn the amplifier power supply on.
-
-  Function does not check for out of range saddlebag index number.
+  This function turns on software-controlled power supply for all saddlebag amplifiers.  Default is to
+  turn the amplifier power supplies on.
 
   \par inp  string: "off" or "0" for off, else on
 
   \return NB error code for write to BEX.
 */
-int sb_setAllAmps(float v)
+int sb_setAllAmps(char *inp)
 {
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
@@ -2493,13 +2499,21 @@ int sb_setAllAmps(float v)
 		buffer[0] = swaddr[i];      // set saddlebag selection switch
 		I2CSEND1;
         configBEX(0x02|(sbPar[i].ampPwr ? 1 : 0), SBBEX_ADDR);  // configure I/O, preserving saddlebag ampl state
-        if (v > 0.5) {
-        	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
-        	sbPar[i].ampPwr = 0x01;                       	    // record power state
-        } else {
+    	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
         	writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
         	I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
-        	sbPar[i].ampPwr = 0x00;                             // record power state
+        	if (!I2CStatus) {
+        		sbPar[i].ampPwr = 1; // record power state as on
+        	} else {
+        		sbPar[i].ampPwr = I2CStatus; // indeterminate power state
+        	}
+        } else {
+        	I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
+        	if (!I2CStatus) {
+        		sbPar[i].ampPwr = 0; // record power state as off
+        	} else {
+        		sbPar[i].ampPwr = I2CStatus; // indeterminate power state
+        	}
         }
 	}
 
@@ -2557,7 +2571,7 @@ BYTE sb_readPLLmon(int sbNum)
 	BYTE sbaddr[] = SADDLEBAG_SWADDR;
 
 	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, sbaddr[sbNum]);
-	if (I2CStatus) return (I2CStatus);
+	if (I2CStatus) return BYTE(I2CStatus);
 
 	BYTE pllState = (readBEX(SBBEX_ADDR) & 0x02) >> 1;
 
@@ -2633,7 +2647,7 @@ void init_saddlebags(void)
 		sb_ampPow("on", i);      // turn on amps (if off)
 		sb_ledOnOff("off", i);   // turn off LED (if on)
 	}
-	OSTimeDly(2);
+	OSTimeDly(2);                // perceptible off time for blink
 	for (i=0; i<NSBG; i++) {
 		sb_ledOnOff("on", i);    // turn on LED
 	}

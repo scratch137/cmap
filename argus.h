@@ -88,7 +88,7 @@ extern int  sb_ampPow(char *inp, int sbNum);
 extern int  sb_ledOnOff(char *inp, int sbNum);
 extern int  sb_readADC(int sbNum);
 extern BYTE sb_readPLLmon(int sbNum);
-extern int  sb_setAllAmps(float v);
+extern int  sb_setAllAmps(char *inp);
 
 /**************************************************************************/
 
