@@ -2407,8 +2407,8 @@ int init_dcm2(void)
     	dcm2_ledOnOff("on");
 
     	return 0;
-    } else {
-    	return NO_DCM2ERR;  // no DCM2 board was detected
+    } else {                // otherwise, no DCM2 board was detected
+    	return NO_DCM2ERR;
     }
 }
 
@@ -2480,7 +2480,7 @@ int sb_ampPow(char *inp, int sbNum)
 		case 1 :
 			sbPar[sbNum].ampStatus = "on";
 			break;
-		default : sprintf(sbPar[sbNum].ampStatus, "ERR%d", sbPar[sbNum].ampPwr);
+		default : sprintf(sbPar[sbNum].ampStatus, "ERR%d", -sbPar[sbNum].ampPwr);
 	}
 
 	return(I2CStatus);
@@ -2534,7 +2534,7 @@ int sb_setAllAmps(char *inp)
     		case 1 :
     			sbPar[i].ampStatus = "on";
     			break;
-    		default : sprintf(sbPar[i].ampStatus, "ERR%d", sbPar[i].ampPwr);
+    		default : sprintf(sbPar[i].ampStatus, "ERR%d", -sbPar[i].ampPwr);
     	}
 	}
 
@@ -2680,7 +2680,7 @@ void init_saddlebags(void)
 			case 1 :
 				sbPar[i].ampStatus = "on";
 				break;
-			default : sprintf(sbPar[i].ampStatus, "ERR%d", sbPar[i].ampPwr);
+			default : sprintf(sbPar[i].ampStatus, "ERR%d", -sbPar[i].ampPwr);
 		}
 	}
 	OSTimeDly(2);                // perceptible off time for blink

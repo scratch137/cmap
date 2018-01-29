@@ -1394,7 +1394,7 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
     		  "%s: %6s %6s %6s %6s\r\n"
-    		  "%s: %6s %6s %6s %6s\r\n",
+    		  "%s: %6s %6s %6s %6s\r\n\r\n",
     	  	  (!rtn ? statusOK : statusERR), rtn,
     	  	  sbnames[0], sbPar[0].adcv[0], sbPar[1].adcv[0], sbPar[2].adcv[0], sbPar[3].adcv[0],
     	  	  sbnames[1], sbPar[0].adcv[1], sbPar[1].adcv[1], sbPar[2].adcv[1], sbPar[3].adcv[1],
@@ -1406,11 +1406,7 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     	  	  sbnames[7], sbPar[0].adcv[7], sbPar[1].adcv[7], sbPar[2].adcv[7], sbPar[3].adcv[7],
     	  	  sbnames[8], (sbPar[0].pll ? "lock" : "UNLOCK"), (sbPar[1].pll ? "lock" : "UNLOCK"),
     	  	  (sbPar[2].pll ? "lock" : "UNLOCK"), (sbPar[3].pll ? "lock" : "UNLOCK"),
-    	  	  sbnames[9],
-    	  	  sbPar[0].ampStatus,
-    	  	  sbPar[1].ampStatus,
-    	  	  sbPar[2].ampStatus,
-    	  	  sbPar[3].ampStatus);
+    	  	  sbnames[9], sbPar[0].ampStatus, sbPar[1].ampStatus, sbPar[2].ampStatus, sbPar[3].ampStatus);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execSaddlebag);
