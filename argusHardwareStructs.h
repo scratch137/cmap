@@ -233,6 +233,7 @@ struct saddlebagParams {
 	float adcv[8];
 	BYTE pll;
 	BYTE ampPwr;
+	char *ampStatus[7];
 };
 
 #endif
