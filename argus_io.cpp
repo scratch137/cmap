@@ -2423,10 +2423,10 @@ struct saddlebagParams {
 	float v[8];
 }; */
 struct saddlebagParams sbPar[] = {
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, {"N/A"}},
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, {"N/A"}},
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, {"N/A"}},
-		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, {"N/A"}}
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
+		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"}
 };
 
 /*******************************************************************/
@@ -2475,12 +2475,12 @@ int sb_ampPow(char *inp, int sbNum)
 	// use value in sbPar.ampPwr to set sbPar.ampStatus
 	switch (sbPar[sbNum].ampPwr) {
 		case 0 :
-			*sbPar[sbNum].ampStatus = "OFF";
+			sbPar[sbNum].ampStatus = "OFF";
 			break;
 		case 1 :
-			*sbPar[sbNum].ampStatus = "on";
+			sbPar[sbNum].ampStatus = "on";
 			break;
-		default : sprintf(*sbPar[sbNum].ampStatus, "ERR%d", sbPar[sbNum].ampPwr);
+		default : sprintf(sbPar[sbNum].ampStatus, "ERR%d", sbPar[sbNum].ampPwr);
 	}
 
 	return(I2CStatus);
@@ -2529,12 +2529,12 @@ int sb_setAllAmps(char *inp)
     	// use value in sbPar.ampPwr to set sbPar.ampStatus
     	switch (sbPar[i].ampPwr) {
     		case 0 :
-    			*sbPar[i].ampStatus = "OFF";
+    			sbPar[i].ampStatus = "OFF";
     			break;
     		case 1 :
-    			*sbPar[i].ampStatus = "on";
+    			sbPar[i].ampStatus = "on";
     			break;
-    		default : sprintf(*sbPar[i].ampStatus, "ERR%d", sbPar[i].ampPwr);
+    		default : sprintf(sbPar[i].ampStatus, "ERR%d", sbPar[i].ampPwr);
     	}
 	}
 
@@ -2675,12 +2675,12 @@ void init_saddlebags(void)
 		// use value in sbPar.ampPwr to set sbPar.ampStatus
 		switch (sbPar[i].ampPwr) {
 			case 0 :
-				*sbPar[i].ampStatus = "OFF";
+				sbPar[i].ampStatus = "OFF";
 				break;
 			case 1 :
-				*sbPar[i].ampStatus = "on";
+				sbPar[i].ampStatus = "on";
 				break;
-			default : sprintf(*sbPar[i].ampStatus, "ERR%d", sbPar[i].ampPwr);
+			default : sprintf(sbPar[i].ampStatus, "ERR%d", sbPar[i].ampPwr);
 		}
 	}
 	OSTimeDly(2);                // perceptible off time for blink
