@@ -130,10 +130,12 @@ void initCommandShell()
       ::zpecShell["engr"]      = &Correlator::execArgusEngr;
       ::zpecShell["freeze"]    = &Correlator::execArgusFreeze;
       ::zpecShell["thaw"]      = &Correlator::execArgusThaw;
-      ::zpecShell["jlna"]      = &Correlator::execCOMAPjlna;
-      ::zpecShell["jcryo"]     = &Correlator::execCOMAPjcryo;
+      ::zpecShell["jlna"]      = &Correlator::execCOMAPJlna;
+      ::zpecShell["jcryo"]     = &Correlator::execCOMAPJcryo;
       ::zpecShell["dcm2"]      = &Correlator::execDCM2;
+      ::zpecShell["jdcm2"]     = &Correlator::execJDCM2;
       ::zpecShell["sb"]        = &Correlator::execSaddlebag;
+      ::zpecShell["jsb"]       = &Correlator::execJSaddlebag;
       break;
 
     default:

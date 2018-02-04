@@ -305,10 +305,12 @@ public:
   void execArgusFreeze(return_type status, argument_type arg);
   void execArgusThaw(return_type status, argument_type arg);
   void execArgusLock(return_type status, argument_type arg);
-  void execCOMAPjlna(return_type status, argument_type arg);
-  void execCOMAPjcryo(return_type status, argument_type arg);
+  void execCOMAPJlna(return_type status, argument_type arg);
+  void execCOMAPJcryo(return_type status, argument_type arg);
   void execDCM2(return_type status, argument_type arg);
+  void execJDCM2(return_type status, argument_type arg);
   void execSaddlebag(return_type status, argument_type arg);
+  void execJSaddlebag(return_type status, argument_type arg);
 
 private:
   /// Alias map container type.

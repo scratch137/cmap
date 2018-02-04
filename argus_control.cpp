@@ -10,6 +10,19 @@
 #include "control.h"
 #include "math.h"
 
+// temporary strings for JSON output work
+char outStr[8192] = {0};
+char str0[512] = {0};
+char str1[512] = {0};
+char str2[512] = {0};
+char str3[512] = {0};
+char str4[512] = {0};
+char str5[512] = {0};
+char str6[512] = {0};
+char str7[512] = {0};
+char str8[512] = {0};
+char str9[512] = {0};
+
 // names for cryostat test points
 char *cnames[] = {"T0", "T1", "T2", "T3", "T4", "T5", "Pressure"};
 /*char *cnames[] = {"20K cold head: ",
@@ -1180,7 +1193,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execCOMAPjlna(return_type status, argument_type arg)
+void Correlator::execCOMAPJlna(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
@@ -1200,7 +1213,7 @@ void Correlator::execCOMAPjlna(return_type status, argument_type arg)
 */
 	  sprintf(status, "%sStub for jlna.\r\n", statusOK);
   } else {
-    	longHelp(status, usage, &Correlator::execCOMAPjlna);
+    	longHelp(status, usage, &Correlator::execCOMAPJlna);
   }
 }
 
@@ -1213,7 +1226,7 @@ void Correlator::execCOMAPjlna(return_type status, argument_type arg)
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
+void Correlator::execCOMAPJcryo(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
@@ -1228,7 +1241,7 @@ void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
 	    		cryoPar.cryoTemps[5],
 	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.));
   } else {
-    	longHelp(status, usage, &Correlator::execCOMAPjcryo);
+    	longHelp(status, usage, &Correlator::execCOMAPJcryo);
   }
 }
 
@@ -1245,7 +1258,7 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 {
 	  static const char *usage =
 	  "[KEYWORD VALUE [VALUE]]\r\n"
-      "  DCM2 commands.\r\n"
+      "  DCM2 commands; no value returns status.\r\n"
       "    KEYWORD   VALUE    VALUE:\r\n"
 	  "    amps      on/off             turns amplifier power on/off\r\n"
 	  "    led       on/off             turns led on/off\r\n"
@@ -1323,6 +1336,124 @@ void Correlator::execDCM2(return_type status, argument_type arg)
       }
       n += sprintf(&outStr[n], "\r\n");
       sprintf(status, outStr);  // send it out
+	}
+  } else {
+	  longHelp(status, usage, &Correlator::execDCM2);
+  }
+}
+
+/**
+  \brief DCM2 control.
+
+  This method controls DCM2 and readouts.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJDCM2(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[KEYWORD VALUE [VALUE]]\r\n"
+      "  DCM2 commands; no value returns status.\r\n"
+      "    KEYWORD   VALUE    VALUE:\r\n"
+	  "    amps      on/off             turns amplifier power on/off\r\n"
+	  "    led       on/off             turns led on/off\r\n"
+	  "    block     ch_no    A/B       blocks DCM2 channel, band A or B\r\n" ;
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  char val[4] = {0};
+	  char onoff[4] = {0};
+	  int narg = sscanf(arg.str, "%9s %3s %3s", kw, val, onoff);
+
+	  if (narg == 2) {
+	      // Execute the command.
+	      if (!strcasecmp(kw, "amps")) {
+  		    rtn = dcm2_ampPow(val);
+	        sprintf(status, "{\"statusOK\":%s}", (!rtn ? "true" : "false"));
+	      } else if (!strcasecmp(kw, "led")) {
+	  		    rtn = dcm2_ledOnOff(val);
+		        sprintf(status, "{\"statusOK\":%s}", (!rtn ? "true" : "false"));
+	      } else {
+		      longHelp(status, usage, &Correlator::execDCM2);
+	      }
+	  } else if (narg == 3){
+		  if (!strcasecmp(kw, "block")) {
+			  rtn = dcm2_blockMod(val, onoff);
+			  sprintf(status, "{\"statusOK\":%s}", (!rtn ? "true" : "false"));
+		  } else {
+			  longHelp(status, usage, &Correlator::execDCM2);
+		  }
+	  } else {
+		  longHelp(status, usage, &Correlator::execDCM2);
+	  }
+	} else {
+      rtn = dcm2_readMBadc();
+      rtn += dcm2_readMBtemp();
+      rtn += dcm2_readAllModTemps();
+      rtn += dcm2_readAllModTotPwr();
+
+      // write output: build up JSON string
+
+      int n, n0, n1, n2, n3, n4, n5;
+      int i;
+
+      n = sprintf(&outStr[0], "{\"statusOK\":%s, \"psVolts\":[%.1f,%.1f], \"temp\":[%.1f], \"pllLock\":[%s,%s]",
+     		  (!rtn ? "true" : "false"),
+    		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH ? "true" : "false"),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH ? "true" : "false"));
+
+      n0 = sprintf(&str0[0], "\"Astatus\":[%d", dcm2Apar.status[0]);
+      n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);
+      n2 = sprintf(&str2[0], "\"AattenQ\":[%.1f", (float)dcm2Apar.attenQ[0]/2.);
+      n3 = sprintf(&str3[0], "\"ApowI\":[%.1f", dcm2Apar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"ApowQ\":[%.1f", dcm2Apar.powDetQ[0]);
+      n5 = sprintf(&str5[0], "\"Atemp\":[%.2f", dcm2Apar.bTemp[0]);
+      for (i=1; i<NRX; i++) {
+    	  n0 += sprintf(&str0[n0], ",%d", dcm2Apar.status[i]);
+    	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Apar.attenI[i]/2.);
+    	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Apar.attenQ[i]/2.);
+    	  n3 += sprintf(&str3[n3], ",%.1f", dcm2Apar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.1f", dcm2Apar.powDetQ[i]);
+    	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Apar.bTemp[i]);
+      }
+	  n0 += sprintf(&str0[n0], "]");
+	  n1 += sprintf(&str1[n1], "]");
+	  n2 += sprintf(&str2[n2], "]");
+	  n3 += sprintf(&str3[n3], "]");
+	  n4 += sprintf(&str4[n4], "]");
+	  n5 += sprintf(&str5[n5], "]");
+
+	  n += sprintf(&outStr[n], ", %s, %s, %s, %s, %s", str0, str1, str2, str4, str5);
+
+      n0 = sprintf(&str0[0], "\"Bstatus\":[%d", dcm2Bpar.status[0]);
+      n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
+      n2 = sprintf(&str2[0], "\"BattenQ\":[%.1f", (float)dcm2Bpar.attenQ[0]/2.);
+      n3 = sprintf(&str3[0], "\"BpowI\":[%.1f", dcm2Bpar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"BpowQ\":[%.1f", dcm2Bpar.powDetQ[0]);
+      n5 = sprintf(&str5[0], "\"Btemp\":[%.2f", dcm2Bpar.bTemp[0]);
+      for (i=1; i<NRX; i++) {
+    	  n0 += sprintf(&str0[n0], ",%d", dcm2Bpar.status[i]);
+    	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Bpar.attenI[i]/2.);
+    	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Bpar.attenQ[i]/2.);
+    	  n3 += sprintf(&str3[n3], ",%.1f", dcm2Bpar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.1f", dcm2Bpar.powDetQ[i]);
+    	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Bpar.bTemp[i]);
+      }
+	  n0 += sprintf(&str0[n0], "]");
+	  n1 += sprintf(&str1[n1], "]");
+	  n2 += sprintf(&str2[n2], "]");
+	  n3 += sprintf(&str3[n3], "]");
+	  n4 += sprintf(&str4[n4], "]");
+	  n5 += sprintf(&str5[n5], "]");
+
+	  n += sprintf(&outStr[n], ", %s, %s, %s, %s, %s}", str0, str1, str2, str4, str5);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execDCM2);
@@ -1412,6 +1543,106 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
 	  longHelp(status, usage, &Correlator::execSaddlebag);
   }
 }
+
+/**
+  \brief JSON saddlebag control.
+
+  This method controls the saddlebag card contols and readouts using JSON formatting.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJSaddlebag(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[KEYWORD VALUE [VALUE]]\r\n"
+      "  Saddlebag commands in JSON.  No argument returns status. \r\n"
+      "    KEYWORD  VALUE  VALUE:\r\n"
+	  "    amp      m      on/off    turns amplifier power for saddlebag m on/off\r\n"
+	  "    led      m      on/off    turns led for saddlebag m on/off\r\n";
+
+	  int rtn = 0;
+
+	  if (!arg.help) {
+		  if (arg.str) {
+		  // Command called with one or more arguments.
+		  char kw[10] = {0};
+		  int nSbg;
+		  char onoff[4] = {0};
+		  int narg = sscanf(arg.str, "%9s %d %3s", kw, &nSbg, onoff);
+
+		  if (narg == 3) {
+		      // Check for valid saddlebag index number; this is the only place this happens ZZZ doesn't catch error
+			  if (nSbg > NSBG || nSbg < 1) nSbg = NSBG+1;  // go to a null device
+			  nSbg -= 1; // convert from human to index
+
+		      if (!strcasecmp(kw, "amp")) {
+		    	  rtn = sb_ampPow(onoff, nSbg);
+		    	  sprintf(status, "{\"statusOK\":%s}", (!rtn ? "true" : "false"));
+		      } else if (!strcasecmp(kw, "led")) {
+		    	  rtn = sb_ledOnOff(onoff, nSbg);
+		    	  sprintf(status, "{\"statusOK\":%s}", (!rtn ? "true" : "false"));
+		      } else {
+		    	  longHelp(status, usage, &Correlator::execSaddlebag);
+		      }
+		  } else {
+			  longHelp(status, usage, &Correlator::execSaddlebag);
+		  }
+		} else {
+		  rtn = 0;
+	      int n, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9;
+	      int i;
+
+	      for (i=0; i<NSBG; i++) {  // read out ADCs and check PLL status
+	    	  rtn += sb_readADC(i);
+	    	  sbPar[i].pll = sb_readPLLmon(i);
+	      }
+
+	      // Assemble JSON return string
+	      n = sprintf(&outStr[0], "{\"statusOK\":%s", (!rtn ? "true" : "false"));
+	      n0 = sprintf(&str0[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[0]);
+	      n1 = sprintf(&str1[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[1]);
+	      n2 = sprintf(&str2[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[2]);
+	      n3 = sprintf(&str3[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[3]);
+	      n4 = sprintf(&str4[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[4]);
+	      n5 = sprintf(&str5[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[5]);
+	      n6 = sprintf(&str6[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[6]);
+	      n7 = sprintf(&str7[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[7]);
+	      n8 = sprintf(&str8[0], "\"%s\":[%s", sbnames[0], (sbPar[0].pll ? "lock" : "UNLOCK"));
+	      n9 = sprintf(&str9[0], "\"%s\":[%s", sbnames[0], sbPar[0].ampStatus);
+	      for (i=1; i<NSBG; i++) {
+	    	  n0 += sprintf(&str0[n0], ",%.1f", sbPar[i].adcv[0]);
+	    	  n1 += sprintf(&str1[n1], ",%.1f", sbPar[i].adcv[1]);
+	    	  n2 += sprintf(&str2[n2], ",%.1f", sbPar[i].adcv[2]);
+	    	  n3 += sprintf(&str3[n3], ",%.1f", sbPar[i].adcv[3]);
+	    	  n4 += sprintf(&str4[n4], ",%.1f", sbPar[i].adcv[4]);
+	    	  n5 += sprintf(&str5[n5], ",%.1f", sbPar[i].adcv[5]);
+	    	  n6 += sprintf(&str6[n6], ",%.1f", sbPar[i].adcv[6]);
+	    	  n7 += sprintf(&str7[n7], ",%.1f", sbPar[i].adcv[7]);
+	    	  n8 += sprintf(&str8[n8], ",%s", (sbPar[i].pll ? "lock" : "UNLOCK"));
+	    	  n9 += sprintf(&str9[n9], ",%s", sbPar[i].ampStatus);
+	      }
+    	  n0 += sprintf(&str0[n0], "]");
+    	  n1 += sprintf(&str1[n1], "]");
+    	  n2 += sprintf(&str2[n2], "]");
+    	  n3 += sprintf(&str3[n3], "]");
+    	  n4 += sprintf(&str4[n4], "]");
+    	  n5 += sprintf(&str5[n5], "]");
+    	  n6 += sprintf(&str6[n6], "]");
+    	  n7 += sprintf(&str7[n7], "]");
+    	  n8 += sprintf(&str8[n8], "]");
+    	  n9 += sprintf(&str9[n9], "]");
+
+    	  sprintf(status, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s}", str0, str1, str2, str3, str4,
+    			  str5, str6, str7, str8, str9);
+		}
+	  } else {
+		  longHelp(status, usage, &Correlator::execSaddlebag);
+	  }
+	}
+
+
 
 /*************************************************************************************/
 /**

@@ -3,3 +3,7 @@ Check which commands should freeze, then check operation
 Get DCM2 attenuator settings into flash/sets/presets
 
 JSON versions of commands
+
+Output line length --
+maybe maxLine in services.h, spec'd at 2048
+but this seems to refer to input line length rather than output length
