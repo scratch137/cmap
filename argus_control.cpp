@@ -1393,10 +1393,11 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execDCM2);
 	  }
 	} else {
-      rtn = dcm2_readMBadc();
-      rtn += dcm2_readMBtemp();
-      rtn += dcm2_readAllModTemps();
-      rtn += dcm2_readAllModTotPwr();
+      rtn = 0; ///
+      ///rtn = dcm2_readMBadc();
+      ///rtn += dcm2_readMBtemp();
+      ///rtn += dcm2_readAllModTemps();
+      ///rtn += dcm2_readAllModTotPwr();
 
       // write output: build up JSON string
 
@@ -1453,7 +1454,7 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	  n4 += sprintf(&str4[n4], "]");
 	  n5 += sprintf(&str5[n5], "]");
 
-	  n += sprintf(&outStr[n], ", %s, %s, %s, %s, %s}", str0, str1, str2, str4, str5);
+	  n += sprintf(&outStr[n], ", %s, %s, %s, %s, %s}\r\n", str0, str1, str2, str4, str5);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execDCM2);
@@ -1602,15 +1603,15 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	      // Assemble JSON return string
 	      n = sprintf(&outStr[0], "{\"statusOK\":%s", (!rtn ? "true" : "false"));
 	      n0 = sprintf(&str0[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[0]);
-	      n1 = sprintf(&str1[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[1]);
-	      n2 = sprintf(&str2[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[2]);
-	      n3 = sprintf(&str3[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[3]);
-	      n4 = sprintf(&str4[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[4]);
-	      n5 = sprintf(&str5[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[5]);
-	      n6 = sprintf(&str6[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[6]);
-	      n7 = sprintf(&str7[0], "\"%s\":[%.1f", sbnames[0], sbPar[0].adcv[7]);
-	      n8 = sprintf(&str8[0], "\"%s\":[%s", sbnames[0], (sbPar[0].pll ? "lock" : "UNLOCK"));
-	      n9 = sprintf(&str9[0], "\"%s\":[%s", sbnames[0], sbPar[0].ampStatus);
+	      n1 = sprintf(&str1[0], "\"%s\":[%.1f", sbnames[1], sbPar[0].adcv[1]);
+	      n2 = sprintf(&str2[0], "\"%s\":[%.1f", sbnames[2], sbPar[0].adcv[2]);
+	      n3 = sprintf(&str3[0], "\"%s\":[%.1f", sbnames[3], sbPar[0].adcv[3]);
+	      n4 = sprintf(&str4[0], "\"%s\":[%.1f", sbnames[4], sbPar[0].adcv[4]);
+	      n5 = sprintf(&str5[0], "\"%s\":[%.1f", sbnames[5], sbPar[0].adcv[5]);
+	      n6 = sprintf(&str6[0], "\"%s\":[%.1f", sbnames[6], sbPar[0].adcv[6]);
+	      n7 = sprintf(&str7[0], "\"%s\":[%.1f", sbnames[7], sbPar[0].adcv[7]);
+	      n8 = sprintf(&str8[0], "\"%s\":[%s", sbnames[8], (sbPar[0].pll ? "lock" : "UNLOCK"));
+	      n9 = sprintf(&str9[0], "\"%s\":[%s", sbnames[9], sbPar[0].ampStatus);
 	      for (i=1; i<NSBG; i++) {
 	    	  n0 += sprintf(&str0[n0], ",%.1f", sbPar[i].adcv[0]);
 	    	  n1 += sprintf(&str1[n1], ",%.1f", sbPar[i].adcv[1]);
@@ -1634,7 +1635,7 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
     	  n8 += sprintf(&str8[n8], "]");
     	  n9 += sprintf(&str9[n9], "]");
 
-    	  sprintf(status, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s}", str0, str1, str2, str3, str4,
+    	  sprintf(status, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s}\r\n", str0, str1, str2, str3, str4,
     			  str5, str6, str7, str8, str9);
 		}
 	  } else {
