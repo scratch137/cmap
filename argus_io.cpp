@@ -2419,7 +2419,7 @@ struct saddlebagParams {
 	float adcv[8];
 	BYTE pll;
 	BYTE ampPwr;
-	char ampStatus[7];};
+	char *ampStatus;};
 	float v[8];
 }; */
 struct saddlebagParams sbPar[] = {

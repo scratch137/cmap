@@ -118,6 +118,7 @@ void initCommandShell()
       //::zpecShell["test"]      = &Correlator::execArgusTest;
       ::zpecShell["init"]      = &Correlator::execArgusInit;
       ::zpecShell["limits"]    = &Correlator::execArgusLimits;
+      ::zpecShell["jlimits"]   = &Correlator::execArgusJLimits;
       ::zpecShell["all"]       = &Correlator::execArgusSetAll;
       ::zpecShell["g"]         = &Correlator::execArgusGate;
       ::zpecShell["d"]         = &Correlator::execArgusDrain;
@@ -134,8 +135,8 @@ void initCommandShell()
       ::zpecShell["jcryo"]     = &Correlator::execCOMAPJcryo;
       ::zpecShell["dcm2"]      = &Correlator::execDCM2;
       ::zpecShell["jdcm2"]     = &Correlator::execJDCM2;
-      ::zpecShell["sb"]        = &Correlator::execSaddlebag;
-      ::zpecShell["jsb"]       = &Correlator::execJSaddlebag;
+      ::zpecShell["sbag"]      = &Correlator::execSaddlebag;
+      ::zpecShell["jsbag"]     = &Correlator::execJSaddlebag;
       break;
 
     default:
