@@ -2457,14 +2457,14 @@ int sb_ampPow(char *inp, int sbNum)
 		writeBEX(readBEX(SBBEX_ADDR) & ~0x01, SBBEX_ADDR);  // pin value low
 		I2CStatus = configBEX(0x02, SBBEX_ADDR);            // make control pin write
     	if (!I2CStatus) {
-    		sbPar[sbNum].ampPwr = 0; // record power state as on
+    		sbPar[sbNum].ampPwr = 0; // record power state as off
     	} else {
     		sbPar[sbNum].ampPwr = I2CStatus; // indeterminate power state
     	}
 	} else {
 		I2CStatus = configBEX(0x03, SBBEX_ADDR);            // make control pin high-Z
     	if (!I2CStatus) {
-    		sbPar[sbNum].ampPwr = 1; // record power state as off
+    		sbPar[sbNum].ampPwr = 1; // record power state as on
     	} else {
     		sbPar[sbNum].ampPwr = I2CStatus; // indeterminate power state
     	}

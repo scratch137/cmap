@@ -365,10 +365,10 @@ void Correlator::execArgusJLimits(return_type status, argument_type arg)
 
   if (!arg.help) {
 	  sprintf(status, "{\"biasLimits\": {\"cmdOK\": true, \"vdgmax\":[%.1f], \"vg\":[%.1f,%.1f], "
-			  	  "\"vd\":[%.1f,%.1f], \"id\":[%.1f,%.1f], \"maxatten\":[%f]}}\r\n",
+			  	  "\"vd\":[%.1f,%.1f], \"id\":[%.1f,%.1f], \"maxatten\":[%.1f]}}\r\n",
 			  	  VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX, IDMIN, IDMAX, MAXATTEN);
   } else {
-    longHelp(status, usage, &Correlator::execArgusLimits);
+    longHelp(status, usage, &Correlator::execArgusJLimits);
   }
 }
 
@@ -1382,7 +1382,7 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 {
 	  static const char *usage =
 	  "[KEYWORD VALUE [VALUE]]\r\n"
-      "  DCM2 commands; no value returns status.\r\n"
+      "  JSON format DCM2 commands; no value returns status.\r\n"
       "    KEYWORD   VALUE    VALUE:\r\n"
 	  "    amps      on/off             turns amplifier power on/off\r\n"
 	  "    led       on/off             turns led on/off\r\n"
@@ -1407,20 +1407,20 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	  		    rtn = dcm2_ledOnOff(val);
 		    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
 	      } else {
-		      longHelp(status, usage, &Correlator::execDCM2);
+		      longHelp(status, usage, &Correlator::execJDCM2);
 	      }
 	  } else if (narg == 3){
 		  if (!strcasecmp(kw, "block")) {
 			  rtn = dcm2_blockMod(val, onoff);
 	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
 		  } else {
-			  longHelp(status, usage, &Correlator::execDCM2);
+			  longHelp(status, usage, &Correlator::execJDCM2);
 		  }
 	  } else {
-		  longHelp(status, usage, &Correlator::execDCM2);
+		  longHelp(status, usage, &Correlator::execJDCM2);
 	  }
 	} else {
-      rtn = 0; ///
+      rtn = 0; ///  DEBUG -- REMOVE FOR RELEASE  ZZZ
       ///rtn = dcm2_readMBadc();
       ///rtn += dcm2_readMBtemp();
       ///rtn += dcm2_readAllModTemps();
@@ -1482,10 +1482,11 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	  n4 += sprintf(&str4[n4], "]");
 	  n5 += sprintf(&str5[n5], "]");
 
-	  sprintf(status, ", %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str4, str5);
+	  n += sprintf(&outStr[n], ", %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str4, str5);
+	  sprintf(status, "%s", outStr);
 	}
   } else {
-	  longHelp(status, usage, &Correlator::execDCM2);
+	  longHelp(status, usage, &Correlator::execJDCM2);
   }
 }
 
@@ -1616,7 +1617,7 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 		    	  longHelp(status, usage, &Correlator::execSaddlebag);
 		      }
 		  } else {
-			  longHelp(status, usage, &Correlator::execSaddlebag);
+			  longHelp(status, usage, &Correlator::execJSaddlebag);
 		  }
 		} else {
 		  rtn = 0;
@@ -1640,7 +1641,7 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	      n6 = sprintf(&str6[0], "\"temp3\":[%.1f", sbPar[0].adcv[6]);
 	      n7 = sprintf(&str7[0], "\"temp4\":[%.1f", sbPar[0].adcv[7]);
 	      n8 = sprintf(&str8[0], "\"pllLock\":[%d", sbPar[0].pll);
-	      n9 = sprintf(&str9[0], "\"ampOn\":[%d", (sbPar[0].ampPwr==0 ? 1 : 0));
+	      n9 = sprintf(&str9[0], "\"ampOn\":[%d", (sbPar[0].ampPwr==1 ? 1 : 0));
 	      for (i=1; i<NSBG; i++) {
 	    	  n0 += sprintf(&str0[n0], ",%.1f", sbPar[i].adcv[0]);
 	    	  n1 += sprintf(&str1[n1], ",%.1f", sbPar[i].adcv[1]);
@@ -1651,7 +1652,7 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	    	  n6 += sprintf(&str6[n6], ",%.1f", sbPar[i].adcv[6]);
 	    	  n7 += sprintf(&str7[n7], ",%.1f", sbPar[i].adcv[7]);
 	    	  n8 += sprintf(&str8[n8], ",%d", sbPar[i].pll);
-	    	  n9 += sprintf(&str9[n9], ",%d", (sbPar[i].ampPwr==0 ? 1 : 0));
+	    	  n9 += sprintf(&str9[n9], ",%d", (sbPar[i].ampPwr==1 ? 1 : 0));
 	      }
     	  n0 += sprintf(&str0[n0], "]");
     	  n1 += sprintf(&str1[n1], "]");
@@ -1664,11 +1665,12 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
     	  n8 += sprintf(&str8[n8], "]");
     	  n9 += sprintf(&str9[n9], "]");
 
-    	  sprintf(status, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str3, str4,
+    	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str3, str4,
     			  str5, str6, str7, str8, str9);
+    	  sprintf(status, "%s", outStr);
 		}
 	  } else {
-		  longHelp(status, usage, &Correlator::execSaddlebag);
+		  longHelp(status, usage, &Correlator::execJSaddlebag);
 	  }
 	}
 
