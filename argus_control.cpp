@@ -149,9 +149,35 @@ void Correlator::execArgusFreeze(return_type status, argument_type arg)
 }
 
 /**
+  \brief Argus freeze command, JSON return.
+
+  This method sets a bit to freeze the system state, generally meant for during integrations.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusFreeze(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Freeze system state (see thaw) to prevent changes to settings.\r\n";
+
+
+  if (!arg.help && !arg.str) {
+	  freezeSys = 1;
+	  freezeCtr += 1;
+	  sprintf(status, "{\"freeze\": {\"cmdOK\":true}}\r\n");
+  } else {
+	    longHelp(status, usage, &Correlator::execJArgusFreeze);
+  }
+}
+
+/**
   \brief Argus thaw command.
 
   This method clears a bit to unfreeze the system state, generally meant for not during integrations.
+  JSON return
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
@@ -169,6 +195,30 @@ void Correlator::execArgusThaw(return_type status, argument_type arg)
 	  sprintf(status, "%sfreezeSys = %u\r\n", statusOK, freezeSys);
   } else {
     	longHelp(status, usage, &Correlator::execArgusThaw);
+  }
+}
+
+/**
+  \brief Argus thaw command, JSON return.
+
+  This method clears a bit to unfreeze the system state, generally meant for not during integrations.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusThaw(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Thaw system state (see freeze) to permit changes to settings.\r\n";
+
+  if (!arg.help && !arg.str) {
+	  freezeSys = 0;
+	  thawCtr += 1;
+	  sprintf(status, "{\"thaw\": {\"cmdOK\":true}}\r\n");
+  } else {
+    	longHelp(status, usage, &Correlator::execJArgusThaw);
   }
 }
 
@@ -427,6 +477,58 @@ void Correlator::execArgusDrain(return_type status, argument_type arg)
 }
 
 /**
+  \brief Argus individual drain bias control, JSON response.
+
+  Set or read a single LNA drain bias for Argus.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusDrain(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M N V]\r\n"
+  "  Set an LNA drain voltage.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  N is the Nth stage within receiver to set.\r\n"
+  "  V is the voltage in V to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m, n;
+    float v = 0.0;
+    if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%d%f", &m, &n, &v);
+      if (narg < 3) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJArgusDrain);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX && n > 0 && n <= NSTAGES){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = argus_setLNAbias("d", m-1, n-1, v, 0);
+    		if (rtn == -10) {
+        		sprintf(status, "{\"biasG\":{\"cmdOK\":false}\r\n"); //LNA cards are not powered
+    		} else {
+        		sprintf(status, "{\"biasG\":{\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+    		}
+    	} else {
+    		sprintf(status, "{\"biasG\":{\"cmdOK\":false}\r\n"); //Receiver or stage number out of range
+    	}
+     }
+  } else {
+      // Command called without arguments; read drain values
+      longHelp(status, usage, &Correlator::execJArgusDrain);  //here dummy
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJArgusDrain);
+  }
+}
+
+/**
   \brief Argus individual gate bias control.
 
   Set or read a single LNA gate bias for Argus.
@@ -482,15 +584,68 @@ void Correlator::execArgusGate(return_type status, argument_type arg)
 
 
 /**
-  \brief Argus individual receiver attenuator control.
+  \brief Argus individual gate bias control, JSON version.
 
-  Set a single receiver's warm IF attenuation for Argus.
+  Set or read a single LNA gate bias for Argus system.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusAtten(return_type status, argument_type arg)
+void Correlator::execJArgusGate(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M N V]\r\n"
+  "  Set an LNA gate voltage.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  N is the Nth stage within receiver to set.\r\n"
+  "  V is the voltage in V to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m, n;
+    float v = 0.0;
+    if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%d%f", &m, &n, &v);
+      if (narg < 3) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJArgusGate);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX && n > 0 && n <= NSTAGES){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = argus_setLNAbias("g", m-1, n-1, v, 0);
+    		if (rtn == -10) {
+        		sprintf(status, "{\"biasG\":{\"cmdOK\":false}}\r\n"); // LNA cards are not powered
+    		} else {
+        		sprintf(status, "{\"biasG\":{\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+    		}
+    	} else {
+    		sprintf(status, "{\"biasG\":{\"cmdOK\":false}}\r\n"); //Receiver or stage number out of range
+    	}
+     }
+  } else {
+      // Command called without arguments; read gate values
+      longHelp(status, usage, &Correlator::execJArgusGate);  //here dummy
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJArgusGate);
+  }
+}
+
+
+/**
+  \brief COMAP individual receiver attenuator control.
+
+  Set a single receiver's warm IF attenuation for COMAP.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execCOMAPatten(return_type status, argument_type arg)
 {
   static const char *usage =
   "[M AB IQ dB]\r\n"
@@ -511,7 +666,7 @@ void Correlator::execArgusAtten(return_type status, argument_type arg)
       int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
       if (narg < 4) {
         // Too few arguments; return help string.
-        longHelp(status, usage, &Correlator::execArgusAtten);
+        longHelp(status, usage, &Correlator::execCOMAPatten);
       } else {
         // Execute the command.
     	if (m > 0 && m <= NRX){
@@ -526,57 +681,61 @@ void Correlator::execArgusAtten(return_type status, argument_type arg)
      }
   } else {
       // Command called without arguments; read gate values
-      longHelp(status, usage, &Correlator::execArgusAtten);  //here dummy
+      longHelp(status, usage, &Correlator::execCOMAPatten);  //here dummy
      }
   } else {
-    longHelp(status, usage, &Correlator::execArgusAtten);
+    longHelp(status, usage, &Correlator::execCOMAPatten);
   }
 }
 
 /**
-  \brief Argus individual receiver sideband control.
+  \brief COMAP individual receiver attenuator control, JSON version.
 
-  Set a single receiver's warm IF sideband for Argus.
+  Set a single receiver's warm IF attenuation for COMAP.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusSB(return_type status, argument_type arg)
+void Correlator::execJCOMAPatten(return_type status, argument_type arg)
 {
   static const char *usage =
-  "[M S]\r\n"
-  "  Set a receiver sideband.\r\n"
+  "[M AB IQ dB]\r\n"
+  "  Set a receiver warm IF attenuation.\r\n"
   "  M is the Mth receiver to set.\r\n"
-  "  S is the sideband: 0 for LSB, 1 for USB.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+  "  dB is the attenuation in dB to set.\r\n"
 		  ;
 
   if (!arg.help) {
-    int m, s;
+    int m;
+    char ab[4], iq[4];
+    float atten;
+
    if (arg.str) {
       // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%d%d", &m, &s);
-      if (narg < 2) {
+      int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
+      if (narg < 4) {
         // Too few arguments; return help string.
-        longHelp(status, usage, &Correlator::execArgusSB);
+        longHelp(status, usage, &Correlator::execJCOMAPatten);
       } else {
         // Execute the command.
     	if (m > 0 && m <= NRX){
     		// convert from user's 1-base to code's 0-base
     		OSTimeDly(CMDDELAY);
-    		/* int rtn = argus_setWIFswitches("s", m-1, s, 0); // NEEDS WORK ???
-   			sprintf(status, "%sargus_setWIFswitches(s, %d, %d, 0) returned status %d.\r\n",
-    					(rtn==0 ? statusOK : statusERR), m, s, rtn); */
+    		int rtn = dcm2_setAtten(m-1, ab, iq, atten);
+   			sprintf(status, "{\"dcm2Atten\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
     	} else {
-    		sprintf(status, "%sReceiver number out of range\r\n", statusERR);
+   			sprintf(status, "{\"dcm2Atten\": {\"cmdOK\":false}}\r\n");
     	}
      }
   } else {
       // Command called without arguments; read gate values
-      longHelp(status, usage, &Correlator::execArgusSB);  //here dummy
+      longHelp(status, usage, &Correlator::execJCOMAPatten);  //here dummy
      }
   } else {
-    longHelp(status, usage, &Correlator::execArgusSB);
+    longHelp(status, usage, &Correlator::execJCOMAPatten);
   }
 }
 
@@ -651,6 +810,73 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
 }
 
 /**
+  \brief Argus: set all gate, drain biases and attenuations to a common value, JSON response.
+
+  Set all gate, drain biases and attenuations to a common value.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusSetAll(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[KEYWORD VALUE]\r\n"
+  "  Set choice of LNA gate/drain bias voltages or \r\n"
+  "  receiver warm IF attenuations to a common value.\r\n"
+  "  Keywords are:\r\n"
+  "    G  gate [V].\r\n"
+  "    D  drain [V].\r\n"
+  "    A  attenuation [dB].\r\n"
+  "    S  saddlebag amp power [on/off].\r\n"
+  "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
+		  ;
+
+  if (!arg.help) {
+    float v = 0.0;
+    char inp[10] = {0};
+    char act[10] = {0};
+
+    if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%s %s", inp, act);
+      if (narg < 2) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJArgusSetAll);
+      } else if (!strcmp(inp, "a")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllAttens(v);
+		sprintf(status, "{\"allA\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+      } else if (!strcmp(inp, "s")) {
+      	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
+     	OSTimeDly(CMDDELAY);
+        int rtn = sb_setAllAmps(act);
+		sprintf(status, "{\"allS\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+        } else {
+        // Set G, D, M biases
+    	OSTimeDly(CMDDELAY);
+        ::zpecShell["all"]       = &Correlator::execArgusSetAll;
+   		int rtn = argus_setAllBias(inp, v, 0);
+    	if (rtn == -10) {
+    		sprintf(status, "{\"allA\": {\"cmdOK\":false}}\r\n");  //LNA cards are not powered
+    	} else {
+    		sprintf(status, "{\"all%s\": {\"cmdOK\":%s}}\r\n",
+    				inp, (rtn==0 ? "true" : "false"));
+    	}
+      }
+
+  } else {
+      // Command called without arguments
+      longHelp(status, usage, &Correlator::execJArgusSetAll);
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJArgusSetAll);
+  }
+}
+
+/**
   \brief Argus cryostat monitoring.
 
   Monitor temperatures and aux inputs from the cryo board.
@@ -679,7 +905,6 @@ void Correlator::execArgusCryo(return_type status, argument_type arg)
   } else {
 	longHelp(status, usage, &Correlator::execArgusCryo);
   }
-
 }
 
 /**
@@ -701,7 +926,7 @@ void Correlator::execCOMAPJcryo(return_type status, argument_type arg)
 	  int rtn = argus_readThermADCs();
 	  sprintf(status, "{\"cryostat\":{\"dataOK\":%s, \"temps\":"
 			  "[%.1f,%.1f,%.1f,%.1f,%.1f,%.1f], \"press\":[%.1f], "
-			  "\"tlocations\":[%s,%s,%s,%s,%s]}}\r\n",
+			  "\"tlocations\":[\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"]}}\r\n",
 	    	    (rtn==0 ? "true" : "false"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
 	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
 	    		cryoPar.cryoTemps[5],
