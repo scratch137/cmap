@@ -286,7 +286,7 @@ public:
   void execArgusTest(return_type status, argument_type arg);
   void execArgusInit(return_type status, argument_type arg);
   void execArgusLimits(return_type status, argument_type arg);
-  void execArgusJLimits(return_type status, argument_type arg);
+  void execJArgusLimits(return_type status, argument_type arg);
   void execArgusDrain(return_type status, argument_type arg);
   void execJArgusDrain(return_type status, argument_type arg);
   void execArgusGate(return_type status, argument_type arg);
@@ -298,8 +298,10 @@ public:
   void execArgusSetAll(return_type status, argument_type arg);
   void execJArgusSetAll(return_type status, argument_type arg);
   void execArgusCryo(return_type status, argument_type arg);
+  void execJCOMAPcryo(return_type status, argument_type arg);
   void execArgusMonPts(return_type status, argument_type arg);
   void execArgusPresets(return_type status, argument_type arg);
+  void execJArgusPresets(return_type status, argument_type arg);
   void execArgusEngr(return_type status, argument_type arg);
   void execCOMAPatten(return_type status, argument_type arg);
   void execJCOMAPatten(return_type status, argument_type arg);
@@ -310,8 +312,8 @@ public:
   void execArgusThaw(return_type status, argument_type arg);
   void execJArgusThaw(return_type status, argument_type arg);
   void execArgusLock(return_type status, argument_type arg);
-  void execCOMAPJlna(return_type status, argument_type arg);
-  void execCOMAPJcryo(return_type status, argument_type arg);
+  void execJCOMAPlna(return_type status, argument_type arg);
+  void execJCOMAPsets(return_type status, argument_type arg);
   void execDCM2(return_type status, argument_type arg);
   void execJDCM2(return_type status, argument_type arg);
   void execSaddlebag(return_type status, argument_type arg);

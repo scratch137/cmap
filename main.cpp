@@ -114,11 +114,11 @@ void initCommandShell()
       ::zpecShell["power"]     = &Correlator::execPower;
       break;
 
-    case ZPEC_HW_ARG:    // edited for comap, AH 2017-08-12, dcm2 2017-12-30
+    case ZPEC_HW_ARG:    // edited for comap, AH 2017-08-12, dcm2 2017-12-30, JSON 1018-02
       //::zpecShell["test"]      = &Correlator::execArgusTest;
       ::zpecShell["init"]      = &Correlator::execArgusInit;
       ::zpecShell["limits"]    = &Correlator::execArgusLimits;
-      ::zpecShell["jlimits"]   = &Correlator::execArgusJLimits;
+      ::zpecShell["jlimits"]   = &Correlator::execJArgusLimits;
       ::zpecShell["all"]       = &Correlator::execArgusSetAll;
       ::zpecShell["jall"]      = &Correlator::execJArgusSetAll;
       ::zpecShell["g"]         = &Correlator::execArgusGate;
@@ -132,13 +132,15 @@ void initCommandShell()
       ::zpecShell["c"]         = &Correlator::execArgusCryo;
       ::zpecShell["mon"]       = &Correlator::execArgusMonPts;
       ::zpecShell["presets"]   = &Correlator::execArgusPresets;
+      ::zpecShell["jpresets"]  = &Correlator::execJArgusPresets;
       ::zpecShell["engr"]      = &Correlator::execArgusEngr;
       ::zpecShell["freeze"]    = &Correlator::execArgusFreeze;
       ::zpecShell["jfreeze"]   = &Correlator::execJArgusFreeze;
       ::zpecShell["thaw"]      = &Correlator::execArgusThaw;
       ::zpecShell["jthaw"]     = &Correlator::execJArgusThaw;
-      ::zpecShell["jlna"]      = &Correlator::execCOMAPJlna;
-      ::zpecShell["jcryo"]     = &Correlator::execCOMAPJcryo;
+      ::zpecShell["jlna"]      = &Correlator::execJCOMAPlna;
+      ::zpecShell["jsets"]     = &Correlator::execJCOMAPsets;
+      ::zpecShell["jcryo"]     = &Correlator::execJCOMAPcryo;
       ::zpecShell["dcm2"]      = &Correlator::execDCM2;
       ::zpecShell["jdcm2"]     = &Correlator::execJDCM2;
       ::zpecShell["sbag"]      = &Correlator::execSaddlebag;

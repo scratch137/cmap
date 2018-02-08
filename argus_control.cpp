@@ -405,7 +405,7 @@ void Correlator::execArgusLimits(return_type status, argument_type arg)
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusJLimits(return_type status, argument_type arg)
+void Correlator::execJArgusLimits(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
@@ -418,7 +418,7 @@ void Correlator::execArgusJLimits(return_type status, argument_type arg)
 			  	  "\"vd\":[%.1f,%.1f], \"id\":[%.1f,%.1f], \"maxatten\":[%.1f]}}\r\n",
 			  	  VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX, IDMIN, IDMAX, MAXATTEN);
   } else {
-    longHelp(status, usage, &Correlator::execArgusJLimits);
+    longHelp(status, usage, &Correlator::execJArgusLimits);
   }
 }
 
@@ -511,12 +511,12 @@ void Correlator::execJArgusDrain(return_type status, argument_type arg)
     		OSTimeDly(CMDDELAY);
     		int rtn = argus_setLNAbias("d", m-1, n-1, v, 0);
     		if (rtn == -10) {
-        		sprintf(status, "{\"biasG\":{\"cmdOK\":false}\r\n"); //LNA cards are not powered
+        		sprintf(status, "{\"biasD\":{\"cmdOK\":false}}\r\n"); //LNA cards are not powered
     		} else {
-        		sprintf(status, "{\"biasG\":{\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+        		sprintf(status, "{\"biasD\":{\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
     		}
     	} else {
-    		sprintf(status, "{\"biasG\":{\"cmdOK\":false}\r\n"); //Receiver or stage number out of range
+    		sprintf(status, "{\"biasD\":{\"cmdOK\":false}}\r\n"); //Receiver or stage number out of range
     	}
      }
   } else {
@@ -916,7 +916,7 @@ void Correlator::execArgusCryo(return_type status, argument_type arg)
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execCOMAPJcryo(return_type status, argument_type arg)
+void Correlator::execJCOMAPcryo(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
@@ -933,7 +933,7 @@ void Correlator::execCOMAPJcryo(return_type status, argument_type arg)
 	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.),
 	    		cnames[0], cnames[1], cnames[2], cnames[3], cnames[4]);
   } else {
-    	longHelp(status, usage, &Correlator::execCOMAPJcryo);
+    	longHelp(status, usage, &Correlator::execJCOMAPcryo);
   }
 }
 
@@ -963,6 +963,36 @@ void Correlator::execArgusPresets(return_type status, argument_type arg)
     		(rtn==0 ? statusOK : statusERR), rtn);
   } else {
 	longHelp(status, usage, &Correlator::execArgusPresets);
+  }
+
+}
+
+/**
+  \brief Use Argus LNA presets, JSON return.
+
+  Use Argus LNA presets from flash memory.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusPresets(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Set LNA biases to values stored in memory.\r\n"
+  "  (see FLASH command to set).\r\n "
+		  ;
+
+  if (!arg.help) {
+	flash_t flashData;
+	zpec_readFlash(&flashData);
+	OSTimeDly(CMDDELAY);
+	int rtn = argus_LNApresets(&flashData);
+    sprintf(status, "\"presets\": {\"cmdOK\":%s}}\r\n",
+    		(rtn==0 ? "true" : "false"));
+  } else {
+	longHelp(status, usage, &Correlator::execJArgusPresets);
   }
 
 }
@@ -1094,6 +1124,153 @@ void Correlator::execArgusPwrCtrl(return_type status, argument_type arg)
     longHelp(status, usage, &Correlator::execArgusPwrCtrl);
   }
 }
+
+/**
+  \brief COMAP LNA power monitor and control.  JSON returns.
+
+  Turn LNA power on and off, provide monitoring, for COMAP.  JSON returns.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPlna(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[STATE]\r\n"
+  "  Sequence LNA power on or off, query LNA power supply.\r\n"
+  "  STATE  ON or 1 to sequence LNA power on.\r\n"
+  "         OFF or 0 to sequence LNA power off.\r\n"
+  "  No argument returns monitor point data.\r\n"
+		  ;
+
+  if (!arg.help) {
+	  if (arg.str) {  // argument present, set new state.
+		  char state[5] = {0};
+
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%4s", state);
+      if (narg < 1) {
+        // Too few arguments; return help string.
+        sprintf(status, "\"lna\": {\"cmdOK\":false}}\r\n");
+      } else {
+        // Execute the command.
+      	if (!strcmp(state, "1") || !strcasecmp(state, "ON")) {
+      		OSTimeDly(CMDDELAY);
+      		int rtn = argus_lnaPower(1);
+            sprintf(status, "\"lna\": {\"cmdOK\":%s, \"lnaPwrState\":[%d]}}\r\n",
+            		(rtn==0 ? "true" : "false"), lnaPwrState);
+      	}
+      	else if (!strcmp(state, "0") || !strcasecmp(state, "OFF")) {
+      		OSTimeDly(CMDDELAY);
+      		int rtn = argus_lnaPower(0);
+            sprintf(status, "\"lna\": {\"cmdOK\":%s, \"lnaPwrState\":[%d]}}\r\n",
+            		(rtn==0 ? "true" : "false"), lnaPwrState);
+     	}
+      	else {
+      		longHelp(status, usage, &Correlator::execJCOMAPlna);
+      	}
+      }
+    } else {
+      // Command called without arguments; write LNA state
+    	int rtn = 0;
+    	if (lnaPwrState) {
+    		OSTimeDly(CMDDELAY);
+    		rtn += argus_readPwrADCs();
+    		rtn += argus_readLNAbiasADCs("vg");
+    		rtn += argus_readLNAbiasADCs("vd");
+    		rtn += argus_readLNAbiasADCs("id");
+
+    		int i, n, n0, n1, n2, n3, n4, n5;
+
+    		n = sprintf(outStr, "{\"lna\": {\"cmdOK\":true, \"dataOK\":%s, \"lnaOn\":%d, "
+    				"\"powSupp\": [%.1f,%.1f,%.1f]",
+    				(rtn==0 ? "true" : "false"),
+    				lnaPwrState, pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0]);
+
+    		n0 = sprintf(str0, "\"vg1\":[%.3f", rxPar[0].LNAmonPts[0]);
+    		n1 = sprintf(str1, "\"vd1\":[%.3f", rxPar[0].LNAmonPts[2]);
+    		n2 = sprintf(str2, "\"id1\":[%.3f", rxPar[0].LNAmonPts[4]);
+    		n3 = sprintf(str0, "\"vg2\":[%.3f", rxPar[0].LNAmonPts[1]);
+    		n4 = sprintf(str1, "\"vd2\":[%.3f", rxPar[0].LNAmonPts[3]);
+    		n5 = sprintf(str2, "\"id2\":[%.3f", rxPar[0].LNAmonPts[5]);
+    		for (i=1; i<NRX; i++){
+        		n0 += sprintf(&str0[n0], ",%.3f", rxPar[i].LNAmonPts[0]);
+        		n1 += sprintf(&str1[n1], ",%.3f", rxPar[i].LNAmonPts[2]);
+        		n2 += sprintf(&str2[n2], ",%.3f", rxPar[i].LNAmonPts[4]);
+        		n3 += sprintf(&str3[n3], ",%.3f", rxPar[i].LNAmonPts[1]);
+        		n4 += sprintf(&str4[n4], ",%.3f", rxPar[i].LNAmonPts[3]);
+        		n5 += sprintf(&str5[n5], ",%.3f", rxPar[i].LNAmonPts[5]);
+    		}
+    		n0 += sprintf(&str0[n0], "]");
+    		n1 += sprintf(&str1[n1], "]");
+    		n2 += sprintf(&str2[n2], "]");
+    		n3 += sprintf(&str3[n3], "]");
+    		n4 += sprintf(&str4[n4], "]");
+    		n5 += sprintf(&str5[n5], "]");
+
+    		n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str3, str4, str5);
+    		sprintf(status, outStr);
+ 		  } else {
+ 	    		rtn = argus_readPwrADCs();
+ 	    		sprintf(status, "{\"lna\": {\"cmdOK\":true, \"dataOK\":%s, \"lnaOn\":%d, "
+ 	    				"\"powSupp\": [%.1f,%.1f,%.1f]}}\r\n",
+ 	    				(rtn==0 ? "true" : "false"),
+ 	    				lnaPwrState, pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0]);
+		  }
+    }
+  } else {
+    longHelp(status, usage, &Correlator::execJCOMAPlna);
+  }
+}
+
+/**
+  \brief COMAP LNA power monitor and control.  JSON returns.
+
+  Turn LNA power on and off, provide monitoring, for COMAP.  JSON returns.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPsets(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Query LNA bias settings.\r\n"
+		  ;
+
+  if (!arg.help) {
+	  if (lnaPwrState) {
+		  int i, n, n0, n1, n2, n3;
+
+		  n = sprintf(outStr, "{\"sets\": {\"cmdOK\":true, ");
+
+		  n0 = sprintf(str0, "\"vg1\":[%.3f", rxPar[0].LNAsets[0]);
+		  n1 = sprintf(str1, "\"vd1\":[%.3f", rxPar[0].LNAsets[2]);
+		  n2 = sprintf(str2, "\"vg2\":[%.3f", rxPar[0].LNAsets[1]);
+		  n3 = sprintf(str3, "\"vd2\":[%.3f", rxPar[0].LNAsets[3]);
+		  for (i=1; i<NRX; i++){
+			  n0 += sprintf(&str0[n0], ",%.3f", rxPar[i].LNAsets[0]);
+			  n1 += sprintf(&str1[n1], ",%.3f", rxPar[i].LNAsets[2]);
+			  n2 += sprintf(&str0[n2], ",%.3f", rxPar[i].LNAsets[1]);
+			  n3 += sprintf(&str1[n3], ",%.3f", rxPar[i].LNAsets[3]);
+		  }
+		  n0 += sprintf(&str0[n0], "]");
+		  n1 += sprintf(&str1[n1], "]");
+		  n2 += sprintf(&str2[n2], "]");
+		  n3 += sprintf(&str3[n3], "]");
+
+		  n += sprintf(&outStr[n], "%s, %s, %s, %s}}\r\n", str0, str1, str2, str3);
+		  sprintf(status, outStr);
+	  } else {
+		  sprintf(status, "{\"sets\": {\"cmdOK\":false}}\r\n");
+	  }
+  } else {
+	  longHelp(status, usage, &Correlator::execJCOMAPsets);
+  }
+}
+
 
 /**
   \brief Read and display Argus monitor points.
@@ -1463,40 +1640,6 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
   }
  }
 
-
-/**
-  \brief COMAP jlna command.
-
-  This method returns the LNA monitor points in JSON format.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-void Correlator::execCOMAPJlna(return_type status, argument_type arg)
-{
-  static const char *usage =
-  "\r\n"
-  "  Return LNA monitor point values in JSON format.\r\n";
-
-  if (!arg.help && !arg.str) {
-/*	    short i, j, k;
-		for (i=0; i<NRX; i++) {
-	      for (j=0; j<NSTAGES; j++){
-	    	  k = i*NSTAGES + j;  // index within rxPar.lnaXsets vector
-	    	  // gates, if value is within limits
-	          flashData.lnaGsets[k] = rxPar[i].LNAsets[j];
-	    	  // drains, if value is within limits
-	    		  flashData.lnaDsets[k] = rxPar[i].LNAsets[j+NSTAGES];
-	      }
-	    }
-*/
-	  sprintf(status, "%sStub for jlna.\r\n", statusOK);
-  } else {
-    	longHelp(status, usage, &Correlator::execCOMAPJlna);
-  }
-}
-
 /**
   \brief DCM2 control.
 
@@ -1645,11 +1788,10 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execJDCM2);
 	  }
 	} else {
-      rtn = 0; ///  DEBUG -- REMOVE FOR RELEASE  ZZZ
-      ///rtn = dcm2_readMBadc();
-      ///rtn += dcm2_readMBtemp();
-      ///rtn += dcm2_readAllModTemps();
-      ///rtn += dcm2_readAllModTotPwr();
+      rtn = dcm2_readMBadc();
+      rtn += dcm2_readMBtemp();
+      rtn += dcm2_readAllModTemps();
+      rtn += dcm2_readAllModTotPwr();
 
       // write output: build up JSON string
 
@@ -1657,7 +1799,7 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       int i;
 
       n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"dataOK\":%s, \"psVolts\":[%.1f,%.1f], "
-    		  "\"temp\":[%.1f], \"pllLock\":[%s,%s]",
+    		  "\"temp\":[%.1f], \"pllLock\":[%s,%s], ",
     		  (!rtn ? "true" : "false"), (!rtn ? "true" : "false"),
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
     		  (dcm2MBpar[2] > PLLLOCKTHRESH ? "true" : "false"),
@@ -1855,7 +1997,7 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	      }
 
 	      // Assemble JSON return string
-	      n = sprintf(&outStr[0], "{\"saddlebags\": {\"cmdOK\":%s, \"dataOK\":%s",
+	      n = sprintf(&outStr[0], "{\"saddlebags\": {\"cmdOK\":%s, \"dataOK\":%s, ",
 	    		  (!rtn ? "true" : "false"), (!rtn ? "true" : "false"));
 	      n0 = sprintf(&str0[0], "\"ps12v\":[%.1f", sbPar[0].adcv[0]);
 	      n1 = sprintf(&str1[0], "\"ps-8v\":[%.1f", sbPar[0].adcv[1]);
