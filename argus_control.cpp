@@ -24,14 +24,14 @@ char str8[512] = {0};
 char str9[512] = {0};
 
 // names for cryostat test points
-char *cnames[] = {"T0", "T1", "T2", "T3", "T4", "T5", "Pressure"};
-/*char *cnames[] = {"20K cold head: ",
-		          "NC:            ",
-		          "20K plate:     ",
-		          "70 K plate:    ",
-		          "70 K cold head:",
-		          "Card cage:     ",
-		          "Pressure:      "}; */
+//char *cnames[] = {"T0", "T1", "T2", "T3", "T4", "T5", "Pressure"};
+char *cnames[] = {"1st stg cold head: ....",
+		          "2nd stg cold head: ....",
+		          "1st stg coax standoff: ",
+		          "2nd stg cold plate: ...",
+		          "Pix1 LNA chassis: .....",
+		          "Pix2 LNA chassis: .....",
+		          "Pressure: ............."};
 
 // names for saddlebag test points; names in JSaddlebag should match these
 char *sbnames[] = {"+12V   [V]",
