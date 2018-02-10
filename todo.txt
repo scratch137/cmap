@@ -1,8 +1,8 @@
+Check logic in jlna: LNAon should be false if either LNA is off or rtn != 0
+
 Check which commands should freeze, then check operation
 
 Get DCM2 attenuator settings into flash/sets/presets
-
-JSON versions of commands
 
 Output line length --
 maybe maxLine in services.h, spec'd at 2048

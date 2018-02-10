@@ -40,6 +40,7 @@ AH 2014.07.01
 // Hardware parameters -- must match structure definitions in argusHardwareStructs.h!
 #define NUM_ELEM(x) (sizeof(x) / sizeof(*(x)))
 #define NRX 20      // number of receivers
+#define JNRX 19     // number of receivers to read out in JSON commands, 1:JNRX
 #define NRXPERBC 4  // number of receivers per bias card
 #define NSTAGES 2   // number of amplifier stages in each receiver
 #define NBCMP 2     // number of monitor point sets for each bias card
