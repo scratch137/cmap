@@ -1,4 +1,4 @@
-Check logic in jlna: LNAon should be false if either LNA is off or rtn != 0
+
 
 Check which commands should freeze, then check operation
 

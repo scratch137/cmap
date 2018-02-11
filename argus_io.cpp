@@ -50,7 +50,6 @@ int i2cState[2];                           // I2C bus SCL (0/1) and SDA (0/2) va
 //Pointer defs
 struct chSet *chSetPtr; // pointer to structure of form chSet
 struct chRead *chReadPtr; // pointer to structure of form chRead
-//struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
 
 // control bits within power control board PIO
 BYTE ctlVDS = 0x01;

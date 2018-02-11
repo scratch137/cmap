@@ -856,6 +856,7 @@ void Correlator::execJArgusSetAll(return_type status, argument_type arg)
         } else {
         // Set G, D biases
     	OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
    		int rtn = argus_setAllBias(inp, v, 0);
     	if (rtn == -10) {
     		sprintf(status, "{\"all%c\": {\"cmdOK\":false}}\r\n", toupper(inp[0]));  //LNA cards are not powered
@@ -924,12 +925,12 @@ void Correlator::execJCOMAPcryo(return_type status, argument_type arg)
 	  int rtn = argus_readThermADCs();
 	  sprintf(status, "{\"cryostat\":{\"cmdOK\":true, \"dataOK\":%s, \"temps\":"
 			  "[%.1f,%.1f,%.1f,%.1f,%.1f,%.1f], \"press\":[%.1f], "
-			  "\"tlocations\":[\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"]}}\r\n",
+			  "\"tlocations\":[\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"]}}\r\n",
 			  	(rtn==0 ? "true" : "false"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
 	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
 	    		cryoPar.cryoTemps[5],
 	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.),
-	    		cnames[0], cnames[1], cnames[2], cnames[3], cnames[4]);
+	    		cnames[0], cnames[1], cnames[2], cnames[3], cnames[4], cnames[5]);
   } else {
     	longHelp(status, usage, &Correlator::execJCOMAPcryo);
   }
@@ -1150,47 +1151,53 @@ void Correlator::execJCOMAPlna(return_type status, argument_type arg)
       int narg = sscanf(arg.str, "%4s", state);
       if (narg < 1) {
         // Too few arguments; return help string.
-        sprintf(status, "\"lna\": {\"cmdOK\":false}}\r\n");
+        sprintf(status, "{\"lna\": {\"cmdOK\":false}}\r\n");
       } else {
         // Execute the command.
       	if (!strcmp(state, "1") || !strcasecmp(state, "ON")) {
       		OSTimeDly(CMDDELAY);
       		int rtn = argus_lnaPower(1);
-            sprintf(status, "\"lna\": {\"cmdOK\":%s, \"LNAon\":%s}}\r\n",
-            		(rtn==0 ? "true" : "false"), (lnaPwrState & ~rtn ? "true" : "false"));
+            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\":%s}}\r\n",
+            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? "true" : "false"));
       	}
       	else if (!strcmp(state, "0") || !strcasecmp(state, "OFF")) {
       		OSTimeDly(CMDDELAY);
       		int rtn = argus_lnaPower(0);
-            sprintf(status, "\"lna\": {\"cmdOK\":%s, \"LNAon\":%s}}\r\n",
-            		(rtn==0 ? "true" : "false"), (lnaPwrState & ~rtn ? "true" : "false"));
-     	}            /// ZZZ check logic: LNAon should be false if either LNA is off or rtn != 0
+            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\":%s}}\r\n",
+            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? "true" : "false"));
+     	}
       	else {
       		longHelp(status, usage, &Correlator::execJCOMAPlna);
       	}
       }
+
     } else {
       // Command called without arguments; write LNA state
+
     	int rtn = 0;
-		int i, n=0, n0, n1, n2, n3, n4, n5;
+
     	if (lnaPwrState) {
     		OSTimeDly(CMDDELAY);
-    		rtn += argus_readPwrADCs();
+    		rtn = argus_readPwrADCs();
     		rtn += argus_readLNAbiasADCs("vg");
     		rtn += argus_readLNAbiasADCs("vd");
     		rtn += argus_readLNAbiasADCs("id");
+    	}
 
-    		n = sprintf(outStr, "{\"lna\": {\"cmdOK\":true, \"dataOK\":%s, \"LNAon\":true, "
-    				"\"powSupp\": [%.1f,%.1f,%.1f]",
-    				(rtn==0 ? "true" : "false"),
-    				pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0]);
+		int i, n0, n1, n2, n3, n4, n5;
+    	int n = sprintf(outStr, "{\"lna\": {\"cmdOK\":true, \"dataOK\":%s, \"LNAon\":%s, "
+					"\"powSupp\": [%.1f,%.1f,%.1f], \"Tchassis\": [%.2f], ",
+					(rtn==0 && lnaPwrState==1 ? "true" : "false"), (lnaPwrState==1 ? "true" : "false"),
+					pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0], pwrCtrlPar[8]);
+
+	    if (lnaPwrState) {
 
     		n0 = sprintf(str0, "\"vg1\":[%.3f", rxPar[0].LNAmonPts[0]);
     		n1 = sprintf(str1, "\"vd1\":[%.3f", rxPar[0].LNAmonPts[2]);
     		n2 = sprintf(str2, "\"id1\":[%.3f", rxPar[0].LNAmonPts[4]);
-    		n3 = sprintf(str0, "\"vg2\":[%.3f", rxPar[0].LNAmonPts[1]);
-    		n4 = sprintf(str1, "\"vd2\":[%.3f", rxPar[0].LNAmonPts[3]);
-    		n5 = sprintf(str2, "\"id2\":[%.3f", rxPar[0].LNAmonPts[5]);
+    		n3 = sprintf(str3, "\"vg2\":[%.3f", rxPar[0].LNAmonPts[1]);
+    		n4 = sprintf(str4, "\"vd2\":[%.3f", rxPar[0].LNAmonPts[3]);
+    		n5 = sprintf(str5, "\"id2\":[%.3f", rxPar[0].LNAmonPts[5]);
     		for (i=1; i<JNRX; i++){
         		n0 += sprintf(&str0[n0], ",%.3f", rxPar[i].LNAmonPts[0]);
         		n1 += sprintf(&str1[n1], ",%.3f", rxPar[i].LNAmonPts[2]);
@@ -1208,19 +1215,19 @@ void Correlator::execJCOMAPlna(return_type status, argument_type arg)
 
  		  } else {
  			rtn = argus_readPwrADCs();
- 			n0 = sprintf(str0, "\"vg1\":[99.");
- 			n1 = sprintf(str1, "\"vd1\":[99.");
- 			n2 = sprintf(str2, "\"id1\":[99.");
- 			n3 = sprintf(str0, "\"vg2\":[99.");
- 			n4 = sprintf(str1, "\"vd2\":[99.");
- 			n5 = sprintf(str2, "\"id2\":[99.");
+ 			n0 = sprintf(str0, "\"vg1\":[99.0");
+ 			n1 = sprintf(str1, "\"vd1\":[99.0");
+ 			n2 = sprintf(str2, "\"id1\":[99.0");
+ 			n3 = sprintf(str3, "\"vg2\":[99.0");
+ 			n4 = sprintf(str4, "\"vd2\":[99.0");
+ 			n5 = sprintf(str5, "\"id2\":[99.0");
  			for (i=1; i<JNRX; i++){
- 				n0 += sprintf(&str0[n0], ",99.");
- 				n1 += sprintf(&str1[n1], ",99.");
- 				n2 += sprintf(&str2[n2], ",99.");
- 				n3 += sprintf(&str3[n3], ",99.");
- 				n4 += sprintf(&str4[n4], ",99.");
- 				n5 += sprintf(&str5[n5], ",99.");
+ 				n0 += sprintf(&str0[n0], ",99.0");
+ 				n1 += sprintf(&str1[n1], ",99.0");
+ 				n2 += sprintf(&str2[n2], ",99.0");
+ 				n3 += sprintf(&str3[n3], ",99.0");
+ 				n4 += sprintf(&str4[n4], ",99.0");
+ 				n5 += sprintf(&str5[n5], ",99.0");
   	    	}
  			n0 += sprintf(&str0[n0], "]");
  			n1 += sprintf(&str1[n1], "]");
@@ -1267,8 +1274,8 @@ void Correlator::execJCOMAPsets(return_type status, argument_type arg)
 		  for (i=1; i<JNRX; i++){
 			  n0 += sprintf(&str0[n0], ",%.3f", rxPar[i].LNAsets[0]);
 			  n1 += sprintf(&str1[n1], ",%.3f", rxPar[i].LNAsets[2]);
-			  n2 += sprintf(&str0[n2], ",%.3f", rxPar[i].LNAsets[1]);
-			  n3 += sprintf(&str1[n3], ",%.3f", rxPar[i].LNAsets[3]);
+			  n2 += sprintf(&str2[n2], ",%.3f", rxPar[i].LNAsets[1]);
+			  n3 += sprintf(&str3[n3], ",%.3f", rxPar[i].LNAsets[3]);
 		  }
 		  n0 += sprintf(&str0[n0], "]");
 		  n1 += sprintf(&str1[n1], "]");
@@ -1278,15 +1285,15 @@ void Correlator::execJCOMAPsets(return_type status, argument_type arg)
 	  } else {
 		  n = sprintf(outStr, "{\"lnasets\": {\"cmdOK\":true, \"LNAon\":false, ");
 
-		  n0 = sprintf(str0, "\"vg1\":[99.");
-		  n1 = sprintf(str1, "\"vd1\":[99.");
-		  n2 = sprintf(str2, "\"vg2\":[99.");
-		  n3 = sprintf(str3, "\"vd2\":[99.");
+		  n0 = sprintf(str0, "\"vg1\":[99.0");
+		  n1 = sprintf(str1, "\"vd1\":[99.0");
+		  n2 = sprintf(str2, "\"vg2\":[99.0");
+		  n3 = sprintf(str3, "\"vd2\":[99.0");
 		  for (i=1; i<JNRX; i++){
-			  n0 += sprintf(&str0[n0], ",99.");
-			  n1 += sprintf(&str1[n1], ",99.");
-			  n2 += sprintf(&str0[n2], ",99.");
-			  n3 += sprintf(&str1[n3], ",99.");
+			  n0 += sprintf(&str0[n0], ",99.0");
+			  n1 += sprintf(&str1[n1], ",99.0");
+			  n2 += sprintf(&str2[n2], ",99.0");
+			  n3 += sprintf(&str3[n3], ",99.0");
 		  }
 		  n0 += sprintf(&str0[n0], "]");
 		  n1 += sprintf(&str1[n1], "]");
@@ -1707,8 +1714,8 @@ void Correlator::execDCM2(return_type status, argument_type arg)
     		  (!rtn ? statusOK : statusERR),
     		  //dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
-    		  (dcm2MBpar[2] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"),
-    		  (dcm2MBpar[3] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"));
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "locked" : "***UNLOCKED***"),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? "locked" : "***UNLOCKED***"));
       for (i=0; i<NRX; i++) {
     	  n += sprintf(&outStr[n],
 		     "Ch %2d: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n",
@@ -1796,8 +1803,8 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
     		  "\"temp\":[%.1f], \"pllLock\":[%s,%s], ",
     		  (!rtn ? "true" : "false"), (!rtn ? "true" : "false"),
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
-    		  (dcm2MBpar[2] > PLLLOCKTHRESH ? "true" : "false"),
-    		  (dcm2MBpar[3] > PLLLOCKTHRESH ? "true" : "false"));
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "true" : "false"),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? "true" : "false"));
 
       n0 = sprintf(&str0[0], "\"Astatus\":[%d", dcm2Apar.status[0]);
       n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);
@@ -1820,7 +1827,7 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	  n4 += sprintf(&str4[n4], "]");
 	  n5 += sprintf(&str5[n5], "]");
 
-	  n += sprintf(&outStr[n], ", %s, %s, %s, %s, %s", str0, str1, str2, str4, str5);
+	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s", str0, str1, str2, str4, str5);
 
       n0 = sprintf(&str0[0], "\"Bstatus\":[%d", dcm2Bpar.status[0]);
       n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
