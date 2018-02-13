@@ -2350,65 +2350,56 @@ int init_dcm2(void)
 	 */
 	// DCM2 setups
 
+    // Configure and initialize BEXs on DCM2 modules
+	int m;  // loop counter
+	for (m=0; m<NRX; m++){
+
+		// select, configure, and initialize A bank; keep track in status element
+		address = 0x77;            // I2C switch address 0x77 for top-level switch
+		buffer[0] = dcm2sw.sb[m];  // pick subbus
+		I2CSEND1;
+		address = 0x73;
+		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
+		I2CSEND1;
+		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
+		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches
+
+		// select, configure, and initialize B bank; keep track in status element
+		address = 0x77;            // I2C switch address 0x77 for top-level switch
+		buffer[0] = dcm2sw.sb[m];  // pick subbus
+		I2CSEND1;
+		address = 0x73;
+		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
+		I2CSEND1;
+		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
+		if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches
+	}
+	closeI2Cssbus(0x77, 0x73);
+
 	// Configure and initialize BEX on main board
-	// Use first write to see whether a DCM2 board is connected
-	openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);
+	openI2Csbus(0x77, DCM2PERIPH_SBADDR);
 	noDCM2 = configBEX(BEXCONF0, BEX_ADDR0);
 	writeBEX(BEXINIT0, BEX_ADDR0);
-	closeI2Csbus(DCM2_SBADDR);
+	closeI2Csbus(0x77);
 
-	// Scan for connected channels and complete init if DCM2 board is detected
-    if (!noDCM2) {
-    	// LED off at beginning of scan
-    	dcm2_ledOnOff("off");
+	// Read out once to initialize
+	dcm2_readMBadc();
+    dcm2_readMBtemp();
+    dcm2_readAllModTemps();
+    dcm2_readAllModTotPwr();
+	// Set to max atten
+	dcm2_setAllAttens(MAXATTEN);
 
-    	// Configure and initialize BEXs on DCM2 modules
-    	int m;  // loop counter
-    	for (m=0; m<NRX; m++){
+    // LED on when init is complete
+    dcm2_ledOnOff("on");
 
-    		// select, configure, and initialize A bank; keep track in status element
-    		address = DCM2_SBADDR;            // I2C switch address DCM2_SBADDR for top-level switch
-    		buffer[0] = dcm2sw.sb[m];  // pick subbus
-    		I2CSEND1;
-    		address = DCM2_SSBADDR;
-    		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
-    		I2CSEND1;
-    		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
-    		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
-    		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-    		OSTimeDly(1);
-    		J2[28].clr();  // enable I2C switches
-
-    		// select, configure, and initialize B bank; keep track in status element
-    		address = DCM2_SBADDR;            // I2C switch address DCM2_SBADDR for top-level switch
-    		buffer[0] = dcm2sw.sb[m];  // pick subbus
-    		I2CSEND1;
-    		address = DCM2_SSBADDR;
-    		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
-    		I2CSEND1;
-			dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
-			if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
-			J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-			OSTimeDly(1);
-			J2[28].clr();  // enable I2C switches
-    	}
-    	closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
-
-    	// Read out once to initialize
-    	dcm2_readMBadc();
-    	dcm2_readMBtemp();
-    	dcm2_readAllModTemps();
-    	dcm2_readAllModTotPwr();
-    	// Set to max atten
-    	dcm2_setAllAttens(MAXATTEN);
-
-    	// LED on when init is complete
-    	dcm2_ledOnOff("on");
-
-    	return 0;
-    } else {                // otherwise, no DCM2 board was detected
-    	return NO_DCM2ERR;
-    }
+	return 0;
 }
 
 /*******************************************************************/
