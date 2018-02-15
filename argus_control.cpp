@@ -1268,7 +1268,7 @@ void Correlator::execJCOMAPsets(return_type status, argument_type arg)
 		  n3 += sprintf(&str3[n3], "]");
 
 	  } else {
-		  n = sprintf(outStr, "{\"lnasets\": {\"cmdOK\":true, \"LNAon\":false, ");
+		  n = sprintf(outStr, "{\"lnasets\": {\"cmdOK\":true, \"LNAon\": [0.0], ");
 
 		  n0 = sprintf(str0, "\"vg1\":[99.0");
 		  n1 = sprintf(str1, "\"vd1\":[99.0");
@@ -1813,14 +1813,14 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 
 	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s", str0, str1, str2, str4, str5);
 
-      n0 = sprintf(&str0[0], "\"Bstatus\":[%d", dcm2Bpar.status[0]);
+      n0 = sprintf(&str0[0], "\"Bstatus\":[%.1f", (float)dcm2Bpar.status[0]);
       n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"BattenQ\":[%.1f", (float)dcm2Bpar.attenQ[0]/2.);
       n3 = sprintf(&str3[0], "\"BpowI\":[%.1f", dcm2Bpar.powDetI[0]);
       n4 = sprintf(&str4[0], "\"BpowQ\":[%.1f", dcm2Bpar.powDetQ[0]);
       n5 = sprintf(&str5[0], "\"Btemp\":[%.2f", dcm2Bpar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
-    	  n0 += sprintf(&str0[n0], ",%d", dcm2Bpar.status[i]);
+    	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Bpar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Bpar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Bpar.attenQ[i]/2.);
     	  n3 += sprintf(&str3[n3], ",%.1f", dcm2Bpar.powDetI[i]);
@@ -1997,8 +1997,8 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	      n5 = sprintf(&str5[0], "\"temp2\":[%.1f", sbPar[0].adcv[5]);
 	      n6 = sprintf(&str6[0], "\"temp3\":[%.1f", sbPar[0].adcv[6]);
 	      n7 = sprintf(&str7[0], "\"temp4\":[%.1f", sbPar[0].adcv[7]);
-	      n8 = sprintf(&str8[0], "\"pllLock\":[%.1f", (float)sbPar[0].pll);
-	      n9 = sprintf(&str9[0], "\"ampOn\":[%.1f", (float)sbPar[0].ampPwr);
+	      n8 = sprintf(&str8[0], "\"pllLock\":[%.1f", (sbPar[0].pll==1 ? 1. : 0.));
+	      n9 = sprintf(&str9[0], "\"ampOn\":[%.1f", (sbPar[0].ampPwr==1 ? 1. : 0.));
 	      for (i=1; i<NSBG; i++) {
 	    	  n0 += sprintf(&str0[n0], ",%.1f", sbPar[i].adcv[0]);
 	    	  n1 += sprintf(&str1[n1], ",%.1f", sbPar[i].adcv[1]);
@@ -2008,8 +2008,8 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	    	  n5 += sprintf(&str5[n5], ",%.1f", sbPar[i].adcv[5]);
 	    	  n6 += sprintf(&str6[n6], ",%.1f", sbPar[i].adcv[6]);
 	    	  n7 += sprintf(&str7[n7], ",%.1f", sbPar[i].adcv[7]);
-	    	  n8 += sprintf(&str8[n8], ",%.1f", (float)sbPar[i].pll);
-	    	  n9 += sprintf(&str9[n9], ",%.1f", (float)sbPar[i].ampPwr);
+	    	  n8 += sprintf(&str8[n8], ",%.1f", (sbPar[i].pll==1 ? 1. : 0.));
+	    	  n9 += sprintf(&str9[n9], ",%.1f", (sbPar[i].ampPwr==1 ? 1. : 0.));
 	      }
     	  n0 += sprintf(&str0[n0], "]");
     	  n1 += sprintf(&str1[n1], "]");
