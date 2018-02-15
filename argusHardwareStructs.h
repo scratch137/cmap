@@ -36,6 +36,7 @@ AH 2014.07.01
 #define CMDDELAY 1        // pause before executing command, in units of 50 ms
 #define I2CBUSERRVAL -100 // value to return for I2C bus lock error
 #define FREEZEERRVAL -200 // value to return for system freeze violation error
+#define WRONGBOX -1000    // value to return if wrong box (bias/dcm2) is addressed
 
 // Hardware parameters -- must match structure definitions in argusHardwareStructs.h!
 #define NUM_ELEM(x) (sizeof(x) / sizeof(*(x)))

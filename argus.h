@@ -33,8 +33,8 @@ extern "C" {
 
 /* All C declarations in this region. */
 
-extern char lnaPwrState;  // LNA power supply state
-extern BYTE sbAmpState;   // Saddlebag amplifiers power state
+extern int lnaPwrState;  // LNA power supply state
+extern int sbAmpState;   // Saddlebag amplifiers power state
 extern unsigned char lnaPSlimitsBypass; // bypass LNA power supply limits when = 1
 extern unsigned char cifPSlimitsBypass; // bypass cold IF power supply limits when = 1
 extern unsigned char lnaLimitsBypass;   // bypass soft limits on LNA bias when = 1
@@ -62,7 +62,7 @@ extern int  argus_readPwrADCs(void);
 extern int  argus_readBCpsV(void);
 extern int  argus_readThermADCs(void);
 extern int  argus_LNApresets(const flash_t *flash);
-extern unsigned char argus_lnaPowerPIO(void);
+extern int  argus_lnaPowerPIO(void);
 extern int  argus_openSubbusC(BYTE addr);
 extern int  argus_closeSubbusC(void);
 extern int  argus_clearBus(void);
@@ -87,7 +87,7 @@ extern int  init_dcm2(void);
 extern int  sb_ampPow(char *inp, int sbNum);
 extern int  sb_ledOnOff(char *inp, int sbNum);
 extern int  sb_readADC(int sbNum);
-extern BYTE sb_readPLLmon(int sbNum);
+extern int  sb_readPLLmon(int sbNum);
 extern int  sb_setAllAmps(char *inp);
 extern void  init_saddlebags(void);
 

@@ -34,7 +34,7 @@ BYTE address = 0;
 int I2CStat = 0;
 
 //Initialize Argus-global state flags and variables
-char lnaPwrState = 0;
+int lnaPwrState = 0;
 unsigned char lnaPSlimitsBypass = BYPASS;  // bypass LNA power supply limits when = 1
 unsigned char lnaLimitsBypass = BYPASS;    // bypass soft limits on LNA bias when = 1
 float gvdiv;
@@ -347,6 +347,8 @@ float adc2v(short int adcw, float sc, float offs, char bip) {
 */
 int argus_setLNAbias(char *term, int m, int n, float v, unsigned char busyOverride)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	unsigned short int dacw;
 	short I2CStat;
 	int baseAdd; //base address offset for gate, drain, mixer
@@ -459,6 +461,8 @@ int argus_setLNAbias(char *term, int m, int n, float v, unsigned char busyOverri
 
 int argus_setAllBias(char *inp, float v, unsigned char busyOverride){
 
+	if (!noDCM2) return WRONGBOX;
+
 	int i, j, stat=0;
 
     // return if the LNA boards are not powered
@@ -508,6 +512,8 @@ int argus_setAllBias(char *inp, float v, unsigned char busyOverride){
 
 int argus_readLNAbiasADCs(char *sw)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	int n, m, mmax; //index counters
 	int baseAddr;  // offset in values vector
 	unsigned short int rawu;
@@ -625,6 +631,8 @@ int argus_readLNAbiasADCs(char *sw)
 
 int argus_readBCpsV(void)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	struct chRead2 *bcPsVptr[] = {&pvRead, &nvRead, &vdsRead, &vccRead};  // pointers to bias card struct
 	BYTE bcard_i2caddr[] = BCARD_I2CADDR;
 	int k, n, m;
@@ -705,6 +713,8 @@ int argus_readBCpsV(void)
 int argus_readPwrADCs(void)
 {
 
+	if (!noDCM2) return WRONGBOX;
+
 	short i;
 	unsigned short int rawu;
 	static float offset[8] = {0};
@@ -766,8 +776,10 @@ int argus_readPwrADCs(void)
   Function to query LNA power control PIO buffer.
 */
 
-unsigned char argus_lnaPowerPIO(void)
+int argus_lnaPowerPIO(void)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	unsigned char pioState;
 
     // check that I2C bus is available, else return
@@ -816,6 +828,8 @@ unsigned char argus_lnaPowerPIO(void)
           */
 int argus_lnaPower(short state)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	BYTE pioState;
 
 	I2CStat = argus_readPwrADCs();
@@ -1046,6 +1060,8 @@ float v2t_670(float v) {
 */
 int argus_readThermADCs(void)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	short i;
 	unsigned short int rawu;
 	static float offset[8] = {0};
@@ -1203,6 +1219,8 @@ int argus_clearBus(void)
  ------------------------------------------------------------------*/
 int argus_readAllSystemADCs(void)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	int I2CStat = 0;
 	if (argus_readPwrADCs() == I2CBUSERRVAL) I2CStat = I2CBUSERRVAL;
 	if (argus_readBCpsV() == I2CBUSERRVAL) I2CStat = I2CBUSERRVAL;
@@ -1241,6 +1259,8 @@ int argus_readAllSystemADCs(void)
 */
 int argus_biasCheck(void)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	int i;  // loop counter
 	int ret = 0;  // return value
 
@@ -1283,6 +1303,8 @@ int argus_biasCheck(void)
 */
 int argus_powCheck(void)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	int ret = 0;  // return value
 
 	// MSN: power supplies
@@ -1315,6 +1337,8 @@ int argus_powCheck(void)
 */
 int argus_thermCheck(void)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	int ret = 0;  // return value
 
 	// compare with limit values
@@ -1352,36 +1376,6 @@ int argus_systemState(void)
     // (unused)
     // MSN
     // (unused)
-	return ret;
-}
-
-
-/****************************************************************************************/
-/**
-  \brief Argus IF power check
-
-  This command checks the IF power at the warm IF processor power detectors against limits
-  defined within this function.
-
-
-  \return Zero on no errors, else int reporting errors.
-*/
-int argus_ifCheck(void)
-{
-	int ret = 0;      // return value
-/*
-	int mask = 0x01;  // mask for setting bits
-	int i;            // loop counter
-
-	// check against these limits, ch0 to ch15
-	float lims[] = MINIFPWRDETV;
-
-	// loop over channels, check for low power and no response from det system
-	for (i=0; i<16; i++) {
-		if ( (wifPar.totPow[i] < lims[i]) || (wifPar.totPow[i]) > MAXIFPWRDETV) ret |= mask;
-		mask <<= 1;
-	}
-*/
 	return ret;
 }
 
@@ -1678,7 +1672,7 @@ BYTE readBEX(BYTE addr)
 int dcm2_readMBadc(void)
 {
 
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	short i;
 	unsigned short int rawu;
@@ -1721,7 +1715,7 @@ int dcm2_readMBadc(void)
 */
 int dcm2_ampPow(char *inp)
 {
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	int I2CStatus = openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);
 	if (I2CStatus) return (I2CStatus);
@@ -1749,7 +1743,7 @@ int dcm2_ampPow(char *inp)
 */
 int dcm2_ledOnOff(char *inp)
 {
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	int I2CStatus = openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);  // get bus control
 	if (I2CStatus) return (I2CStatus);
@@ -1873,7 +1867,7 @@ float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE ad
 int dcm2_readMBtemp(void)
 {
 
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	int I2CStatus = openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);  // get bus control
 	if (I2CStatus) return (I2CStatus);
@@ -1898,7 +1892,7 @@ int dcm2_readMBtemp(void)
 int dcm2_readAllModTemps(void)
 {
 
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	// use this approach to lock bus for multiple readouts
 	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
@@ -2036,7 +2030,7 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
 int dcm2_readAllModTotPwr(void)
 {
 
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	// check that I2C bus is available, else return
 	// use this approach to lock bus during multiple readouts
@@ -2170,7 +2164,7 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 {
 
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	BYTE ssb;         // subsubbus address
 	BYTE attenBits;   // attenuator command bits
@@ -2242,7 +2236,7 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 int dcm2_setAllAttens(float atten)
 {
 
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	// check for freeze
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
@@ -2325,7 +2319,7 @@ int dcm2_setAllAttens(float atten)
 int dcm2_blockMod(char *ch, char *ab)
 {
 
-	if (noDCM2) return -10;  // return if no DCM2 is present
+	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
 
 	struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
 	int m;
@@ -2454,6 +2448,8 @@ struct saddlebagParams sbPar[] = {
 */
 int sb_ampPow(char *inp, int sbNum)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                    // check for freeze
@@ -2507,6 +2503,8 @@ int sb_ampPow(char *inp, int sbNum)
 */
 int sb_setAllAmps(char *inp)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}    // check for freeze
@@ -2567,6 +2565,8 @@ int sb_setAllAmps(char *inp)
 
 int sb_ledOnOff(char *inp, int sbNum)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
 	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, swaddr[sbNum]);  // get bus control
@@ -2595,8 +2595,10 @@ int sb_ledOnOff(char *inp, int sbNum)
   \par inp  string: "off" or "0" for off, else on
   \return PLL bit value.
 */
-BYTE sb_readPLLmon(int sbNum)
+int sb_readPLLmon(int sbNum)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	BYTE sbaddr[] = SADDLEBAG_SWADDR;
 
 	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, sbaddr[sbNum]);
@@ -2621,6 +2623,8 @@ BYTE sb_readPLLmon(int sbNum)
 */
 int sb_readADC(int sbNum)
 {
+	if (!noDCM2) return WRONGBOX;
+
 	short i;
 	unsigned short int rawu;
 	BYTE sbaddr[] = SADDLEBAG_SWADDR;

@@ -246,12 +246,11 @@ void Correlator::execArgusRxHealth(return_type status, argument_type arg)
 	  int rtnStatus = argus_systemState();
 	  argus_readAllSystemADCs();
 	  int rtnPow = argus_powCheck();
-	  int rtnIF = argus_ifCheck();
 	  int rtnTherm = argus_thermCheck();
 	  int rtnRx = argus_biasCheck();
 	  sprintf(status, "%sState and error flags:\r\n"
 			  "System status 0x%04x\r\n"
-			  "Power errors 0x%04x\r\n"
+			  //"Power errors 0x%04x\r\n"
 			  "IF output power errors 0x%04x\r\n"
 			  "Thermal errors 0x%04x\r\n"
 			  "LNA bias error state 0x%04x\r\n"
@@ -261,7 +260,7 @@ void Correlator::execArgusRxHealth(return_type status, argument_type arg)
 			  "0x%04x 0x%04x 0x%04x 0x%04x\r\n"
 			  "0x%04x 0x%04x 0x%04x 0x%04x\r\n\r\n",
               (!freezeSys ? statusOK : statusERR),
-              rtnStatus, rtnPow, rtnIF, rtnTherm, rtnRx,
+              rtnStatus, rtnPow, rtnTherm, rtnRx,
               biasSatus[0], biasSatus[1], biasSatus[2],
               biasSatus[3], biasSatus[4], biasSatus[5], biasSatus[6], biasSatus[7], biasSatus[8],
               biasSatus[9], biasSatus[10], biasSatus[11], biasSatus[12], biasSatus[13], biasSatus[14],
@@ -911,14 +910,12 @@ void Correlator::execJCOMAPcryo(return_type status, argument_type arg)
 
   if (!arg.help && !arg.str) {
 	  int rtn = argus_readThermADCs();
-	  sprintf(status, "{\"cryostat\":{\"cmdOK\":true, \"dataOK\":%s, \"temps\":"
-			  "[%.1f,%.1f,%.1f,%.1f,%.1f,%.1f], \"press\":[%.1f], "
-			  "\"tlocations\":[\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"]}}\r\n",
+	  sprintf(status, "{\"cryostat\":{\"cmdOK\":%s, \"temps\":"
+			  "[%.1f,%.1f,%.1f,%.1f,%.1f,%.1f], \"press\":[%.6f]}}\r\n",
 			  	(rtn==0 ? "true" : "false"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
 	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
 	    		cryoPar.cryoTemps[5],
-	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.),
-	    		cnames[0], cnames[1], cnames[2], cnames[3], cnames[4], cnames[5]);
+	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.));
   } else {
     	longHelp(status, usage, &Correlator::execJCOMAPcryo);
   }
@@ -1145,14 +1142,14 @@ void Correlator::execJCOMAPlna(return_type status, argument_type arg)
       	if (!strcmp(state, "1") || !strcasecmp(state, "ON")) {
       		OSTimeDly(CMDDELAY);
       		int rtn = argus_lnaPower(1);
-            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\":%s}}\r\n",
-            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? "true" : "false"));
+            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f]}}\r\n",
+            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? 1.0 : 0.0));
       	}
       	else if (!strcmp(state, "0") || !strcasecmp(state, "OFF")) {
       		OSTimeDly(CMDDELAY);
       		int rtn = argus_lnaPower(0);
-            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\":%s}}\r\n",
-            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? "true" : "false"));
+            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f]}}\r\n",
+            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? 1.0 : 0.0));
      	}
       	else {
       		longHelp(status, usage, &Correlator::execJCOMAPlna);
@@ -1173,9 +1170,9 @@ void Correlator::execJCOMAPlna(return_type status, argument_type arg)
     	}
 
 		int i, n0, n1, n2, n3, n4, n5;
-    	int n = sprintf(outStr, "{\"lna\": {\"cmdOK\":true, \"dataOK\":%s, \"LNAon\":%s, "
+    	int n = sprintf(outStr, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f], "
 					"\"powSupp\": [%.1f,%.1f,%.1f], \"Tchassis\": [%.2f], ",
-					(rtn==0 && lnaPwrState==1 ? "true" : "false"), (lnaPwrState==1 ? "true" : "false"),
+					(rtn==0 && lnaPwrState==1 ? "true" : "false"), (lnaPwrState && !rtn ? 1.0 : 0.0),
 					pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0], pwrCtrlPar[8]);
 
 	    if (lnaPwrState) {
@@ -1253,7 +1250,7 @@ void Correlator::execJCOMAPsets(return_type status, argument_type arg)
   if (!arg.help) {
 	  if (lnaPwrState) {
 
-		  n = sprintf(outStr, "{\"lnasets\": {\"cmdOK\":true, \"LNAon\":true, ");
+		  n = sprintf(outStr, "{\"lnasets\": {\"cmdOK\":true, \"LNAon\": [1.0], ");
 
 		  n0 = sprintf(str0, "\"vg1\":[%.3f", rxPar[0].LNAsets[0]);
 		  n1 = sprintf(str1, "\"vd1\":[%.3f", rxPar[0].LNAsets[2]);
@@ -1786,21 +1783,21 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       int n, n0, n1, n2, n3, n4, n5;
       int i;
 
-      n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"dataOK\":%s, \"psVolts\":[%.1f,%.1f], "
-    		  "\"temp\":[%.1f], \"pllLock\":[%s,%s], ",
-    		  (!rtn ? "true" : "false"), (!rtn ? "true" : "false"),
+      n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"psVolts\":[%.1f,%.1f], "
+    		  "\"temp\":[%.1f], \"pllLock\":[%.1f,%.1f], ",
+    		  (!rtn ? "true" : "false"),
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
-    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "true" : "false"),
-    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? "true" : "false"));
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? 1.0 : 0.0),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? 1.0 : 0.0));
 
-      n0 = sprintf(&str0[0], "\"Astatus\":[%d", dcm2Apar.status[0]);
+      n0 = sprintf(&str0[0], "\"Astatus\":[%.1f", (float)dcm2Apar.status[0]);
       n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"AattenQ\":[%.1f", (float)dcm2Apar.attenQ[0]/2.);
       n3 = sprintf(&str3[0], "\"ApowI\":[%.1f", dcm2Apar.powDetI[0]);
       n4 = sprintf(&str4[0], "\"ApowQ\":[%.1f", dcm2Apar.powDetQ[0]);
       n5 = sprintf(&str5[0], "\"Atemp\":[%.2f", dcm2Apar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
-    	  n0 += sprintf(&str0[n0], ",%d", dcm2Apar.status[i]);
+    	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Apar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Apar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Apar.attenQ[i]/2.);
     	  n3 += sprintf(&str3[n3], ",%.1f", dcm2Apar.powDetI[i]);
@@ -1990,8 +1987,8 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	      }
 
 	      // Assemble JSON return string
-	      n = sprintf(&outStr[0], "{\"sbag\": {\"cmdOK\":%s, \"dataOK\":%s, ",
-	    		  (!rtn ? "true" : "false"), (!rtn ? "true" : "false"));
+	      n = sprintf(&outStr[0], "{\"sbag\": {\"cmdOK\":%s, ",
+	    		  (!rtn ? "true" : "false"));
 	      n0 = sprintf(&str0[0], "\"ps12v\":[%.1f", sbPar[0].adcv[0]);
 	      n1 = sprintf(&str1[0], "\"ps-8v\":[%.1f", sbPar[0].adcv[1]);
 	      n2 = sprintf(&str2[0], "\"fanspeed1\":[%.1f", sbPar[0].adcv[2]);
@@ -2000,8 +1997,8 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	      n5 = sprintf(&str5[0], "\"temp2\":[%.1f", sbPar[0].adcv[5]);
 	      n6 = sprintf(&str6[0], "\"temp3\":[%.1f", sbPar[0].adcv[6]);
 	      n7 = sprintf(&str7[0], "\"temp4\":[%.1f", sbPar[0].adcv[7]);
-	      n8 = sprintf(&str8[0], "\"pllLock\":[%s", (sbPar[0].pll==1 ? "true" : "false"));
-	      n9 = sprintf(&str9[0], "\"ampOn\":[%s", (sbPar[0].ampPwr==1 ? "true" : "false"));
+	      n8 = sprintf(&str8[0], "\"pllLock\":[%.1f", (float)sbPar[0].pll);
+	      n9 = sprintf(&str9[0], "\"ampOn\":[%.1f", (float)sbPar[0].ampPwr);
 	      for (i=1; i<NSBG; i++) {
 	    	  n0 += sprintf(&str0[n0], ",%.1f", sbPar[i].adcv[0]);
 	    	  n1 += sprintf(&str1[n1], ",%.1f", sbPar[i].adcv[1]);
@@ -2011,8 +2008,8 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 	    	  n5 += sprintf(&str5[n5], ",%.1f", sbPar[i].adcv[5]);
 	    	  n6 += sprintf(&str6[n6], ",%.1f", sbPar[i].adcv[6]);
 	    	  n7 += sprintf(&str7[n7], ",%.1f", sbPar[i].adcv[7]);
-	    	  n8 += sprintf(&str8[n8], ",%s", (sbPar[i].pll==1 ? "true" : "false"));
-	    	  n9 += sprintf(&str9[n9], ",%s", (sbPar[i].ampPwr==1 ? "true" : "false"));
+	    	  n8 += sprintf(&str8[n8], ",%.1f", (float)sbPar[i].pll);
+	    	  n9 += sprintf(&str9[n9], ",%.1f", (float)sbPar[i].ampPwr);
 	      }
     	  n0 += sprintf(&str0[n0], "]");
     	  n1 += sprintf(&str1[n1], "]");
