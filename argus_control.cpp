@@ -287,10 +287,7 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
   "  Set engineering mode functions.\r\n"
   "    KEYWORD         VALUE:\r\n"
   "    bypassLNApsLims  x   magic number x to bypass LNA power supply limits.\r\n"
-//  "    bypassCIFpsLim  x   magic number x bypass cold IF power supply limits.\r\n"
   "    bypassLNAlims   y   magic number y to bypass soft limits on LNA biases.\r\n"
-//  "    stopVaneOnStall x   0 to ignore vane auto-stop when vane stalled.\r\n"
-//  "    sendVane        z   send vane drive hardware integer z.\r\n"
   "    dec             n   n decimal places for MON LNA, MON MIX, MON SETS display\r\n"
   "    clearBus            clear I2C bus busy bit, open main bus switches.\r\n"
   "    clrCtr              clear counters for I2C bus and freeze/thaw.\r\n"
@@ -306,16 +303,7 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
       if (narg == 2) {
         // Execute the command.
       	if (!strcasecmp(kw, "bypassLNApsLims")) lnaPSlimitsBypass = (val == 37 ? 1 : 0);
-//      	else if (!strcasecmp(kw, "bypassCIFpsLim")) cifPSlimitsBypass = (val == 37 ? 1 : 0);
       	else if (!strcasecmp(kw, "bypassLNAlims"))  lnaLimitsBypass = (val == 74 ? 1 : 0);
-      	//else if (!strcasecmp(kw, "stopVaneOnStall"))  lnaLimitsBypass = (val == 0 ? 0 : 1);
-      	/*else if (!strcasecmp(kw, "sendVane")) {
-      		OSTimeDly(CMDDELAY);
-      		if (!argus_openSubbusC(VANE_I2CADDR)) {
-      			//argus_setVaneBits((BYTE)(val-200));
-      			argus_closeSubbusC();
-      		}
-      	}*/
       	else if (!strcasecmp(kw, "dec")) {
     		if (val > 2) {
     			d1 = d2 = val;
@@ -357,12 +345,12 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
        		"  bypassLNAlims = %d\r\n"
      		"  decimal points: %d, %d\r\n"
        		"  power control PIO byte = 0x%02x\r\n"
-    		"  DCM2 board detected: %s\r\n"
+    		"  DCM2 board detected: %s (status %d)\r\n"
     		"  version %s\r\n",
     		statusOK, i2cBusBusy, freezeSys,
     		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
     		lnaPSlimitsBypass, lnaLimitsBypass,
-    		d1, d2, argus_lnaPowerPIO(), (noDCM2 ? "no" : "yes"), VER);
+    		d1, d2, argus_lnaPowerPIO(), (noDCM2 ? "no" : "yes"), noDCM2, VER);
     }
   } else {
 	  longHelp(status, usage, &Correlator::execArgusEngr);
@@ -1671,13 +1659,13 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	  if (narg == 2) {
 	      // Execute the command.
 	      if (!strcasecmp(kw, "amps")) {
-  		    rtn = dcm2_ampPow(val);
-	        sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
-					(!rtn ? statusOK : statusERR), val, rtn);
+	    	  rtn = dcm2_ampPow(val);
+	    	  sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), val, rtn);
 	      } else if (!strcasecmp(kw, "led")) {
-	  		    rtn = dcm2_ledOnOff(val);
-		        sprintf(status, "%sdcm2_ledOnOff(%s) returned with status %d\r\n",
-						(!rtn ? statusOK : statusERR), val, rtn);
+	    	  rtn = dcm2_ledOnOff(val);
+		      sprintf(status, "%sdcm2_ledOnOff(%s) returned with status %d\r\n",
+		    		  (!rtn ? statusOK : statusERR), val, rtn);
 	      } else {
 		      longHelp(status, usage, &Correlator::execDCM2);
 	      }
@@ -1693,25 +1681,24 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execDCM2);
 	  }
 	} else {
-      rtn = dcm2_readMBadc();
-      rtn += dcm2_readMBtemp();
-      rtn += dcm2_readAllModTemps();
-      rtn += dcm2_readAllModTotPwr();
+		rtn = dcm2_readMBadc();
+		rtn += dcm2_readMBtemp();
+		rtn += dcm2_readAllModTemps();
+		rtn += dcm2_readAllModTotPwr();
 
       // write output: header, channel reports, then an extra line
 
-      char outStr[2048] = {0};
       int n = 0;
       int i;
       n = sprintf(&outStr[0],
-    		  "%sDCM2 parameters:\r\n"
+    		  "%sDCM2 parameters:     (status %d)\r\n"
     		  //"%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f \r\n"
     		  "DCM2 7 & 12 V supply voltages: %.1f V, %.1f V, fanout board temp.: %.1f C\r\n"
     		  "4 GHz PLL: %s, 8 GHz PLL: %s\r\n"
     		  "Individual DCM2 modules:\r\n"
     		  "                 Band A               |           Band B\r\n"
     		  "      Bl AttI AttQ  TPwI  TPwQ   T[C] |Bl AttI AttQ  TPwI  TPwQ   T[C]\r\n",
-    		  (!rtn ? statusOK : statusERR),
+    		  (!rtn ? statusOK : statusERR), rtn,
     		  //dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
     		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "locked" : "***UNLOCKED***"),
@@ -1916,7 +1903,7 @@ void Correlator::execSaddlebag(return_type status, argument_type arg)
     	  sbPar[i].pll = sb_readPLLmon(i);
       }
       sprintf(status, "%sSaddlebags:   (status %d)\r\n"
-    		  "        1     2     3     4\r\n"
+    		  "               1      2      3      4\r\n"
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
     		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
