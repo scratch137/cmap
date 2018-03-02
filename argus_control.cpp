@@ -1771,17 +1771,17 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	      // Execute the command.
 	      if (!strcasecmp(kw, "amps")) {
   		    rtn = dcm2_ampPow(val);
-	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%d}}\r\n", (!rtn ? 1 : 0));
+	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
 	      } else if (!strcasecmp(kw, "led")) {
 	  		    rtn = dcm2_ledOnOff(val);
-		    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%d}}\r\n", (!rtn ? 1 : 0));
+		    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
 	      } else {
 		      longHelp(status, usage, &Correlator::execJDCM2);
 	      }
 	  } else if (narg == 3){
 		  if (!strcasecmp(kw, "block")) {
 			  rtn = dcm2_blockMod(val, onoff);
-	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%d}}\r\n", (!rtn ? 1 : 0));
+	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
 		  } else {
 			  longHelp(status, usage, &Correlator::execJDCM2);
 		  }
@@ -1800,20 +1800,20 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       int i;
 
       n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"psVolts\":[%.1f,%.1f], "
-    		  "\"temp\":[%.1f], \"pllLock\":[%d,%d], ",
+    		  "\"temp\":[%.1f], \"pllLock\":[%.1f,%.1f], ",
     		  (!rtn ? "true" : "false"),
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
-    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? 1 : 0),
-    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? 1 : 0));
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? 1.0 : 0.0),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? 1.0 : 0.0));
 
-      n0 = sprintf(&str0[0], "\"Astatus\":[%d", dcm2Apar.status[0]);
+      n0 = sprintf(&str0[0], "\"Astatus\":[%.1f", (float)dcm2Apar.status[0]);
       n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"AattenQ\":[%.1f", (float)dcm2Apar.attenQ[0]/2.);
       n3 = sprintf(&str3[0], "\"ApowI\":[%.3f", dcm2Apar.powDetI[0]);
       n4 = sprintf(&str4[0], "\"ApowQ\":[%.3f", dcm2Apar.powDetQ[0]);
       n5 = sprintf(&str5[0], "\"Atemp\":[%.2f", dcm2Apar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
-    	  n0 += sprintf(&str0[n0], ",%d", dcm2Apar.status[i]);
+    	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Apar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Apar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Apar.attenQ[i]/2.);
     	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Apar.powDetI[i]);
@@ -1829,14 +1829,14 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 
 	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s", str0, str1, str2, str4, str5);
 
-      n0 = sprintf(&str0[0], "\"Bstatus\":[%d", dcm2Bpar.status[0]);
+      n0 = sprintf(&str0[0], "\"Bstatus\":[%.1f", (float)dcm2Bpar.status[0]);
       n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"BattenQ\":[%.1f", (float)dcm2Bpar.attenQ[0]/2.);
       n3 = sprintf(&str3[0], "\"BpowI\":[%.3f", dcm2Bpar.powDetI[0]);
       n4 = sprintf(&str4[0], "\"BpowQ\":[%.3f", dcm2Bpar.powDetQ[0]);
       n5 = sprintf(&str5[0], "\"Btemp\":[%.2f", dcm2Bpar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
-    	  n0 += sprintf(&str0[n0], ",%d", dcm2Bpar.status[i]);
+    	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Bpar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Bpar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Bpar.attenQ[i]/2.);
     	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Bpar.powDetI[i]);
