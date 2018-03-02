@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180212"
+#define VER "comap_20180212-0302"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -167,7 +167,7 @@ struct chRead2 { // read ADCs
 /* DCM2 definitions */
 #define NO_DCM2ERR -1     // No DCM2 present
 #define DBMSCALE -45.5   // scale factor for power detector conversion to dBm
-#define DBMOFFSET 20     // offset value for power detector conversion to dBm
+#define DBMOFFSET 23     // offset value for power detector conversion to dBm (20 + output pad atten)
 #define ADCVREF 3.3      // reference voltage for 16-bit ADCs
 #define PLLLOCKTHRESH 0.5   // voltage threshold for 4 and 8 GHz PLL lock indication
 

@@ -1704,21 +1704,21 @@ void Correlator::execDCM2(return_type status, argument_type arg)
       int n = 0;
       int i;
       n = sprintf(&outStr[0],
-    		  "%sDCM2 parameters:\r\n"
+    		  "%sDCM2 parameters:\r\n      (status %d)"
     		  //"%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f \r\n"
     		  "DCM2 7 & 12 V supply voltages: %.1f V, %.1f V, fanout board temp.: %.1f C\r\n"
     		  "4 GHz PLL: %s, 8 GHz PLL: %s\r\n"
     		  "Individual DCM2 modules:\r\n"
-    		  "                 Band A               |           Band B\r\n"
-    		  "      Bl AttI AttQ  TPwI  TPwQ   T[C] |Bl AttI AttQ  TPwI  TPwQ   T[C]\r\n",
-    		  (!rtn ? statusOK : statusERR),
+    		  "                   Band A               |             Band B\r\n"
+    		  "      Bl AttI AttQ    TPwI    TPwQ   T[C] |Bl AttI AttQ    TPwI    TPwQ   T[C]\r\n",
+    		  (!rtn ? statusOK : statusERR), rtn,
     		  //dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
     		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "locked" : "***UNLOCKED***"),
     		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? "locked" : "***UNLOCKED***"));
       for (i=0; i<NRX; i++) {
     	  n += sprintf(&outStr[n],
-		     "Ch %2d: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n",
+		     "Ch %2d: %d %4.1f %4.1f %7.3f %7.3f %6.2f | %d %4.1f %4.1f %7.3f %7.3f %6.2f\r\n",
 		     i+1, dcm2Apar.status[i], 
 		     (float)dcm2Apar.attenI[i]/2., (float)dcm2Apar.attenQ[i]/2.,
 		     dcm2Apar.powDetI[i], dcm2Apar.powDetQ[i], 
@@ -1809,15 +1809,15 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       n0 = sprintf(&str0[0], "\"Astatus\":[%d", dcm2Apar.status[0]);
       n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"AattenQ\":[%.1f", (float)dcm2Apar.attenQ[0]/2.);
-      n3 = sprintf(&str3[0], "\"ApowI\":[%.1f", dcm2Apar.powDetI[0]);
-      n4 = sprintf(&str4[0], "\"ApowQ\":[%.1f", dcm2Apar.powDetQ[0]);
+      n3 = sprintf(&str3[0], "\"ApowI\":[%.3f", dcm2Apar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"ApowQ\":[%.3f", dcm2Apar.powDetQ[0]);
       n5 = sprintf(&str5[0], "\"Atemp\":[%.2f", dcm2Apar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
     	  n0 += sprintf(&str0[n0], ",%d", dcm2Apar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Apar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Apar.attenQ[i]/2.);
-    	  n3 += sprintf(&str3[n3], ",%.1f", dcm2Apar.powDetI[i]);
-    	  n4 += sprintf(&str4[n4], ",%.1f", dcm2Apar.powDetQ[i]);
+    	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Apar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.3f", dcm2Apar.powDetQ[i]);
     	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Apar.bTemp[i]);
       }
 	  n0 += sprintf(&str0[n0], "]");
@@ -1832,15 +1832,15 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       n0 = sprintf(&str0[0], "\"Bstatus\":[%d", dcm2Bpar.status[0]);
       n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"BattenQ\":[%.1f", (float)dcm2Bpar.attenQ[0]/2.);
-      n3 = sprintf(&str3[0], "\"BpowI\":[%.1f", dcm2Bpar.powDetI[0]);
-      n4 = sprintf(&str4[0], "\"BpowQ\":[%.1f", dcm2Bpar.powDetQ[0]);
+      n3 = sprintf(&str3[0], "\"BpowI\":[%.3f", dcm2Bpar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"BpowQ\":[%.3f", dcm2Bpar.powDetQ[0]);
       n5 = sprintf(&str5[0], "\"Btemp\":[%.2f", dcm2Bpar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
     	  n0 += sprintf(&str0[n0], ",%d", dcm2Bpar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Bpar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Bpar.attenQ[i]/2.);
-    	  n3 += sprintf(&str3[n3], ",%.1f", dcm2Bpar.powDetI[i]);
-    	  n4 += sprintf(&str4[n4], ",%.1f", dcm2Bpar.powDetQ[i]);
+    	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Bpar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.3f", dcm2Bpar.powDetQ[i]);
     	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Bpar.bTemp[i]);
       }
 	  n0 += sprintf(&str0[n0], "]");
