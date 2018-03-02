@@ -276,6 +276,8 @@ public:
   void execStatus(return_type status, argument_type arg);
   void execSync(return_type status, argument_type arg);
   void execTime(return_type status, argument_type arg);
+  void execjUpTime(return_type status, argument_type arg);
+
   void execTotalPower(return_type status, argument_type arg);
   void execVerbose(return_type status, argument_type arg);
   void execVersion(return_type status, argument_type arg);

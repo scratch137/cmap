@@ -1799,9 +1799,9 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       int n, n0, n1, n2, n3, n4, n5;
       int i;
 
-      n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"dataOK\":%s, \"psVolts\":[%.1f,%.1f], "
+      n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"psVolts\":[%.1f,%.1f], "
     		  "\"temp\":[%.1f], \"pllLock\":[%s,%s], ",
-    		  (!rtn ? "true" : "false"), (!rtn ? "true" : "false"),
+    		  (!rtn ? "true" : "false"),
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
     		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "true" : "false"),
     		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? "true" : "false"));

@@ -180,7 +180,7 @@ void initCommandShell()
   ::zpecShell["reboot"]    = &Correlator::execReboot;
 
   ::zpecShell["time"]      = &Correlator::execTime;
-
+  ::zpecShell["jUpTime"]   = &Correlator::execjUpTime;
   ::zpecShell["verbose"]   = &Correlator::execVerbose;
 }
 

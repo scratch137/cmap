@@ -1017,6 +1017,36 @@ void Correlator::execTime(return_type status, argument_type arg)
   }
 }
 
+/**
+  \brief Get the current time in JSON format.
+
+  Times are in seconds since boot.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: [TIME]
+*/
+void Correlator::execjUpTime(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Get the uptime since last boot.\r\n";
+
+  if (!arg.help) {
+    if (arg.str) {
+      bootTicks_ = (long long )(0.6+atof(arg.str)*TICKS_PER_SECOND) -::TimeTick;
+    }
+
+    unsigned long long now = bootTicks_ + ::TimeTick;
+    siprintf(status, "{\"uptime\": {\"cmdOK\":true, \"sec\":[%u.%02u]}}\r\n",
+		     statusOK,
+		     (unsigned )(now/TICKS_PER_SECOND),
+		     (unsigned )(now%TICKS_PER_SECOND)*(100/TICKS_PER_SECOND));
+  } else {
+    longHelp(status, usage, &Correlator::execjUpTime);
+  }
+}
+
 
 /**
   \brief Returns version string.
