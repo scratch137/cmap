@@ -145,6 +145,7 @@ void initCommandShell()
       ::zpecShell["jdcm2"]     = &Correlator::execJDCM2;
       ::zpecShell["sbag"]      = &Correlator::execSaddlebag;
       ::zpecShell["jsbag"]     = &Correlator::execJSaddlebag;
+      ::zpecShell["jtime"]     = &Correlator::execjUpTime;
       break;
 
     default:
@@ -180,7 +181,6 @@ void initCommandShell()
   ::zpecShell["reboot"]    = &Correlator::execReboot;
 
   ::zpecShell["time"]      = &Correlator::execTime;
-  ::zpecShell["jUpTime"]   = &Correlator::execjUpTime;
   ::zpecShell["verbose"]   = &Correlator::execVerbose;
 }
 

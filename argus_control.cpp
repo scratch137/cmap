@@ -1704,12 +1704,12 @@ void Correlator::execDCM2(return_type status, argument_type arg)
       int n = 0;
       int i;
       n = sprintf(&outStr[0],
-    		  "%sDCM2 parameters:\r\n      (status %d)"
+    		  "%sDCM2 parameters:    (status %d)\r\n"
     		  //"%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f \r\n"
     		  "DCM2 7 & 12 V supply voltages: %.1f V, %.1f V, fanout board temp.: %.1f C\r\n"
     		  "4 GHz PLL: %s, 8 GHz PLL: %s\r\n"
     		  "Individual DCM2 modules:\r\n"
-    		  "                   Band A               |             Band B\r\n"
+    		  "                   Band A                 |             Band B\r\n"
     		  "      Bl AttI AttQ    TPwI    TPwQ   T[C] |Bl AttI AttQ    TPwI    TPwQ   T[C]\r\n",
     		  (!rtn ? statusOK : statusERR), rtn,
     		  //dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
@@ -1771,17 +1771,17 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	      // Execute the command.
 	      if (!strcasecmp(kw, "amps")) {
   		    rtn = dcm2_ampPow(val);
-	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%d}}\r\n", (!rtn ? 1 : 0));
 	      } else if (!strcasecmp(kw, "led")) {
 	  		    rtn = dcm2_ledOnOff(val);
-		    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+		    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%d}}\r\n", (!rtn ? 1 : 0));
 	      } else {
 		      longHelp(status, usage, &Correlator::execJDCM2);
 	      }
 	  } else if (narg == 3){
 		  if (!strcasecmp(kw, "block")) {
 			  rtn = dcm2_blockMod(val, onoff);
-	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%d}}\r\n", (!rtn ? 1 : 0));
 		  } else {
 			  longHelp(status, usage, &Correlator::execJDCM2);
 		  }
@@ -1800,11 +1800,11 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       int i;
 
       n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"psVolts\":[%.1f,%.1f], "
-    		  "\"temp\":[%.1f], \"pllLock\":[%s,%s], ",
+    		  "\"temp\":[%.1f], \"pllLock\":[%d,%d], ",
     		  (!rtn ? "true" : "false"),
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
-    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "true" : "false"),
-    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? "true" : "false"));
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? 1 : 0),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? 1 : 0));
 
       n0 = sprintf(&str0[0], "\"Astatus\":[%d", dcm2Apar.status[0]);
       n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);

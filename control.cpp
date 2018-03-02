@@ -1030,16 +1030,11 @@ void Correlator::execjUpTime(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
-  "  Get the uptime since last boot.\r\n";
+  "  Uptime in seconds since last boot, JSON format.\r\n";
 
   if (!arg.help) {
-    if (arg.str) {
-      bootTicks_ = (long long )(0.6+atof(arg.str)*TICKS_PER_SECOND) -::TimeTick;
-    }
-
-    unsigned long long now = bootTicks_ + ::TimeTick;
+	unsigned long long now = bootTicks_ + ::TimeTick;
     siprintf(status, "{\"uptime\": {\"cmdOK\":true, \"sec\":[%u.%02u]}}\r\n",
-		     statusOK,
 		     (unsigned )(now/TICKS_PER_SECOND),
 		     (unsigned )(now%TICKS_PER_SECOND)*(100/TICKS_PER_SECOND));
   } else {
