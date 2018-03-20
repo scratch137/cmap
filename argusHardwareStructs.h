@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180212-0302"
+#define VER "comap_20180212-0320test"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE

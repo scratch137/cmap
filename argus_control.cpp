@@ -357,12 +357,12 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
        		"  bypassLNAlims = %d\r\n"
      		"  decimal points: %d, %d\r\n"
        		"  power control PIO byte = 0x%02x\r\n"
-    		"  DCM2 board detected: %s\r\n"
+    		"  DCM2 board detected: %s (status = %d)\r\n"
     		"  version %s\r\n",
     		statusOK, i2cBusBusy, freezeSys,
     		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
     		lnaPSlimitsBypass, lnaLimitsBypass,
-    		d1, d2, argus_lnaPowerPIO(), (noDCM2 ? "no" : "yes"), VER);
+    		d1, d2, argus_lnaPowerPIO(), (noDCM2 ? "no" : "yes"), noDCM2, VER);
     }
   } else {
 	  longHelp(status, usage, &Correlator::execArgusEngr);
