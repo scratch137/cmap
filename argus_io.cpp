@@ -1117,47 +1117,6 @@ int argus_readThermADCs(void)
 
 	return I2CStat;
 }
-
-/****************************************************************************************/
-/**
-  \brief Set LNA params from flash.
-
-  This command sets the LNA bias values to preset values stored in flash.
-
-  \param  *flash A pointer to a structure of type flash_t.
-  \return Zero on success, else number of failed I2C writes.
-*/
-int argus_LNApresets(const flash_t *flash)
-{
-// Storage for Argus is is g1, g2, d1, d2, m1, m2, g3, g4 ... m31, m32
-	// check for freeze
-	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
-
-	// check that I2C bus is available, else return
-	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
-	i2cBusBusy = 1;
-	busLockCtr += 1;
-
-	// Data written in control.cpp, approx line 405
-	short i, j, k;
-	int rtn = 0;
-
-	for (i=0; i<NRX; i++) {
-		for (j=0; j<NSTAGES; j++){  // set drains first, then gates
-			k = i*NSTAGES+j;
-			// need to adjust gates first to keep from running into high-v limit on drains
-			rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[k], 1);
-			//OSTimeDly(1);   // insert for settling?
-			rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[k], 1);
-		}
-	}
-
-	// release I2C bus
-	i2cBusBusy = 0;
-
-	return rtn;
-}
-
 /*******************************************************************/
 /**
   \brief Clear I2C bus.
@@ -2359,6 +2318,9 @@ int init_dcm2(void)
 	 * For DCM2,  0x80 switch setting from 0x77 connects to main board peripherals, BEX @ 0x21
 	 * For microC, 0x80 switch setting from 0x77 connects to a bias card without BEXs (ADCs and DACs)
 	 * So attempting to address the DCM2 main board BEX will show whether the hardware is bias or DCM2
+	 *
+	 * IMPORTANT: either bias system or DCM2 may be connected, but not both
+	 *
 	 */
 	// DCM2 setups
 
@@ -2366,58 +2328,55 @@ int init_dcm2(void)
 	address = DCM2_SBADDR;           // Open: I2C switch address
 	buffer[0] = DCM2PERIPH_SBADDR;   // I2C channel address
 	I2CStat = I2CSEND1;
-	noDCM2 = configBEX(BEXCONF0, BEX_ADDR0);
-	if (noDCM2) {
-		argus_clearBus();    // clear bus errors; was dragged low (noDCM2=5 for bias system)
-		return -1;           // bail out if nothing detected
+	noDCM2 = configBEX(BEXCONF0, BEX_ADDR0);  // test to see if config "takes"
+	if (noDCM2) {            // if not:
+		argus_clearBus();    // clear bus errors; dragged low by addressing unpowered LNA board (err = 5)
+		return -1;           // bail out
 	}
-	writeBEX(BEXINIT0, BEX_ADDR0);
+	writeBEX(BEXINIT0, BEX_ADDR0);  // otherwise, dcm2 detected, keep going
 	closeI2Csbus(DCM2_SBADDR);
 	address = DCM2_SBADDR;          // Close: I2C switch address
-	buffer[0] = 0x00;               // I2C channel address
+	buffer[0] = 0x00;               // open switches
 	I2CStat = I2CSEND1;
 
     // Configure and initialize BEXs on DCM2 modules
-	if (noDCM2==0 && 0) {
-		int m;  // loop counter
-		for (m=0; m<NRX; m++){
+	int m;  // loop counter
+	for (m=0; m<NRX; m++){
+		// select, configure, and initialize A bank; keep track in status element
+		address = 0x77;            // I2C switch address 0x77 for top-level switch
+		buffer[0] = dcm2sw.sb[m];  // pick subbus
+		I2CSEND1;
+		address = 0x73;
+		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
+		I2CSEND1;
+		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
+		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches
 
-			// select, configure, and initialize A bank; keep track in status element
-			address = 0x77;            // I2C switch address 0x77 for top-level switch
-			buffer[0] = dcm2sw.sb[m];  // pick subbus
-			I2CSEND1;
-			address = 0x73;
-			buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
-			I2CSEND1;
-			dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
-			if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
-			J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-			OSTimeDly(1);
-			J2[28].clr();  // enable I2C switches
-
-			// select, configure, and initialize B bank; keep track in status element
-			address = 0x77;            // I2C switch address 0x77 for top-level switch
-			buffer[0] = dcm2sw.sb[m];  // pick subbus
-			I2CSEND1;
-			address = 0x73;
-			buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
-			I2CSEND1;
-			dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
-			if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
-			J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-			OSTimeDly(1);
-			J2[28].clr();  // enable I2C switches
-		}
-		closeI2Cssbus(0x77, 0x73);
-
-		// Read out once to initialize
-		dcm2_readMBadc();
-		dcm2_readMBtemp();
-		dcm2_readAllModTemps();
-		dcm2_readAllModTotPwr();
-		// Set to max atten
-		dcm2_setAllAttens(MAXATTEN);
+		// select, configure, and initialize B bank; keep track in status element
+		address = 0x77;            // I2C switch address 0x77 for top-level switch
+		buffer[0] = dcm2sw.sb[m];  // pick subbus
+		I2CSEND1;
+		address = 0x73;
+		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
+		I2CSEND1;
+		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
+		if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+		OSTimeDly(1);
+		J2[28].clr();  // enable I2C switches
 	}
+	closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
+
+	// Read out once to initialize
+	dcm2_readMBadc();
+	dcm2_readMBtemp();
+	dcm2_readAllModTemps();
+	dcm2_readAllModTotPwr();
+	// Set to max atten
+	dcm2_setAllAttens(MAXATTEN);
 
     // Blink LED, leave LED on when init is complete
     dcm2_ledOnOff("off");
@@ -2716,6 +2675,76 @@ void init_saddlebags(void)
 	}
 
 	return;
+}
+
+/****************************************************************************************/
+/**
+  \brief Set LNA and attenuator params from flash.
+
+  This command sets the LNA bias values to preset values stored in flash.
+
+  \param  *flash A pointer to a structure of type flash_t.
+  \return Zero on success, else number of failed I2C writes.
+*/
+int comap_presets(const flash_t *flash)
+{
+// Storage for Argus is is g1, g2, d1, d2, m1, m2, g3, g4 ... m31, m32
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
+
+	// check that I2C bus is available, else return
+	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
+	i2cBusBusy = 1;
+	busLockCtr += 1;
+
+	// Data written in control.cpp, approx line 405
+	short i, j, k;
+	int rtn = 0;
+	BYTE attenBits;
+
+	if (noDCM2) {  // set LNA bias
+		for (i=0; i<NRX; i++) {
+			for (j=0; j<NSTAGES; j++){  // set drains first, then gates
+				k = i*NSTAGES+j;
+				// need to adjust gates first to keep from running into high-v limit on drains
+				rtn += argus_setLNAbias("g", i, j, flash->lnaGsets[k], 1);
+				//OSTimeDly(1);   // insert for settling?
+				rtn += argus_setLNAbias("d", i, j, flash->lnaDsets[k], 1);
+			}
+		}
+	} else {  // set DCM2 attens
+		for (i=0; i<NRX; i++) {
+		// do this one atten at a time for error tracking
+			int I2CStat = 0;
+			if (!dcm2Apar.status[i]) {
+				// first set addresses to select a and b channels of DCM2 modules
+				address = DCM2_SBADDR;        // I2C switch address DCM2_SBADDR for top-level switch
+				buffer[0] = dcm2sw.sb[i];     // I2C channel address
+				I2CSEND1;
+				address = DCM2_SSBADDR;        // I2C switch address DCM2_SSBADDR for second-level switch, band A
+				buffer[0] = dcm2sw.ssba[i];
+				I2CSEND1;
+				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, flash->attenAI[i]*2, BEX_ADDR, &attenBits);
+				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, flash->attenAQ[i]*2, BEX_ADDR, &attenBits);
+			}
+			if (!dcm2Bpar.status[i]) {
+				// first set addresses to select a and b channels of DCM2 modules
+				address = DCM2_SBADDR;        // I2C switch address DCM2_SBADDR for top-level switch
+				buffer[0] = dcm2sw.sb[i];   // I2C channel address  0x01 for second-level switch
+				I2CSEND1;
+				address = DCM2_SSBADDR;        // I2C switch address DCM2_SSBADDR for second-level switch, band A
+				buffer[0] = dcm2sw.ssbb[i];
+				I2CSEND1;
+				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, flash->attenBI[i]*2, BEX_ADDR, &attenBits);
+				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, flash->attenBQ[i]*2, BEX_ADDR, &attenBits);
+			}
+		}
+	}
+
+	// release I2C bus
+	i2cBusBusy = 0;
+
+	return I2CStat;
 }
 
 /*******************************************************************/

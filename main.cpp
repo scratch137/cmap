@@ -131,8 +131,8 @@ void initCommandShell()
       ::zpecShell["cryo"]      = &Correlator::execArgusCryo;
       ::zpecShell["c"]         = &Correlator::execArgusCryo;
       ::zpecShell["mon"]       = &Correlator::execArgusMonPts;
-      ::zpecShell["presets"]   = &Correlator::execArgusPresets;
-      ::zpecShell["jpresets"]  = &Correlator::execJArgusPresets;
+      ::zpecShell["presets"]   = &Correlator::execCOMAPpresets;
+      ::zpecShell["jpresets"]  = &Correlator::execJCOMAPpresets;
       ::zpecShell["engr"]      = &Correlator::execArgusEngr;
       ::zpecShell["freeze"]    = &Correlator::execArgusFreeze;
       ::zpecShell["jfreeze"]   = &Correlator::execJArgusFreeze;

@@ -61,7 +61,6 @@ extern int  argus_readLNAbiasADCs(char *sw);
 extern int  argus_readPwrADCs(void);
 extern int  argus_readBCpsV(void);
 extern int  argus_readThermADCs(void);
-extern int  argus_LNApresets(const flash_t *flash);
 extern int  argus_lnaPowerPIO(void);
 extern int  argus_openSubbusC(BYTE addr);
 extern int  argus_closeSubbusC(void);
@@ -90,6 +89,8 @@ extern int  sb_readADC(int sbNum);
 extern int  sb_readPLLmon(int sbNum);
 extern int  sb_setAllAmps(char *inp);
 extern void  init_saddlebags(void);
+
+extern int  comap_presets(const flash_t *flash);
 
 /**************************************************************************/
 

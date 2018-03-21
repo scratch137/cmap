@@ -386,6 +386,12 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		    	  }
     		      }
     		    }
+     		    for (i=0; i<NRX; i++) {  // now write DCM2 atten values into flash
+     		    	flashData.attenAI[i] = dcm2Apar.attenI[i];
+     		    	flashData.attenAQ[i] = dcm2Apar.attenQ[i];
+     		    	flashData.attenBI[i] = dcm2Bpar.attenI[i];
+     		    	flashData.attenBQ[i] = dcm2Bpar.attenQ[i];
+     		    }
     		  } else {
     	            // no valid selection, quit
     		    longHelp(status, usage, &Correlator::execFlash);

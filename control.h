@@ -302,8 +302,8 @@ public:
   void execArgusCryo(return_type status, argument_type arg);
   void execJCOMAPcryo(return_type status, argument_type arg);
   void execArgusMonPts(return_type status, argument_type arg);
-  void execArgusPresets(return_type status, argument_type arg);
-  void execJArgusPresets(return_type status, argument_type arg);
+  void execCOMAPpresets(return_type status, argument_type arg);
+  void execJCOMAPpresets(return_type status, argument_type arg);
   void execArgusEngr(return_type status, argument_type arg);
   void execCOMAPatten(return_type status, argument_type arg);
   void execJCOMAPatten(return_type status, argument_type arg);
