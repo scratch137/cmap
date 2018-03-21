@@ -2362,54 +2362,67 @@ int init_dcm2(void)
 	 */
 	// DCM2 setups
 
-	// Configure and initialize BEX on main board; test to see if DCM2 is connected
-	openI2Csbus(0x77, DCM2PERIPH_SBADDR);
+	// Configure and initialize BEX on main board
+	address = DCM2_SBADDR;           // Open: I2C switch address
+	buffer[0] = DCM2PERIPH_SBADDR;   // I2C channel address
+	I2CStat = I2CSEND1;
 	noDCM2 = configBEX(BEXCONF0, BEX_ADDR0);
+	if (noDCM2) {
+		argus_clearBus();    // clear bus errors; was dragged low (noDCM2=5 for bias system)
+		return -1;           // bail out if nothing detected
+	}
 	writeBEX(BEXINIT0, BEX_ADDR0);
-	closeI2Csbus(0x77);
+	closeI2Csbus(DCM2_SBADDR);
+	address = DCM2_SBADDR;          // Close: I2C switch address
+	buffer[0] = 0x00;               // I2C channel address
+	I2CStat = I2CSEND1;
 
-	if (noDCM2==0) {
-    	// Configure and initialize BEXs on DCM2 modules
-    	int m;  // loop counter
-    	for (m=0; m<NRX; m++){
-    		// select, configure, and initialize A bank; keep track in status element
-    		address = 0x77;            // I2C switch address 0x77 for top-level switch
-    		buffer[0] = dcm2sw.sb[m];  // pick subbus
-    		I2CSEND1;
-    		address = 0x73;
-    		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
-    		I2CSEND1;
-    		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
-    		if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
-    		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-    		OSTimeDly(1);
-    		J2[28].clr();  // enable I2C switches
-    		// select, configure, and initialize B bank; keep track in status element
-    		address = 0x77;            // I2C switch address 0x77 for top-level switch
-    		buffer[0] = dcm2sw.sb[m];  // pick subbus
-    		I2CSEND1;
-    		address = 0x73;
-    		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
-    		I2CSEND1;
-    		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
-    		if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
-    		J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
-    		OSTimeDly(1);
-    		J2[28].clr();  // enable I2C switches
-    		}
-    	closeI2Cssbus(0x77, 0x73);
+    // Configure and initialize BEXs on DCM2 modules
+	if (noDCM2==0 && 0) {
+		int m;  // loop counter
+		for (m=0; m<NRX; m++){
 
-    	// Read out once to initialize
+			// select, configure, and initialize A bank; keep track in status element
+			address = 0x77;            // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];  // pick subbus
+			I2CSEND1;
+			address = 0x73;
+			buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
+			I2CSEND1;
+			dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
+			if (!dcm2Apar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+			J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+			OSTimeDly(1);
+			J2[28].clr();  // enable I2C switches
+
+			// select, configure, and initialize B bank; keep track in status element
+			address = 0x77;            // I2C switch address 0x77 for top-level switch
+			buffer[0] = dcm2sw.sb[m];  // pick subbus
+			I2CSEND1;
+			address = 0x73;
+			buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
+			I2CSEND1;
+			dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
+			if (!dcm2Bpar.status[m]) writeBEX(BEXINIT, BEX_ADDR);  // initialize bus extender
+			J2[28].set();  // reset I2C bus switches in case a subsub bus is stuck
+			OSTimeDly(1);
+			J2[28].clr();  // enable I2C switches
+		}
+		closeI2Cssbus(0x77, 0x73);
+
+		// Read out once to initialize
 		dcm2_readMBadc();
 		dcm2_readMBtemp();
 		dcm2_readAllModTemps();
 		dcm2_readAllModTotPwr();
 		// Set to max atten
 		dcm2_setAllAttens(MAXATTEN);
+	}
 
-		// LED on when init is complete
-		dcm2_ledOnOff("on");
-    }
+    // Blink LED, leave LED on when init is complete
+    dcm2_ledOnOff("off");
+	OSTimeDly(10);
+    dcm2_ledOnOff("on");
 
 	return 0;
 }
@@ -2659,46 +2672,6 @@ int sb_readADC(int sbNum)
 	return (I2CStat);
 }
 
-/*******************************************************************/
-/**
-  \brief Bias system initialization.
-
-  This function initializes the bias system either to make a clean start on boot,
-  to properly update the parameters file on boot, or both.
-
-  \return Nothing.
-*/
-
-void init_bias(void)
-{
-		// shut down LNA power if it is on
-		// may take a while if lnaPwrState is high but PIOs aren't initialized,
-		// or maybe not
-		if (lnaPwrState==1) {
-			argus_lnaPower(0);
-		}
-
-		/** Initialize devices on main I2C bus **/
-		//// Power control card
-		address = I2CSWITCH_BP;
-		buffer[0] = PWCTL_I2CADDR;
-
-		I2CSEND1;
-		// set default value in BEX
-		address = 0x21;
-		buffer[0] = 0x01;
-		buffer[1] = 0x20;  // all relays off low; FPLED is off high
-		I2CSEND2;
-		// configure BEX pins for I/O
-		address = 0x21;
-		buffer[0] = 0x03;
-		buffer[1] = 0xc0;
-		I2CSEND2;
-		//// Clean up: disconnect I2C sub-buses
-		address = I2CSWITCH_BP;
-		buffer[0] = 0;
-		I2CStat = I2CSEND1;
-}
 
 /**
   \brief Saddlebag initialization.
@@ -2741,6 +2714,52 @@ void init_saddlebags(void)
 		writeBEX(0x00, SBBEX_ADDR);   // turn on LED
 		closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 	}
+
+	return;
+}
+
+/*******************************************************************/
+/**
+  \brief Bias initialization.
+
+  This function initializes the bias system
+  - Turns off LNA supply if it's on.
+
+  \return Nothing.
+*/
+
+void init_bias(void)
+{
+
+	// shut down LNA power if it is on
+	// may take a while if lnaPwrState is high but PIOs aren't initialized,
+	// or maybe not
+	if (lnaPwrState==1) {
+		argus_lnaPower(0);
+	}
+
+	// Initialize devices on main I2C bus
+	//// Power control card
+	address = I2CSWITCH_BP;
+	buffer[0] = PWCTL_I2CADDR;
+	I2CSEND1;
+	// set default value in BEX
+	address = 0x21;
+	buffer[0] = 0x01;
+	buffer[1] = 0x20;  // all relays off low; FPLED is off high
+	I2CSEND2;
+	// configure BEX pins for I/O
+	address = 0x21;
+	buffer[0] = 0x03;
+	buffer[1] = 0xc0;
+	I2CSEND2;
+	//// Clean up: disconnect I2C sub-buses
+	address = I2CSWITCH_BP;
+	buffer[0] = 0;
+	I2CStat = I2CSEND1;
+
+	return;
+
 }
 
 /**************************************************************************/
@@ -2782,13 +2801,12 @@ void argus_init(const flash_t *flash)
 	OSTimeDly(1);
 	J2[28].clr();  // enable I2C switches
 
+	init_dcm2();  // initialize dcm2 control board
 
-	init_dcm2();       // initialize DCM2 box, determine whether a DCM2 is connected
-	if (noDCM2) {      // if not, initialze bias box
-		init_bias();       // initialize bias system and backplane
+	if (noDCM2) {
+		init_bias();       // initialize bias system
 		init_saddlebags(); // initialize saddlebag interface boards
 	}
-
 
     // release I2C bus
 	i2cBusBusy = 0;

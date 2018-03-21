@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180215"
+#define VER "comap_20180321"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -41,7 +41,7 @@ AH 2014.07.01
 // Hardware parameters -- must match structure definitions in argusHardwareStructs.h!
 #define NUM_ELEM(x) (sizeof(x) / sizeof(*(x)))
 #define NRX 20      // number of receivers
-#define JNRX 19     // number of receivers to read out in JSON commands, 1:JNRX
+#define JNRX 19     // number of receivers to read out in JSON commands, 1:JNRX (19)
 #define NRXPERBC 4  // number of receivers per bias card
 #define NSTAGES 2   // number of amplifier stages in each receiver
 #define NBCMP 2     // number of monitor point sets for each bias card
@@ -168,7 +168,7 @@ struct chRead2 { // read ADCs
 /* DCM2 definitions */
 #define NO_DCM2ERR -1     // No DCM2 present
 #define DBMSCALE -45.5   // scale factor for power detector conversion to dBm
-#define DBMOFFSET 20     // offset value for power detector conversion to dBm
+#define DBMOFFSET 23     // offset value for power detector conversion to dBm (20 + output pad atten)
 #define ADCVREF 3.3      // reference voltage for 16-bit ADCs
 #define PLLLOCKTHRESH 0.5   // voltage threshold for 4 and 8 GHz PLL lock indication
 
