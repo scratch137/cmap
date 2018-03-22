@@ -2368,9 +2368,15 @@ int init_dcm2(void)
 		OSTimeDly(1);
 		J2[28].clr();  // enable I2C switches
 	}
-	closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
+	address = DCM2_SSBADDR; // open subsubbus switch
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+	address = DCM2_SBADDR;  // open subbus switch
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
 
-	// Read out once to initialize
+
+	// Read out once to initialize (but these will also unset/set bus lock)
 	dcm2_readMBadc();
 	dcm2_readMBtemp();
 	dcm2_readAllModTemps();
@@ -2715,7 +2721,6 @@ int comap_presets(const flash_t *flash)
 	} else {  // set DCM2 attens
 		for (i=0; i<NRX; i++) {
 		// do this one atten at a time for error tracking
-			int I2CStat = 0;
 			if (!dcm2Apar.status[i]) {
 				// first set addresses to select a and b channels of DCM2 modules
 				address = DCM2_SBADDR;        // I2C switch address DCM2_SBADDR for top-level switch
@@ -2724,8 +2729,18 @@ int comap_presets(const flash_t *flash)
 				address = DCM2_SSBADDR;        // I2C switch address DCM2_SSBADDR for second-level switch, band A
 				buffer[0] = dcm2sw.ssba[i];
 				I2CSEND1;
-				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, flash->attenAI[i]*2, BEX_ADDR, &attenBits);
-				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, flash->attenAQ[i]*2, BEX_ADDR, &attenBits);
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, flash->attenAI[i]*2, BEX_ADDR, &attenBits);
+				if (!I2CStat) {
+					dcm2Apar.attenI[i] = attenBits;  // store command bits for atten
+				} else {
+					dcm2Apar.attenI[i] = 198;
+				}
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, flash->attenAQ[i]*2, BEX_ADDR, &attenBits);
+				if (!I2CStat) {
+					dcm2Apar.attenQ[i] = attenBits;  // store command bits for atten
+				} else {
+					dcm2Apar.attenQ[i] = 198;
+				}
 			}
 			if (!dcm2Bpar.status[i]) {
 				// first set addresses to select a and b channels of DCM2 modules
@@ -2735,8 +2750,18 @@ int comap_presets(const flash_t *flash)
 				address = DCM2_SSBADDR;        // I2C switch address DCM2_SSBADDR for second-level switch, band A
 				buffer[0] = dcm2sw.ssbb[i];
 				I2CSEND1;
-				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, flash->attenBI[i]*2, BEX_ADDR, &attenBits);
-				I2CStat += HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, flash->attenBQ[i]*2, BEX_ADDR, &attenBits);
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, flash->attenBI[i]*2, BEX_ADDR, &attenBits);
+				if (!I2CStat) {
+					dcm2Bpar.attenI[i] = attenBits;  // store command bits for atten
+				} else {
+					dcm2Bpar.attenI[i] = 198;
+				}
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, flash->attenBQ[i]*2, BEX_ADDR, &attenBits);
+				if (!I2CStat) {
+					dcm2Bpar.attenQ[i] = attenBits;  // store command bits for atten
+				} else {
+					dcm2Bpar.attenQ[i] = 198;
+				}
 			}
 		}
 	}
