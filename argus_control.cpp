@@ -386,7 +386,7 @@ void Correlator::execArgusLimits(return_type status, argument_type arg)
 /**
   \brief Argus setting limits, JSON version.
 
-  Return values of bias setting limits when queried.  T
+  Return values of bias setting limits when queried.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
@@ -934,7 +934,7 @@ void Correlator::execCOMAPpresets(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
-  "  Set LNA biases to values stored in memory.\r\n"
+  "  Set LNA bias or DCM2 attenuations to values stored in memory.\r\n"
   "  (see FLASH command to set).\r\n "
 		  ;
 
@@ -943,7 +943,7 @@ void Correlator::execCOMAPpresets(return_type status, argument_type arg)
 	zpec_readFlash(&flashData);
 	OSTimeDly(CMDDELAY);
 	int rtn = comap_presets(&flashData);
-    sprintf(status, "%sSet LNA to preset bias values, status %d\r\n",
+    sprintf(status, "%sSet LNA or DCM2 to stored values, status %d\r\n",
     		(rtn==0 ? statusOK : statusERR), rtn);
   } else {
 	longHelp(status, usage, &Correlator::execCOMAPpresets);
@@ -964,7 +964,7 @@ void Correlator::execJCOMAPpresets(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
-  "  Set LNA biasesand attens to values stored in memory.\r\n"
+  "  Set LNA bias or DCM2 attenuations to values stored in memory.\r\n"
   "  (see FLASH command to set).\r\n "
 		  ;
 
