@@ -2703,7 +2703,7 @@ int comap_presets(const flash_t *flash)
 	i2cBusBusy = 1;
 	busLockCtr += 1;
 
-	// Data written in control.cpp, approx line 405
+	// Data written in control.cpp, approx line 405; structure defined in zpec.h
 	short i, j, k;
 	int rtn = 0;
 	BYTE attenBits;
@@ -2729,6 +2729,7 @@ int comap_presets(const flash_t *flash)
 				address = DCM2_SSBADDR;        // I2C switch address DCM2_SSBADDR for second-level switch, band A
 				buffer[0] = dcm2sw.ssba[i];
 				I2CSEND1;
+				//HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float atten, BYTE addr, BYTE *bits)
 				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, flash->attenAI[i]*2, BEX_ADDR, &attenBits);
 				if (!I2CStat) {
 					dcm2Apar.attenI[i] = attenBits;  // store command bits for atten
