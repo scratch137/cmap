@@ -369,28 +369,31 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
     		    // Move LNA bias settings to flashData; storage is g, d  (matches argus_LNApresets)
     		    short i, j, k;
-     		    for (i=0; i<NRX; i++) {
-    		      for (j=0; j<NSTAGES; j++){
-    		    	  k = i*NSTAGES + j;  // index within rxPar.lnaXsets vector
-    		    	  // gates, if value is within limits
-    		    	  if (rxPar[i].LNAsets[j] >= VGMIN && rxPar[i].LNAsets[j] <= VGMAX) {
-    		    		  flashData.lnaGsets[k] = rxPar[i].LNAsets[j];
-    		    	  } else {
-    		    		  flashData.lnaGsets[k] = VGSTART;
-    		    	  }
-    		    	  // drains, if value is within limits
-    		    	  if (rxPar[i].LNAsets[j+NSTAGES] >= VDMIN && rxPar[i].LNAsets[j+NSTAGES] <= VDMAX) {
-    		    		  flashData.lnaDsets[k] = rxPar[i].LNAsets[j+NSTAGES];
-    		    	  } else {
-    		    		  flashData.lnaDsets[k] = VDSTART;
-    		    	  }
-    		      }
-    		    }
-     		    for (i=0; i<NRX; i++) {  // now write DCM2 atten values into flash
-     		    	flashData.attenAI[i] = dcm2Apar.attenI[i];
-     		    	flashData.attenAQ[i] = dcm2Apar.attenQ[i];
-     		    	flashData.attenBI[i] = dcm2Bpar.attenI[i];
-     		    	flashData.attenBQ[i] = dcm2Bpar.attenQ[i];
+     		    if (noDCM2) {
+     		    	for (i=0; i<NRX; i++) {
+     		    		for (j=0; j<NSTAGES; j++){
+     		    			k = i*NSTAGES + j;  // index within rxPar.lnaXsets vector
+     		    			// gates, if value is within limits
+     		    			if (rxPar[i].LNAsets[j] >= VGMIN && rxPar[i].LNAsets[j] <= VGMAX) {
+     		    				flashData.lnaGsets[k] = rxPar[i].LNAsets[j];
+     		    			} else {
+     		    				flashData.lnaGsets[k] = VGSTART;
+     		    			}
+     		    			// drains, if value is within limits
+     		    			if (rxPar[i].LNAsets[j+NSTAGES] >= VDMIN && rxPar[i].LNAsets[j+NSTAGES] <= VDMAX) {
+     		    				flashData.lnaDsets[k] = rxPar[i].LNAsets[j+NSTAGES];
+     		    			} else {
+     		    				flashData.lnaDsets[k] = VDSTART;
+     		    			}
+     		    		}
+     		    	}
+     		    } else {
+     		    	for (i=0; i<NRX; i++) {  // now write DCM2 atten values into flash
+     		    		flashData.attenAI[i] = dcm2Apar.attenI[i];
+     		    		flashData.attenAQ[i] = dcm2Apar.attenQ[i];
+     		    		flashData.attenBI[i] = dcm2Bpar.attenI[i];
+     		    		flashData.attenBQ[i] = dcm2Bpar.attenQ[i];
+     		    	}
      		    }
     		  } else {
     	            // no valid selection, quit

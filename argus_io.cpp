@@ -2730,13 +2730,13 @@ int comap_presets(const flash_t *flash)
 				buffer[0] = dcm2sw.ssba[i];
 				I2CSEND1;
 				//HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float atten, BYTE addr, BYTE *bits)
-				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, (float)flash->attenAI[i]*2, BEX_ADDR, &attenBits);
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, ((float)flash->attenAI[i])/2., BEX_ADDR, &attenBits);
 				if (!I2CStat) {
 					dcm2Apar.attenI[i] = attenBits;  // store command bits for atten
 				} else {
 					dcm2Apar.attenI[i] = 198;
 				}
-				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, (float)flash->attenAQ[i]*2, BEX_ADDR, &attenBits);
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, ((float)flash->attenAQ[i])/2., BEX_ADDR, &attenBits);
 				if (!I2CStat) {
 					dcm2Apar.attenQ[i] = attenBits;  // store command bits for atten
 				} else {
@@ -2751,14 +2751,13 @@ int comap_presets(const flash_t *flash)
 				address = DCM2_SSBADDR;        // I2C switch address DCM2_SSBADDR for second-level switch, band A
 				buffer[0] = dcm2sw.ssbb[i];
 				I2CSEND1;
-				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, (float)flash->attenBI[i]*2, BEX_ADDR, &attenBits);
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, ((float)flash->attenBI[i])/2., BEX_ADDR, &attenBits);
 				if (!I2CStat) {
 					dcm2Bpar.attenI[i] = attenBits;  // store command bits for atten
 				} else {
 					dcm2Bpar.attenI[i] = 198;
 				}
-//				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, (float)flash->attenBQ[i]*2, BEX_ADDR, &attenBits);
-				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, 3.5, BEX_ADDR, &attenBits);
+				I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, ((float)flash->attenBQ[i])/2., BEX_ADDR, &attenBits);
 				if (!I2CStat) {
 					dcm2Bpar.attenQ[i] = attenBits;  // store command bits for atten
 				} else {

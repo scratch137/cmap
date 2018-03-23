@@ -1859,7 +1859,7 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	  n4 += sprintf(&str4[n4], "]");
 	  n5 += sprintf(&str5[n5], "]");
 
-	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s", str0, str1, str2, str4, str5);
+	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s, ", str0, str1, str2, str3, str4, str5);
 
       n0 = sprintf(&str0[0], "\"Bstatus\":[%.1f", (float)dcm2Bpar.status[0]);
       n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
@@ -1882,7 +1882,7 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	  n4 += sprintf(&str4[n4], "]");
 	  n5 += sprintf(&str5[n5], "]");
 
-	  n += sprintf(&outStr[n], ", %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str4, str5);
+	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s}}", str0, str1, str2, str3, str4, str5);
 	  sprintf(status, "%s", outStr);
 	}
   } else {
