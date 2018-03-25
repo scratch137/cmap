@@ -347,7 +347,7 @@ float adc2v(short int adcw, float sc, float offs, char bip) {
 */
 int argus_setLNAbias(char *term, int m, int n, float v, unsigned char busyOverride)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	unsigned short int dacw;
 	short I2CStat;
@@ -461,7 +461,7 @@ int argus_setLNAbias(char *term, int m, int n, float v, unsigned char busyOverri
 
 int argus_setAllBias(char *inp, float v, unsigned char busyOverride){
 
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	int i, j, stat=0;
 
@@ -512,7 +512,7 @@ int argus_setAllBias(char *inp, float v, unsigned char busyOverride){
 
 int argus_readLNAbiasADCs(char *sw)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	int n, m, mmax; //index counters
 	int baseAddr;  // offset in values vector
@@ -631,7 +631,7 @@ int argus_readLNAbiasADCs(char *sw)
 
 int argus_readBCpsV(void)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	struct chRead2 *bcPsVptr[] = {&pvRead, &nvRead, &vdsRead, &vccRead};  // pointers to bias card struct
 	BYTE bcard_i2caddr[] = BCARD_I2CADDR;
@@ -713,7 +713,7 @@ int argus_readBCpsV(void)
 int argus_readPwrADCs(void)
 {
 
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	short i;
 	unsigned short int rawu;
@@ -778,7 +778,7 @@ int argus_readPwrADCs(void)
 
 int argus_lnaPowerPIO(void)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	unsigned char pioState;
 
@@ -828,7 +828,7 @@ int argus_lnaPowerPIO(void)
           */
 int argus_lnaPower(short state)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	BYTE pioState;
 
@@ -1060,7 +1060,7 @@ float v2t_670(float v) {
 */
 int argus_readThermADCs(void)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	short i;
 	unsigned short int rawu;
@@ -1178,7 +1178,7 @@ int argus_clearBus(void)
  ------------------------------------------------------------------*/
 int argus_readAllSystemADCs(void)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	int I2CStat = 0;
 	if (argus_readPwrADCs() == I2CBUSERRVAL) I2CStat = I2CBUSERRVAL;
@@ -1218,7 +1218,7 @@ int argus_readAllSystemADCs(void)
 */
 int argus_biasCheck(void)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	int i;  // loop counter
 	int ret = 0;  // return value
@@ -1262,7 +1262,7 @@ int argus_biasCheck(void)
 */
 int argus_powCheck(void)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	int ret = 0;  // return value
 
@@ -1296,7 +1296,7 @@ int argus_powCheck(void)
 */
 int argus_thermCheck(void)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	int ret = 0;  // return value
 
@@ -1443,7 +1443,7 @@ struct dcm2switches dcm2sw = {  // all channels point to 20A
 #endif
 
 // Flag for DCM2 board detection; 0 if present, !0 else
-int noDCM2;
+int foundLNAbiasSys;
 
 /*******************************************************************/
 /**
@@ -1631,7 +1631,7 @@ BYTE readBEX(BYTE addr)
 int dcm2_readMBadc(void)
 {
 
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	short i;
 	unsigned short int rawu;
@@ -1674,7 +1674,7 @@ int dcm2_readMBadc(void)
 */
 int dcm2_ampPow(char *inp)
 {
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	int I2CStatus = openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);
 	if (I2CStatus) return (I2CStatus);
@@ -1702,7 +1702,7 @@ int dcm2_ampPow(char *inp)
 */
 int dcm2_ledOnOff(char *inp)
 {
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	int I2CStatus = openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);  // get bus control
 	if (I2CStatus) return (I2CStatus);
@@ -1826,7 +1826,7 @@ float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE ad
 int dcm2_readMBtemp(void)
 {
 
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	int I2CStatus = openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);  // get bus control
 	if (I2CStatus) return (I2CStatus);
@@ -1851,7 +1851,7 @@ int dcm2_readMBtemp(void)
 int dcm2_readAllModTemps(void)
 {
 
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	// use this approach to lock bus for multiple readouts
 	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
@@ -1989,7 +1989,7 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
 int dcm2_readAllModTotPwr(void)
 {
 
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	// check that I2C bus is available, else return
 	// use this approach to lock bus during multiple readouts
@@ -2123,7 +2123,7 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 {
 
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	BYTE ssb;         // subsubbus address
 	BYTE attenBits;   // attenuator command bits
@@ -2195,7 +2195,7 @@ int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 int dcm2_setAllAttens(float atten)
 {
 
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	// check for freeze
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
@@ -2278,7 +2278,7 @@ int dcm2_setAllAttens(float atten)
 int dcm2_blockMod(char *ch, char *ab)
 {
 
-	if (noDCM2) return WRONGBOX;  // return if no DCM2 is present
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
 	int m;
@@ -2328,25 +2328,20 @@ int init_dcm2(void)
 	address = DCM2_SBADDR;           // Open: I2C switch address
 	buffer[0] = DCM2PERIPH_SBADDR;   // I2C channel address
 	I2CStat = I2CSEND1;
-	noDCM2 = configBEX(BEXCONF0, BEX_ADDR0);  // test to see if config "takes"
-	if (noDCM2) {            // if not:
-		argus_clearBus();    // clear bus errors; dragged low by addressing unpowered LNA board (err = 5)
-		return -1;           // bail out
-	}
-	writeBEX(BEXINIT0, BEX_ADDR0);  // otherwise, dcm2 detected, keep going
-	closeI2Csbus(DCM2_SBADDR);
-	address = DCM2_SBADDR;          // Close: I2C switch address
-	buffer[0] = 0x00;               // open switches
+	configBEX(BEXCONF0, BEX_ADDR0);  // configure DCM2 main board BEX
+	writeBEX(BEXINIT0, BEX_ADDR0);   // initialize DCM2 main board BEX
+	address = DCM2_SBADDR;           // Close: I2C switch address
+	buffer[0] = 0x00;                // open switches
 	I2CStat = I2CSEND1;
 
     // Configure and initialize BEXs on DCM2 modules
 	int m;  // loop counter
 	for (m=0; m<NRX; m++){
 		// select, configure, and initialize A bank; keep track in status element
-		address = 0x77;            // I2C switch address 0x77 for top-level switch
+		address = DCM2_SBADDR;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-		address = 0x73;
+		address = DCM2_SSBADDR;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
 		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
@@ -2356,10 +2351,10 @@ int init_dcm2(void)
 		J2[28].clr();  // enable I2C switches
 
 		// select, configure, and initialize B bank; keep track in status element
-		address = 0x77;            // I2C switch address 0x77 for top-level switch
+		address = DCM2_SBADDR;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-		address = 0x73;
+		address = DCM2_SSBADDR;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
 		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
@@ -2375,6 +2370,8 @@ int init_dcm2(void)
 	buffer[0] = 0x00;
 	I2CStat = I2CSEND1;
 
+	// release bus for rest of init
+	i2cBusBusy = 0;
 
 	// Read out once to initialize (but these will also unset/set bus lock)
 	dcm2_readMBadc();
@@ -2426,7 +2423,7 @@ struct saddlebagParams sbPar[] = {
 */
 int sb_ampPow(char *inp, int sbNum)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
@@ -2481,7 +2478,7 @@ int sb_ampPow(char *inp, int sbNum)
 */
 int sb_setAllAmps(char *inp)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
@@ -2543,7 +2540,7 @@ int sb_setAllAmps(char *inp)
 
 int sb_ledOnOff(char *inp, int sbNum)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	BYTE swaddr[] = SADDLEBAG_SWADDR;
 
@@ -2575,7 +2572,7 @@ int sb_ledOnOff(char *inp, int sbNum)
 */
 int sb_readPLLmon(int sbNum)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	BYTE sbaddr[] = SADDLEBAG_SWADDR;
 
@@ -2601,7 +2598,7 @@ int sb_readPLLmon(int sbNum)
 */
 int sb_readADC(int sbNum)
 {
-	if (!noDCM2) return WRONGBOX;
+	if (!foundLNAbiasSys) return WRONGBOX;
 
 	short i;
 	unsigned short int rawu;
@@ -2656,12 +2653,17 @@ void init_saddlebags(void)
 	int i;
 	int I2CStat;
 
+	// Configure BEXs on all saddlebags
+	address = SB_SBADDR;  // Select I2C subbus
+	buffer[0] = I2CSSB_I2CADDR;
+	I2CStat = I2CSEND1;
 	for (i=0; i<NSBG; i++){
-		openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, swaddr[i]);  // get bus control
+		address = SB_SSBADDR;  // Select I2C subsubbus
+		buffer[0] = swaddr[i];
+		I2CStat = I2CSEND1;
 		I2CStat = configBEX(0x03, SBBEX_ADDR);  // configure I/O, amplifiers on
 		sbPar[i].ampPwr = (I2CStat ? I2CStat : 1);
 		writeBEX(0x80, SBBEX_ADDR);   // turn off LED (if on)
-		closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 		// use value in sbPar.ampPwr to set sbPar.ampStatus
 		switch (sbPar[i].ampPwr) {
 			case 0 :
@@ -2673,12 +2675,30 @@ void init_saddlebags(void)
 			default : sprintf(sbPar[i].ampStatus, "ERR%d", -sbPar[i].ampPwr);
 		}
 	}
-	OSTimeDly(2);                // perceptible off time for blink
+	address = SB_SSBADDR;  // Close subsubbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+	address = SB_SBADDR;  // Close subbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+
+	// Blink LEDs to show complete
+	OSTimeDly(5);                // perceptible off time for blink off
+	address = SB_SBADDR;         // Select I2C subbus
+	buffer[0] = I2CSSB_I2CADDR;
+	I2CStat = I2CSEND1;
 	for (i=0; i<NSBG; i++) {
-		openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, swaddr[i]);  // get bus control
+		address = SB_SSBADDR;   // Select I2C subsubbus
+		buffer[0] = swaddr[i];
+		I2CStat = I2CSEND1;
 		writeBEX(0x00, SBBEX_ADDR);   // turn on LED
-		closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 	}
+	address = SB_SSBADDR;  // Close subsubbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+	address = SB_SBADDR;  // Close subbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
 
 	return;
 }
@@ -2708,7 +2728,7 @@ int comap_presets(const flash_t *flash)
 	int rtn = 0;
 	BYTE attenBits;
 
-	if (noDCM2) {  // set LNA bias
+	if (foundLNAbiasSys) {  // set LNA bias
 		for (i=0; i<NRX; i++) {
 			for (j=0; j<NSTAGES; j++){  // set drains first, then gates
 				k = i*NSTAGES+j;
@@ -2828,6 +2848,8 @@ void init_bias(void)
 void argus_init(const flash_t *flash)
 {
 
+	i2cBusBusy = 1;  // lock bus from outside use during initialization
+
 	// get voltage divider value from flash
 	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
 	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
@@ -2856,11 +2878,28 @@ void argus_init(const flash_t *flash)
 	OSTimeDly(1);
 	J2[28].clr();  // enable I2C switches
 
-	init_dcm2();  // initialize dcm2 control board
+	// Try to detect bias system power control card is there
+	// If so, initialize for the bias system; else initialize for DCM2 control
 
-	if (noDCM2) {
-		init_bias();       // initialize bias system
+	// Test: select power control card (nothing is connected to DCM2 switch at this setting)
+	address = I2CSWITCH_BP;
+	buffer[0] = PWCTL_I2CADDR;
+	I2CSEND1;
+	// try to set register for power control BEX
+	address = 0x21;
+	buffer[0] = 0x00;
+	foundLNAbiasSys = I2CSEND1;
+	foundLNAbiasSys = (foundLNAbiasSys ? 0 : 1);
+	// Open select switch
+	address = I2CSWITCH_BP;
+	buffer[0] = 0x00;
+	I2CSEND1;
+
+	if (foundLNAbiasSys) {
+		init_bias();       // initialize front-end LNA bias system
 		init_saddlebags(); // initialize saddlebag interface boards
+	} else {
+		init_dcm2();       // initialize dcm2 controls
 	}
 
     // release I2C bus

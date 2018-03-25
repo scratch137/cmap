@@ -336,7 +336,8 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
       	}
     } else {
     	OSTimeDly(CMDDELAY);
-    	sprintf(status, "%sEngineering:\r\n"
+    	if (foundLNAbiasSys) {
+    		sprintf(status, "%sEngineering for Front-end system:\r\n"
     		"  i2cBusBusy = %d, freeze = %u\r\n"
             "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
             "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
@@ -344,12 +345,19 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
        		"  bypassLNAlims = %d\r\n"
      		"  decimal points: %d, %d\r\n"
        		"  power control PIO byte = 0x%02x\r\n"
-    		"  DCM2 board detected: %s (status = %d)\r\n"
     		"  version %s\r\n",
     		statusOK, i2cBusBusy, freezeSys,
     		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
-    		lnaPSlimitsBypass, lnaLimitsBypass,
-    		d1, d2, argus_lnaPowerPIO(), (noDCM2 ? "no" : "yes"), noDCM2, VER);
+    		lnaPSlimitsBypass, lnaLimitsBypass, d1, d2, argus_lnaPowerPIO(), VER);
+    	} else {
+    		sprintf(status, "%sEngineering for DCM2 system:\r\n"
+    		"  i2cBusBusy = %d, freeze = %u\r\n"
+            "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
+            "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
+    		"  version %s\r\n",
+    		statusOK, i2cBusBusy, freezeSys,
+    		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr, VER);
+    	}
     }
   } else {
 	  longHelp(status, usage, &Correlator::execArgusEngr);
@@ -943,7 +951,7 @@ void Correlator::execCOMAPpresets(return_type status, argument_type arg)
 	zpec_readFlash(&flashData);
 	OSTimeDly(CMDDELAY);
 	int rtn = comap_presets(&flashData);
-    sprintf(status, "%sSet LNA or DCM2 to stored values, status %d\r\n",
+    sprintf(status, "%sSetting parameters to stored values, status %d\r\n",
     		(rtn==0 ? statusOK : statusERR), rtn);
   } else {
 	longHelp(status, usage, &Correlator::execCOMAPpresets);
@@ -1485,7 +1493,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
     	  } else if (!strcasecmp(state, "pres")) {
     		  flash_t flashData;
     		  zpec_readFlash(&flashData);
-    		  if (noDCM2) {
+    		  if (foundLNAbiasSys) {
     			  sprintf(status, "%sStored bias values in [V]\n\r\n"
 	      			  "          1               2               3               4\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"

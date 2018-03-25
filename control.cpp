@@ -369,7 +369,7 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
     		    // Move LNA bias settings to flashData; storage is g, d  (matches argus_LNApresets)
     		    short i, j, k;
-     		    if (noDCM2) {
+     		    if (foundLNAbiasSys) {
      		    	for (i=0; i<NRX; i++) {
      		    		for (j=0; j<NSTAGES; j++){
      		    			k = i*NSTAGES + j;  // index within rxPar.lnaXsets vector
