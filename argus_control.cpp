@@ -337,7 +337,7 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
     } else {
     	OSTimeDly(CMDDELAY);
     	if (foundLNAbiasSys) {
-    		sprintf(status, "%sEngineering for Front-end system:\r\n"
+    		sprintf(status, "%sEngineering report, Front-end system:\r\n"
     		"  i2cBusBusy = %d, freeze = %u\r\n"
             "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
             "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
@@ -350,7 +350,7 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
     		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
     		lnaPSlimitsBypass, lnaLimitsBypass, d1, d2, argus_lnaPowerPIO(), VER);
     	} else {
-    		sprintf(status, "%sEngineering for DCM2 system:\r\n"
+    		sprintf(status, "%sEngineering report, DCM2 system:\r\n"
     		"  i2cBusBusy = %d, freeze = %u\r\n"
             "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
             "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"

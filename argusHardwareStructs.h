@@ -203,7 +203,7 @@ struct chRead2 { // read ADCs
 #define SPI_MOSI_M 0x40
 #define SPI_CLK_M 0x80
 // BEX I2C address for downconverter cards
-#define BEX_ADDR 0x21       // 0x21 for lab testing with I2C interface, 0x20 for DCM2 module
+#define BEX_ADDR 0x20       // 0x21 for lab testing with I2C interface, 0x20 for true DCM2 modules
 // BEX init values for downconverter cards
 #define BEXCONF SPI_MISO_M  // read SPI_MISO_M, write all others on BEX
 #define BEXINIT QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS
