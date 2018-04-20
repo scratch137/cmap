@@ -2137,6 +2137,10 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 	x |= spi_csb_m;
 	buffer[1] = x;
 	I2CStat += I2CSEND2;
+	// then set CS low according to spec sheet
+	x &= ~spi_csb_m;
+	buffer[1] = x;
+	I2CStat += I2CSEND2;
 
 	return ( I2CStat );
 
