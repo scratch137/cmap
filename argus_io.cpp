@@ -2886,6 +2886,7 @@ void argus_init(const flash_t *flash)
 	buffer[0] = PWCTL_I2CADDR;
 	I2CSEND1;
 	// try to set register for power control BEX
+#if(0)
 	address = 0x21;
 	buffer[0] = 0x00;
 	foundLNAbiasSys = I2CSEND1;
@@ -2894,6 +2895,9 @@ void argus_init(const flash_t *flash)
 	address = I2CSWITCH_BP;
 	buffer[0] = 0x00;
 	I2CSEND1;
+#else
+	foundLNAbiasSys = FOUNDLNABIASSYS;
+#endif
 
 	if (foundLNAbiasSys) {
 		init_bias();       // initialize front-end LNA bias system
