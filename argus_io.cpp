@@ -2267,6 +2267,104 @@ int dcm2_setAllAttens(float atten)
 
 /********************************************************************/
 /**
+  \brief Set all DCM2 power levels.
+
+  This command sets the attenuators in the DCM2 modules
+
+  \param  inp  select on a for attenuation.
+  \param  m    mth receiver.
+  \param  ab   A or B channel
+  \param  iq   I or Q channel
+  \param  pow  power level in dB
+  \return Zero on success, -1 for invalid selection, else number of I2C read fails.
+*/
+int dcm2_setPow(int m, char *ab, char *iq, float pow)
+{
+
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
+
+	BYTE ssb;         // subsubbus address
+	BYTE attenBits;   // attenuator command bits
+	                  // dcm2parPtr defined globally
+	struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
+
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
+
+	// check for out-of-range channel number
+	if (m > NRX) {
+		return -10;
+	}
+	// select card for band A or B, set pointer to correct parameter structure
+	if (!strcasecmp(ab, "a")) {
+		ssb = dcm2sw.ssba[m];
+		dcm2parPtr = &dcm2Apar;
+	} else if (!strcasecmp(ab, "b")) {
+		ssb = dcm2sw.ssbb[m];
+		dcm2parPtr = &dcm2Bpar;
+	} else {
+		return -20;
+	}
+
+	float currAtten;
+	BYTE cs;
+	if (!strcasecmp(iq, "i")) {
+		cs = ILOG_CS;
+		currAtten = ((float) dcm2parPtr->attenI[m])/2.;
+	} else if (!strcasecmp(iq, "q")){
+		cs = QLOG_CS;
+		currAtten = ((float) dcm2parPtr->attenQ[m])/2.;
+	} else {
+		return -25;
+	}
+
+	if (!dcm2parPtr->status) {
+		return -30;  // return if channel is blocked
+	}
+
+	// open communication to DCM2 module
+	int I2CStatus = openI2Cssbus(DCM2_SBADDR, dcm2sw.sb[m], DCM2_SSBADDR, ssb); // get bus control
+	if (I2CStatus) return (I2CStatus);
+
+	for (int i=0; i<10; i++) {  // iterate to find closest atten value
+		// read current power level
+		float pval = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, cs, ADCVREF, BEX_ADDR);
+		pval = (pval < ADCVREF ? pval*DBMSCALE + DBMOFFSET : -99.);
+
+		float atten;
+		float currAtten = 0;
+		// calculate new attenuation value; break out of loop if close enough
+		atten = (pval - pow) +  currAtten;
+		if (abs(currAtten - atten)-0.01 < 0.5) break;
+
+		// send command to attenuator
+		// select I or Q input on card
+		if (!strcasecmp(iq, "i")) {
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
+			} else {
+				dcm2parPtr->attenI[m] = 198;
+			}
+		} else if (!strcasecmp(iq, "q")){
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
+			} else {
+				dcm2parPtr->attenQ[m] = 198;
+			}
+		} else {  // invalid choice for IQ channels
+			closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
+			return (-40);
+		}
+	}
+
+	// close up and return
+	return (closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR));
+}
+
+/********************************************************************/
+/**
   \brief Block DCM2 module.
 
   This command writes a non-zero value to the appropriate status byte of the DCM2 parameters structure.
