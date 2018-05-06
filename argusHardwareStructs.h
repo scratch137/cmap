@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // Version label
-#define VER "comap_20180506d_powtest"
+#define VER "comap_20180515d_powtest"
 
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 0  // 1 for bias, 0 for DCM2

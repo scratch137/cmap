@@ -2332,7 +2332,7 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 		pval = (pval < ADCVREF ? pval*DBMSCALE + DBMOFFSET : -99.);
 
 		float atten;
-		float currAtten = 0;
+
 		// calculate new attenuation value; break out of loop if close enough
 		atten = (pval - pow) +  currAtten;
 		if (abs(currAtten - atten)-0.01 < 0.5) break;
@@ -2343,20 +2343,25 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 			if (!I2CStat) {
 				dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
+				currAtten = atten;
 			} else {
 				dcm2parPtr->attenI[m] = 198;
+				currAtten = 99.;
 			}
 		} else if (!strcasecmp(iq, "q")){
 			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 			if (!I2CStat) {
 				dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
+				currAtten = atten;
 			} else {
 				dcm2parPtr->attenQ[m] = 198;
+				currAtten = 99.;
 			}
 		} else {  // invalid choice for IQ channels
 			closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
 			return (-40);
 		}
+		if (currAtten<0.1 || currAtten>(MAXATTEN-0.1)) break;  // stop if attenuator is at a limit
 	}
 
 	// close up and return
