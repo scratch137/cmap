@@ -2338,24 +2338,24 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 		if (abs(currAtten - atten)-0.01 < 0.5) break;
 
 		// send command to attenuator
-		// select I or Q input on card
+		// select I or Q input on card, then set new atten val.  return with error code for bus write problem.
 		if (!strcasecmp(iq, "i")) {
 			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 			if (!I2CStat) {
 				dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
-				currAtten = atten;
+				currAtten = ((float) attenBits)/2.;
 			} else {
-				dcm2parPtr->attenI[m] = 198;
-				currAtten = 99.;
+				closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
+				return I2CBUSERRVAL;
 			}
 		} else if (!strcasecmp(iq, "q")){
 			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
 			if (!I2CStat) {
 				dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
-				currAtten = atten;
+				currAtten = ((float) attenBits)/2.;
 			} else {
-				dcm2parPtr->attenQ[m] = 198;
-				currAtten = 99.;
+				closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
+				return I2CBUSERRVAL;
 			}
 		} else {  // invalid choice for IQ channels
 			closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);

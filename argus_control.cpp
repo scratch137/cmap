@@ -336,27 +336,27 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
       	}
     } else {
     	OSTimeDly(CMDDELAY);
-    	if (foundLNAbiasSys) {
-    		sprintf(status, "%sEngineering report, Front-end system:\r\n"
-    		"  i2cBusBusy = %d, freeze = %u\r\n"
-            "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
-            "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
-    		"  bypassLNApsLim = %d\r\n"
-       		"  bypassLNAlims = %d\r\n"
-     		"  decimal points: %d, %d\r\n"
-       		"  power control PIO byte = 0x%02x\r\n"
-    		"  version %s\r\n",
-    		statusOK, i2cBusBusy, freezeSys,
-    		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
-    		lnaPSlimitsBypass, lnaLimitsBypass, d1, d2, argus_lnaPowerPIO(), VER);
+     	if (foundLNAbiasSys) {
+     		sprintf(status, "%sEngineering report, Front-end system:\r\n"
+     				"  i2cBusBusy = %d, freeze = %u\r\n"
+     				"  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
+     				"  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
+     				"  bypassLNApsLim = %d\r\n"
+     				"  bypassLNAlims = %d\r\n"
+     				"  decimal points: %d, %d\r\n"
+     				"  power control PIO byte = 0x%02x\r\n"
+     				"  version %s\r\n",
+     				statusOK, i2cBusBusy, freezeSys,
+     				busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
+     				lnaPSlimitsBypass, lnaLimitsBypass, d1, d2, argus_lnaPowerPIO(), VER);
     	} else {
     		sprintf(status, "%sEngineering report, DCM2 system:\r\n"
-    		"  i2cBusBusy = %d, freeze = %u\r\n"
-            "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
-            "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
-    		"  version %s\r\n",
-    		statusOK, i2cBusBusy, freezeSys,
-    		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr, VER);
+    				"  i2cBusBusy = %d, freeze = %u\r\n"
+    				"  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
+    				"  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
+    				"  version %s\r\n",
+    				statusOK, i2cBusBusy, freezeSys,
+    				busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr, VER);
     	}
     }
   } else {
