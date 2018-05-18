@@ -2267,16 +2267,15 @@ int dcm2_setAllAttens(float atten)
 
 /********************************************************************/
 /**
-  \brief Set all DCM2 power levels.
+  \brief Set individual DCM2 power levels.
 
   This command sets the attenuators in the DCM2 modules
 
-  \param  inp  select on a for attenuation.
   \param  m    mth receiver.
   \param  ab   A or B channel
   \param  iq   I or Q channel
   \param  pow  power level in dB
-  \return Zero on success, -1 for invalid selection, else number of I2C read fails.
+  \return Zero on success, else error coding.
 */
 int dcm2_setPow(int m, char *ab, char *iq, float pow)
 {
@@ -2326,16 +2325,12 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 	int I2CStatus = openI2Cssbus(DCM2_SBADDR, dcm2sw.sb[m], DCM2_SSBADDR, ssb); // get bus control
 	if (I2CStatus) return (I2CStatus);
 
-	for (int i=0; i<10; i++) {  // iterate to find closest atten value; max iterations hard-coded here
+	for (int i=0; i<5; i++) {  // iterate to find closest atten value; max iterations hard-coded here
 		// read current power level
 		float pval = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, cs, ADCVREF, BEX_ADDR);
 		pval = (pval < ADCVREF ? pval*DBMSCALE + DBMOFFSET : -99.);
-
-		float atten;
-
-		// calculate new attenuation value; break out of loop if close enough
-		atten = (pval - pow) +  currAtten;
-		if (abs(currAtten - atten)-0.01 < 0.5) break;
+		// calculate new attenuation value
+		float atten = (pval - pow) +  currAtten;
 
 		// send command to attenuator
 		// select I or Q input on card, then set new atten val.  return with error code for bus write problem.
@@ -2345,8 +2340,7 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 				dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
 				currAtten = ((float) attenBits)/2.;
 			} else {
-				closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
-				return I2CBUSERRVAL;
+				break;
 			}
 		} else if (!strcasecmp(iq, "q")){
 			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
@@ -2354,18 +2348,38 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 				dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
 				currAtten = ((float) attenBits)/2.;
 			} else {
-				closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
-				return I2CBUSERRVAL;
+				break;
 			}
-		} else {  // invalid choice for IQ channels
-			closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
-			return (-40);
 		}
+		if (abs(pval - pow) < 0.501) break;  // quit when close enough
 		if (currAtten<0.1 || currAtten>(MAXATTEN-0.1)) break;  // stop if attenuator is at a limit
 	}
 
 	// close up and return
 	return (closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR));
+}
+
+/********************************************************************/
+/**
+  \brief Set all DCM2 power levels to a common value.
+
+  This command sets the attenuators in the DCM2 modules
+
+  \param  pow  power level in dB
+  \return Zero on success, else error coding.
+*/
+int dcm2_setAllPow(float pow)
+{
+	int m; // loop counter
+	int I2CStatus = 0;
+
+	for (m=1; m<(NRX+1); m++) { // one-base counting for receivers
+		I2CStatus += dcm2_setPow(m, "a", "i", pow);
+		I2CStatus += dcm2_setPow(m, "a", "q", pow);
+		I2CStatus += dcm2_setPow(m, "b", "i", pow);
+		I2CStatus += dcm2_setPow(m, "b", "q", pow);
+	}
+	return I2CStatus;
 }
 
 /********************************************************************/

@@ -854,6 +854,7 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
+  "    P  DCM2 power levels [dBm].\r\n"
   "    S  saddlebag amp power [on/off].\r\n"
   "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
 		  ;
@@ -875,6 +876,13 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
    		sscanf(act, "%f", &v);
         int rtn = dcm2_setAllAttens(v);
 		sprintf(status, "%sdcm2_setAllAttens(%f) returned status %d.\r\n",
+					(rtn==0 ? statusOK : statusERR), v, rtn);
+      } else if (!strcmp(inp, "p")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllPow(v);
+		sprintf(status, "%sdcm2_setAllPow(%f) returned status %d.\r\n",
 					(rtn==0 ? statusOK : statusERR), v, rtn);
       } else if (!strcmp(inp, "s")) {
       	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
@@ -924,6 +932,7 @@ void Correlator::execJArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
+  "    P  DCM2 power levels [dBm].\r\n"
   "    S  saddlebag amp power [on/off].\r\n"
   "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
 		  ;
@@ -945,6 +954,12 @@ void Correlator::execJArgusSetAll(return_type status, argument_type arg)
    		sscanf(act, "%f", &v);
         int rtn = dcm2_setAllAttens(v);
 		sprintf(status, "{\"allA\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+      } else if (!strcmp(inp, "p")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllPow(v);
+		sprintf(status, "{\"allP\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
       } else if (!strcmp(inp, "s")) {
       	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
      	OSTimeDly(CMDDELAY);
