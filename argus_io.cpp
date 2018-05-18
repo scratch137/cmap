@@ -2267,16 +2267,15 @@ int dcm2_setAllAttens(float atten)
 
 /********************************************************************/
 /**
-  \brief Set all DCM2 power levels.
+  \brief Set individual DCM2 power levels.
 
   This command sets the attenuators in the DCM2 modules
 
-  \param  inp  select on a for attenuation.
   \param  m    mth receiver.
   \param  ab   A or B channel
   \param  iq   I or Q channel
   \param  pow  power level in dB
-  \return Zero on success, -1 for invalid selection, else number of I2C read fails.
+  \return Zero on success, else error coding.
 */
 int dcm2_setPow(int m, char *ab, char *iq, float pow)
 {
@@ -2366,6 +2365,29 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 
 	// close up and return
 	return (closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR));
+}
+
+/********************************************************************/
+/**
+  \brief Set all DCM2 power levels to a common value.
+
+  This command sets the attenuators in the DCM2 modules
+
+  \param  pow  power level in dB
+  \return Zero on success, else error coding.
+*/
+int dcm2_setAllPow(float pow)
+{
+	int m; // loop counter
+	int I2CStatus = 0;
+
+	for (m=0; m<NRX; m++) {
+		I2CStatus += dcm2_setPow(m, "a", "i", pow);
+		I2CStatus += dcm2_setPow(m, "a", "q", pow);
+		I2CStatus += dcm2_setPow(m, "b", "i", pow);
+		I2CStatus += dcm2_setPow(m, "b", "q", pow);
+	}
+	return I2CStatus;
 }
 
 /********************************************************************/
