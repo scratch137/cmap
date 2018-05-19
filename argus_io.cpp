@@ -2123,6 +2123,7 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 {
 
+
 	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	BYTE ssb;         // subsubbus address
@@ -2351,7 +2352,7 @@ int dcm2_setPow(int m, char *ab, char *iq, float pow)
 				break;
 			}
 		}
-		if (abs(pval - pow) < 0.501) break;  // quit when close enough
+		if (abs(pval - pow) < 0.501) break;  // quit when close enough; half dB step hard-coded here
 		if (currAtten<0.1 || currAtten>(MAXATTEN-0.1)) break;  // stop if attenuator is at a limit
 	}
 
@@ -2373,7 +2374,7 @@ int dcm2_setAllPow(float pow)
 	int m; // loop counter
 	int I2CStatus = 0;
 
-	for (m=1; m<(NRX+1); m++) { // one-base counting for receivers
+	for (m=0; m<NRX; m++) {
 		I2CStatus += dcm2_setPow(m, "a", "i", pow);
 		I2CStatus += dcm2_setPow(m, "a", "q", pow);
 		I2CStatus += dcm2_setPow(m, "b", "i", pow);
