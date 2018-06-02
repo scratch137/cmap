@@ -2938,7 +2938,11 @@ int vane_readADC(void)
   \brief Vane drive initialization.
 
   This function initializes the vane control BEX.
+<<<<<<< HEAD
   - Sets all write bits on BEX high; others remain high-Z. [should it move vane to obs position?]
+=======
+  - Sets all bits on BEX high. [should it move vane to obs position?]
+>>>>>>> a39ba7760c2a74c4041d00a4dc76470f2c539070
   - Blinks LED or simply turns it on if it were off.
 
   \return Nothing.
