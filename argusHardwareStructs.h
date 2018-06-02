@@ -12,9 +12,9 @@ AH 2014.07.01
 */
 
 // set manual flag for bias or dcm2 system
-#define FOUNDLNABIASSYS 0  // 1 for bias, 0 for DCM2
+#define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20180519_d"
+#define VER "comap_20180602_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -232,12 +232,25 @@ struct dcm2params {
 #define SBADC_ADDR 0x08  // I2C bus address for saddlebag bus expanders
 #define NSBG 4           // ones-base number of saddlebags, used in error checking
 
-// ADC order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
 struct saddlebagParams {
 	float adcv[8];
 	BYTE pll;
 	BYTE ampPwr;
 	char *ampStatus;
+};
+
+/***************************************************************************/
+/* Vane definitions */
+// Use many definitions from saddlebags since interface hardware is identical
+
+#define VANE_SWADDR 0x08
+#define VANEINPORT 0x04
+#define VANEOUTPORT 0x08
+
+struct vaneParams {
+	float adcv[8];
+	BYTE vaneFlag;
+	char *vanePos;
 };
 
 #endif
