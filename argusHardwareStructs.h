@@ -244,7 +244,8 @@ struct saddlebagParams {
 /* Vane definitions */
 // Use many definitions from saddlebags since interface hardware is identical
 
-#define VANE_SWADDR 0x08
+#define VANE_SWADDR 0x08 // for testing, on SSC3/SSD3
+//#define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
 #define VANEINPORT 0x04
 #define VANEOUTPORT 0x08
 
