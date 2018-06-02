@@ -45,6 +45,18 @@ char *sbnames[] = {"+12V   [V]",
 				   "PLL lock  ",
                    "Amp on    "};
 
+// names for vane test points; names in JSaddlebag should match these
+char *vnames[] = {"Vin    [V]",
+                   "NC        ",
+                   "NC        ",
+                   "NC        ",
+		           "Angle     ",
+		           "T_load [C]",
+		           "T_outs [C]",
+		           "T_shrd [C]",
+				   "Vane pos. ",
+                   "          "};
+
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
 
@@ -2203,6 +2215,61 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execJSaddlebag);
 	  }
 	}
+
+/*************************************************************************************/
+/**
+  \brief Vane control.
+
+  This method controls the vane control card and readouts.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execVane(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[Command]\r\n"
+      "  Vane commands:\r\n"
+      "    OBS moves ambient vane out of the beam.\r\n"
+	  "    CAL moves ambient vane into calibration position.\r\n"
+	  "  No argument returns monitor point data.\r\n"
+			  ;
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  int narg = sscanf(arg.str, "%3s", kw);
+
+	  if (narg == 1) {
+	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal")) {
+	    	  rtn = vane_obscal(kw);
+	    	  sprintf(status, "%svane_obscal(%s) returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), kw, rtn);
+	      } else {
+	    	  longHelp(status, usage, &Correlator::execVane);
+	      }
+	  } else {
+		  longHelp(status, usage, &Correlator::execVane);
+	  }
+	} else {
+	  rtn = vane_readADC();
+      sprintf(status, "%sVane at %s, ADC readout status %d:\r\n"
+    		  "  Vin = %5.3f\r\n"
+    		  "  Angle = %5.3f\r\n"
+    		  "  T_vane = %5.3f\r\n"
+    		  "  T_amb = %5.3f\r\n"
+    		  "  T_shroud = %5.3f\r\n\r\n",
+    	  	  (!rtn ? statusOK : statusERR), vanePar.vanePos, rtn,
+    	  	 vanePar.adcv[0],  vanePar.adcv[4],  vanePar.adcv[5],  vanePar.adcv[6],  vanePar.adcv[7]);
+	}
+  } else {
+	  longHelp(status, usage, &Correlator::execVane);
+  }
+}
 
 /*************************************************************************************/
 /**

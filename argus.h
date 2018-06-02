@@ -27,6 +27,8 @@ extern struct dcm2params dcm2Apar;
 extern struct dcm2params dcm2Bpar;
 // saddlebag defs
 extern struct saddlebagParams sbPar[];
+// vane defs
+extern struct vaneParams vanePar;
 
 extern "C" {
 #endif
@@ -90,7 +92,11 @@ extern int  sb_ledOnOff(char *inp, int sbNum);
 extern int  sb_readADC(int sbNum);
 extern int  sb_readPLLmon(int sbNum);
 extern int  sb_setAllAmps(char *inp);
-extern void  init_saddlebags(void);
+extern void init_saddlebags(void);
+
+extern int  vane_obscal(char *inp);
+extern int  vane_readADC(void);
+extern void init_vane(void);
 
 extern int  comap_presets(const flash_t *flash);
 

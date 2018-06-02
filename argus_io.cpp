@@ -2514,15 +2514,17 @@ struct saddlebagParams {
 	float adcv[8];
 	BYTE pll;
 	BYTE ampPwr;
-	char *ampStatus;};
-	float v[8];
+	char *ampStatus;
 }; */
+// ADC order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
 struct saddlebagParams sbPar[] = {
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"}
 };
+
+
 
 /*******************************************************************/
 /**
@@ -2822,6 +2824,170 @@ void init_saddlebags(void)
 }
 
 /****************************************************************************************/
+/*
+struct vaneParams {
+	float adcv[8];
+	BYTE vaneFlag;
+	char *vanePos;
+};
+with ADC order: Vin, NC, NC, NC, angle, temp_load, temp_outside, temp_shroud
+*/
+struct vaneParams vanePar = {
+		  {999., 999., 999., 999., 999., 999., 999., 999.}, 99, "N/A"
+};
+
+
+/**
+  \brief Move vane in or out.
+
+  This function toggles bits on vane control I2C interface card to drive vane in and out of beam
+  (obs and cal positions).
+
+  Bus expander should be configured in an init file
+
+  \par inp  string: "obs" or "0" for vane out of beam, else vane is in beam
+
+  \return NB error code for write to BEX.
+*/
+int vane_obscal(char *inp)
+{
+	if (!foundLNAbiasSys) return WRONGBOX;
+
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                    // check for freeze
+
+	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, VANE_SWADDR);
+	if (I2CStatus) return (I2CStatus);
+
+	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
+		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~VANEOUTPORT, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
+    	if (!I2CStatus) {
+    		vanePar.vaneFlag = 0; // record command position as obs, out of beam
+    	} else {
+    		vanePar.vaneFlag = I2CStatus; // indeterminate state
+    	}
+	} else {
+		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~VANEINPORT, SBBEX_ADDR);  // pin value low to drive to cal, all others but led high
+    	if (!I2CStatus) {
+    		vanePar.vaneFlag = 1; // record command position as cal, in beam
+    	} else {
+    		vanePar.vaneFlag = I2CStatus; // indeterminate state
+    	}
+	}
+
+	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
+
+	// use value in sbPar.ampPwr to set sbPar.ampStatus
+	switch (vanePar.vaneFlag) {
+		case 0 :
+			vanePar.vanePos = "obs";
+			break;
+		case 1 :
+			vanePar.vanePos = "CAL";
+			break;
+		default : sprintf(vanePar.vanePos, "ERR%d", -vanePar.vaneFlag);
+	}
+
+	return(I2CStatus);
+}
+
+/**
+  \brief Read all channels of the vane ADC.
+
+  This function reads values from all channels of a LTC2309 ADC.
+
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+int vane_readADC(void)
+{
+	if (!foundLNAbiasSys) return WRONGBOX;
+
+	short i;
+	unsigned short int rawu;
+
+	// Scale and offset for ADC channels
+	// order: Vin, NC, NC, NC, angle, temp_load, temp_outside, temp_shroud
+	const float offset[8] = {0, 0, 0, 0, 0., -50., -50., -50.};
+	const float scale[8] = {10., -10., 60., 60., 1000., 100., 100., 100.};
+	//const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // for calibration
+	//const float scale[8] = {1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000};  // for calibration, in mV
+
+	// get control of I2C bus
+	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, VANE_SWADDR);
+	if (I2CStatus) return (I2CStatus);
+
+	//Read all channels of ADC
+	for (i = 0 ;  i < 8 ; i++) {
+		address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
+		buffer[0] = (BYTE)pcRead.add[i];    // internal address for channel
+		I2CStat = I2CSEND1;                 // send command for conversion
+		I2CREAD2;                           // read device buffer back
+		if (I2CStat == 0) {
+			rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
+			vanePar.adcv[i] = rawu*scale[i]*4.096/65535 + offset[i];
+		}
+		else vanePar.adcv[i] = 9999.;  // error condition
+	}
+
+	// release I2C bus
+	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
+
+	return (I2CStat);
+}
+
+/**
+  \brief Vane drive initialization.
+
+  This function initializes the vane control BEX.
+  - Sets all write bits on BEX high; others remain high-Z. [should it move vane to obs position?]
+  - Blinks LED or simply turns it on if it were off.
+
+  \return Nothing.
+*/
+
+void init_vane(void)
+{
+
+	// Configure BEXs on vane interface card
+	address = SB_SBADDR;  // Select I2C subbus
+	buffer[0] = I2CSSB_I2CADDR;
+	I2CStat = I2CSEND1;
+	address = SB_SSBADDR;  // Select I2C subsubbus
+	buffer[0] = VANE_SWADDR;
+	I2CStat = I2CSEND1;
+	//
+	BYTE configByte = (BYTE)(~SBLED_ADDR & ~VANEINPORT & ~VANEOUTPORT);  // configure BEX for write by clearing bit
+	int I2CStat = configBEX(configByte, SBBEX_ADDR);
+	vanePar.vaneFlag = (I2CStat ? I2CStat : 1);
+	writeBEX(0xff, SBBEX_ADDR);   // set all ports high; turns off both LED and motor
+    //
+	address = SB_SSBADDR;  // Close subsubbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+	address = SB_SBADDR;  // Close subbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+
+	// Blink LED to show complete
+	OSTimeDly(5);                // perceptible off time for blink off
+	address = SB_SBADDR;         // Select I2C subbus
+	buffer[0] = I2CSSB_I2CADDR;
+	I2CStat = I2CSEND1;
+	address = SB_SSBADDR;   // Select I2C subsubbus
+	buffer[0] = VANE_SWADDR;
+	I2CStat = I2CSEND1;
+	writeBEX((BYTE) ~SBLED_ADDR, SBBEX_ADDR);   // turn on LED, set other port values high
+	address = SB_SSBADDR;  // Close subsubbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+	address = SB_SBADDR;  // Close subbus
+	buffer[0] = 0x00;
+	I2CStat = I2CSEND1;
+
+	return;
+}
+
+
+/****************************************************************************************/
 /**
   \brief Set LNA and attenuator params from flash.
 
@@ -3020,6 +3186,7 @@ void argus_init(const flash_t *flash)
 	if (foundLNAbiasSys) {
 		init_bias();       // initialize front-end LNA bias system
 		init_saddlebags(); // initialize saddlebag interface boards
+		init_vane();       // initialize vane control interface board
 	} else {
 		init_dcm2();       // initialize dcm2 controls
 	}
