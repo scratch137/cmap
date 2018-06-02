@@ -320,6 +320,8 @@ public:
   void execJDCM2(return_type status, argument_type arg);
   void execSaddlebag(return_type status, argument_type arg);
   void execJSaddlebag(return_type status, argument_type arg);
+  void execCOMAPpow(return_type status, argument_type arg);
+  void execJCOMAPpow(return_type status, argument_type arg);
 
 private:
   /// Alias map container type.

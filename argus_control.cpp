@@ -336,27 +336,27 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
       	}
     } else {
     	OSTimeDly(CMDDELAY);
-    	if (foundLNAbiasSys) {
-    		sprintf(status, "%sEngineering report, Front-end system:\r\n"
-    		"  i2cBusBusy = %d, freeze = %u\r\n"
-            "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
-            "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
-    		"  bypassLNApsLim = %d\r\n"
-       		"  bypassLNAlims = %d\r\n"
-     		"  decimal points: %d, %d\r\n"
-       		"  power control PIO byte = 0x%02x\r\n"
-    		"  version %s\r\n",
-    		statusOK, i2cBusBusy, freezeSys,
-    		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
-    		lnaPSlimitsBypass, lnaLimitsBypass, d1, d2, argus_lnaPowerPIO(), VER);
+     	if (foundLNAbiasSys) {
+     		sprintf(status, "%sEngineering report, Front-end system:\r\n"
+     				"  i2cBusBusy = %d, freeze = %u\r\n"
+     				"  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
+     				"  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
+     				"  bypassLNApsLim = %d\r\n"
+     				"  bypassLNAlims = %d\r\n"
+     				"  decimal points: %d, %d\r\n"
+     				"  power control PIO byte = 0x%02x\r\n"
+     				"  version %s\r\n",
+     				statusOK, i2cBusBusy, freezeSys,
+     				busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
+     				lnaPSlimitsBypass, lnaLimitsBypass, d1, d2, argus_lnaPowerPIO(), VER);
     	} else {
     		sprintf(status, "%sEngineering report, DCM2 system:\r\n"
-    		"  i2cBusBusy = %d, freeze = %u\r\n"
-            "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
-            "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
-    		"  version %s\r\n",
-    		statusOK, i2cBusBusy, freezeSys,
-    		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr, VER);
+    				"  i2cBusBusy = %d, freeze = %u\r\n"
+    				"  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
+    				"  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
+    				"  version %s\r\n",
+    				statusOK, i2cBusBusy, freezeSys,
+    				busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr, VER);
     	}
     }
   } else {
@@ -734,6 +734,108 @@ void Correlator::execJCOMAPatten(return_type status, argument_type arg)
 }
 
 /**
+  \brief COMAP individual receiver attenuator control.
+
+  Set a single receiver's warm IF attenuation for COMAP.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execCOMAPpow(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M AB IQ dB]\r\n"
+  "  Set a receiver warm IF attenuation.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+  "  dB is the power level dB to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m;
+    char ab[4], iq[4];
+    float atten;
+
+   if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
+      if (narg < 4) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execCOMAPpow);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = dcm2_setPow(m-1, ab, iq, atten);
+   			sprintf(status, "%sdcm2_setPow(%d, %s, %s, %f) returned status %d.\r\n",
+    					(rtn==0 ? statusOK : statusERR), m, ab, iq, atten, rtn);
+    	} else {
+    		sprintf(status, "%sReceiver number out of range\r\n", statusERR);
+    	}
+     }
+  } else {  // no argument: return atten vals?
+      longHelp(status, usage, &Correlator::execCOMAPpow);
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execCOMAPpow);
+  }
+}
+
+/**
+  \brief COMAP individual receiver attenuator control, JSON version.
+
+  Set a single receiver's warm IF attenuation for COMAP.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPpow(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M AB IQ dB]\r\n"
+  "  Set a receiver warm IF attenuation.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+  "  dB is the power level in dB to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m;
+    char ab[4], iq[4];
+    float atten;
+
+   if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
+      if (narg < 4) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJCOMAPpow);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = dcm2_setPow(m-1, ab, iq, atten);
+   			sprintf(status, "{\"dcm2pow\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+    	} else {
+   			sprintf(status, "{\"dcm2pow\": {\"cmdOK\":false}}\r\n");
+    	}
+     }
+  } else {
+      // Command called without arguments; return atten values?
+      longHelp(status, usage, &Correlator::execJCOMAPpow);  //here dummy
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJCOMAPpow);
+  }
+}
+
+/**
   \brief Argus: set all gate, drain biases and attenuations to a common value.
 
   Set all gate, drain biases and attenuations to a common value.
@@ -752,6 +854,7 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
+  "    P  DCM2 power levels [dBm].\r\n"
   "    S  saddlebag amp power [on/off].\r\n"
   "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
 		  ;
@@ -773,6 +876,13 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
    		sscanf(act, "%f", &v);
         int rtn = dcm2_setAllAttens(v);
 		sprintf(status, "%sdcm2_setAllAttens(%f) returned status %d.\r\n",
+					(rtn==0 ? statusOK : statusERR), v, rtn);
+      } else if (!strcmp(inp, "p")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllPow(v);
+		sprintf(status, "%sdcm2_setAllPow(%f) returned status %d.\r\n",
 					(rtn==0 ? statusOK : statusERR), v, rtn);
       } else if (!strcmp(inp, "s")) {
       	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
@@ -822,6 +932,7 @@ void Correlator::execJArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
+  "    P  DCM2 power levels [dBm].\r\n"
   "    S  saddlebag amp power [on/off].\r\n"
   "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
 		  ;
@@ -843,6 +954,12 @@ void Correlator::execJArgusSetAll(return_type status, argument_type arg)
    		sscanf(act, "%f", &v);
         int rtn = dcm2_setAllAttens(v);
 		sprintf(status, "{\"allA\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+      } else if (!strcmp(inp, "p")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllPow(v);
+		sprintf(status, "{\"allP\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
       } else if (!strcmp(inp, "s")) {
       	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
      	OSTimeDly(CMDDELAY);

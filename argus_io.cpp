@@ -2123,6 +2123,7 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 int dcm2_setAtten(int m, char *ab, char *iq, float atten)
 {
 
+
 	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
 	BYTE ssb;         // subsubbus address
@@ -2263,6 +2264,123 @@ int dcm2_setAllAttens(float atten)
 	}
 	    // close up and return; will show error if bus writes are a problem
 		return (closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR));
+}
+
+/********************************************************************/
+/**
+  \brief Set individual DCM2 power levels.
+
+  This command sets the attenuators in the DCM2 modules
+
+  \param  m    mth receiver.
+  \param  ab   A or B channel
+  \param  iq   I or Q channel
+  \param  pow  power level in dB
+  \return Zero on success, else error coding.
+*/
+int dcm2_setPow(int m, char *ab, char *iq, float pow)
+{
+
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
+
+	BYTE ssb;         // subsubbus address
+	BYTE attenBits;   // attenuator command bits
+	                  // dcm2parPtr defined globally
+	struct dcm2params *dcm2parPtr; // pointer to structure of form dcm2params
+
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
+
+	// check for out-of-range channel number
+	if (m > NRX) {
+		return -10;
+	}
+	// select card for band A or B, set pointer to correct parameter structure
+	if (!strcasecmp(ab, "a")) {
+		ssb = dcm2sw.ssba[m];
+		dcm2parPtr = &dcm2Apar;
+	} else if (!strcasecmp(ab, "b")) {
+		ssb = dcm2sw.ssbb[m];
+		dcm2parPtr = &dcm2Bpar;
+	} else {
+		return -20;
+	}
+
+	float currAtten;
+	BYTE cs;
+	if (!strcasecmp(iq, "i")) {
+		cs = ILOG_CS;
+		currAtten = ((float) dcm2parPtr->attenI[m])/2.;
+	} else if (!strcasecmp(iq, "q")){
+		cs = QLOG_CS;
+		currAtten = ((float) dcm2parPtr->attenQ[m])/2.;
+	} else {
+		return -25;
+	}
+
+	if (!dcm2parPtr->status) {
+		return -30;  // return if channel is blocked
+	}
+
+	// open communication to DCM2 module
+	int I2CStatus = openI2Cssbus(DCM2_SBADDR, dcm2sw.sb[m], DCM2_SSBADDR, ssb); // get bus control
+	if (I2CStatus) return (I2CStatus);
+
+	for (int i=0; i<5; i++) {  // iterate to find closest atten value; max iterations hard-coded here
+		// read current power level
+		float pval = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, cs, ADCVREF, BEX_ADDR);
+		pval = (pval < ADCVREF ? pval*DBMSCALE + DBMOFFSET : -99.);
+		// calculate new attenuation value
+		float atten = (pval - pow) +  currAtten;
+
+		// send command to attenuator
+		// select I or Q input on card, then set new atten val.  return with error code for bus write problem.
+		if (!strcasecmp(iq, "i")) {
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, I_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2parPtr->attenI[m] = attenBits;  // store command byte for atten
+				currAtten = ((float) attenBits)/2.;
+			} else {
+				break;
+			}
+		} else if (!strcasecmp(iq, "q")){
+			I2CStat = HMC624_SPI_bitbang(SPI_CLK_M, SPI_MOSI_M, Q_ATTEN_LE, atten, BEX_ADDR, &attenBits);
+			if (!I2CStat) {
+				dcm2parPtr->attenQ[m] = attenBits;  // store command byte for atten
+				currAtten = ((float) attenBits)/2.;
+			} else {
+				break;
+			}
+		}
+		if (abs(pval - pow) < 0.501) break;  // quit when close enough; half dB step hard-coded here
+		if (currAtten<0.1 || currAtten>(MAXATTEN-0.1)) break;  // stop if attenuator is at a limit
+	}
+
+	// close up and return
+	return (closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR));
+}
+
+/********************************************************************/
+/**
+  \brief Set all DCM2 power levels to a common value.
+
+  This command sets the attenuators in the DCM2 modules
+
+  \param  pow  power level in dB
+  \return Zero on success, else error coding.
+*/
+int dcm2_setAllPow(float pow)
+{
+	int m; // loop counter
+	int I2CStatus = 0;
+
+	for (m=0; m<NRX; m++) {
+		I2CStatus += dcm2_setPow(m, "a", "i", pow);
+		I2CStatus += dcm2_setPow(m, "a", "q", pow);
+		I2CStatus += dcm2_setPow(m, "b", "i", pow);
+		I2CStatus += dcm2_setPow(m, "b", "q", pow);
+	}
+	return I2CStatus;
 }
 
 /********************************************************************/

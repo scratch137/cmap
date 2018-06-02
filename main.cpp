@@ -146,6 +146,8 @@ void initCommandShell()
       ::zpecShell["sbag"]      = &Correlator::execSaddlebag;
       ::zpecShell["jsbag"]     = &Correlator::execJSaddlebag;
       ::zpecShell["jtime"]     = &Correlator::execjUpTime;
+      ::zpecShell["p"]         = &Correlator::execCOMAPpow;
+      ::zpecShell["jp"]        = &Correlator::execJCOMAPpow;
       break;
 
     default:
