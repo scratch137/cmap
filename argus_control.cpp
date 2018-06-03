@@ -2233,6 +2233,7 @@ void Correlator::execVane(return_type status, argument_type arg)
       "  Vane commands:\r\n"
       "    OBS moves ambient vane out of the beam.\r\n"
 	  "    CAL moves ambient vane into calibration position.\r\n"
+      "    MAN switches off both relays for manual control.\r\n"
 	  "  No argument returns monitor point data.\r\n"
 			  ;
 
@@ -2245,7 +2246,7 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  int narg = sscanf(arg.str, "%3s", kw);
 
 	  if (narg == 1) {
-	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal")) {
+	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
 	    	  rtn = vane_obscal(kw);
 	    	  sprintf(status, "%svane_obscal(%s) returned with status %d\r\n",
 	    			  (!rtn ? statusOK : statusERR), kw, rtn);
@@ -2257,12 +2258,12 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  }
 	} else {
 	  rtn = vane_readADC();
-      sprintf(status, "%sVane at %s, ADC readout status %d:\r\n"
-    		  "  Vin = %5.3f\r\n"
-    		  "  Angle = %5.3f\r\n"
-    		  "  T_vane = %5.3f\r\n"
-    		  "  T_amb = %5.3f\r\n"
-    		  "  T_shroud = %5.3f\r\n\r\n",
+      sprintf(status, "%sVane position is %s    (status %d):\r\n"
+    		  "  V_supp =   %5.3f [V]\r\n"
+    		  "  Angle =    %5.3f [V]\r\n"
+    		  "  T_vane =   %5.3f [C]\r\n"
+    		  "  T_amb =    %5.3f [C]\r\n"
+    		  "  T_shroud = %5.3f [C]\r\n\r\n",
     	  	  (!rtn ? statusOK : statusERR), vanePar.vanePos, rtn,
     	  	 vanePar.adcv[0],  vanePar.adcv[4],  vanePar.adcv[5],  vanePar.adcv[6],  vanePar.adcv[7]);
 	}

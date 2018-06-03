@@ -2859,33 +2859,35 @@ int vane_obscal(char *inp)
 	if (I2CStatus) return (I2CStatus);
 
 	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
-		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~VANEOUTPORT, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
+		I2CStatus = writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
     		vanePar.vaneFlag = 0; // record command position as obs, out of beam
+    		vanePar.vanePos = "OBS";
     	} else {
     		vanePar.vaneFlag = I2CStatus; // indeterminate state
+    		sprintf(vanePar.vanePos, "ERR-%d", vanePar.vaneFlag);
+    	}
+	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
+		I2CStatus = writeBEX(VANECALCMD, SBBEX_ADDR);  // pin value low to drive to cal, all others but LED high
+    	if (!I2CStatus) {
+    		vanePar.vaneFlag = 1; // record command position as cal, fully in beam
+			vanePar.vanePos = "CAL";
+    	} else {
+    		vanePar.vaneFlag = I2CStatus; // indeterminate state
+    		sprintf(vanePar.vanePos, "ERR-%d", vanePar.vaneFlag);
     	}
 	} else {
-		I2CStatus = writeBEX(readBEX(SBBEX_ADDR) & ~VANEINPORT, SBBEX_ADDR);  // pin value low to drive to cal, all others but led high
+		I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);  // motor relays off; all pin values but led high
     	if (!I2CStatus) {
-    		vanePar.vaneFlag = 1; // record command position as cal, in beam
+    		vanePar.vaneFlag = 2; // record command position as in beam, actual position unknown
+			vanePar.vanePos = "MAN";
     	} else {
-    		vanePar.vaneFlag = I2CStatus; // indeterminate state
+    		vanePar.vaneFlag = I2CStatus; // indeterminate
+    		sprintf(vanePar.vanePos, "ERR-%d", vanePar.vaneFlag);
     	}
 	}
 
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
-
-	// use value in sbPar.ampPwr to set sbPar.ampStatus
-	switch (vanePar.vaneFlag) {
-		case 0 :
-			vanePar.vanePos = "obs";
-			break;
-		case 1 :
-			vanePar.vanePos = "CAL";
-			break;
-		default : sprintf(vanePar.vanePos, "ERR%d", -vanePar.vaneFlag);
-	}
 
 	return(I2CStatus);
 }
@@ -2907,7 +2909,7 @@ int vane_readADC(void)
 	// Scale and offset for ADC channels
 	// order: Vin, NC, NC, NC, angle, temp_load, temp_outside, temp_shroud
 	const float offset[8] = {0, 0, 0, 0, 0., -50., -50., -50.};
-	const float scale[8] = {10., -10., 60., 60., 1000., 100., 100., 100.};
+	const float scale[8] = {10., -10., 1., 1., 1., 100., 100., 100.};
 	//const float offset[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // for calibration
 	//const float scale[8] = {1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000};  // for calibration, in mV
 
@@ -2938,11 +2940,7 @@ int vane_readADC(void)
   \brief Vane drive initialization.
 
   This function initializes the vane control BEX.
-<<<<<<< HEAD
   - Sets all write bits on BEX high; others remain high-Z. [should it move vane to obs position?]
-=======
-  - Sets all bits on BEX high. [should it move vane to obs position?]
->>>>>>> a39ba7760c2a74c4041d00a4dc76470f2c539070
   - Blinks LED or simply turns it on if it were off.
 
   \return Nothing.
@@ -2951,41 +2949,30 @@ int vane_readADC(void)
 void init_vane(void)
 {
 
-	// Configure BEXs on vane interface card
+	// Open communication
 	address = SB_SBADDR;  // Select I2C subbus
 	buffer[0] = I2CSSB_I2CADDR;
-	I2CStat = I2CSEND1;
+	I2CSEND1;
 	address = SB_SSBADDR;  // Select I2C subsubbus
 	buffer[0] = VANE_SWADDR;
-	I2CStat = I2CSEND1;
-	//
-	BYTE configByte = (BYTE)(~SBLED_ADDR & ~VANEINPORT & ~VANEOUTPORT);  // configure BEX for write by clearing bit
-	int I2CStat = configBEX(configByte, SBBEX_ADDR);
-	vanePar.vaneFlag = (I2CStat ? I2CStat : 1);
-	writeBEX(0xff, SBBEX_ADDR);   // set all ports high; turns off both LED and motor
-    //
-	address = SB_SSBADDR;  // Close subsubbus
-	buffer[0] = 0x00;
-	I2CStat = I2CSEND1;
-	address = SB_SBADDR;  // Close subbus
-	buffer[0] = 0x00;
-	I2CStat = I2CSEND1;
+	I2CSEND1;
 
-	// Blink LED to show complete
-	OSTimeDly(5);                // perceptible off time for blink off
-	address = SB_SBADDR;         // Select I2C subbus
-	buffer[0] = I2CSSB_I2CADDR;
-	I2CStat = I2CSEND1;
-	address = SB_SSBADDR;   // Select I2C subsubbus
-	buffer[0] = VANE_SWADDR;
-	I2CStat = I2CSEND1;
-	writeBEX((BYTE) ~SBLED_ADDR, SBBEX_ADDR);   // turn on LED, set other port values high
+	// Configure BEX on vane interface card
+	writeBEX(0xff, SBBEX_ADDR);   // prepare with all ports high; turns off both LED and motor
+	BYTE configByte = VANEOBSCMD & VANECALCMD & 0x7f;  // configure BEX by clearing write bits
+	configBEX(configByte, SBBEX_ADDR);
+	writeBEX(0xff, SBBEX_ADDR);   // set all ports high; turns off both LED and motor
+	// Turn on LED to show complete
+	OSTimeDly(5);                // wait to allow perceptible off time for blink
+	writeBEX(0x7f, SBBEX_ADDR);   // turn on LED, leave other port values high
+
+	// Close communication
 	address = SB_SSBADDR;  // Close subsubbus
 	buffer[0] = 0x00;
-	I2CStat = I2CSEND1;
+	I2CSEND1;
 	address = SB_SBADDR;  // Close subbus
 	buffer[0] = 0x00;
-	I2CStat = I2CSEND1;
+	I2CSEND1;
 
 	return;
 }

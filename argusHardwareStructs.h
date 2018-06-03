@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20180602_b"
+#define VER "comap_20180603_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -227,10 +227,10 @@ struct dcm2params {
 #define SB_SSBADDR 0x74
 
 //#define SADDLEBAG_SWADDR {0x08, 0x08, 0x08, 0x08, 0x00}  // for testing, on SSC3/SSD3
+//#define SADDLEBAG_SWADDR {0x00, 0x00, 0x00, 0x00, 0x00}  // for testing, no connection
 #define SADDLEBAG_SWADDR {0x01, 0x02, 0x04, 0x08, 0x00}  //I2C switch addresses on I2C subbus card
 #define SBBEX_ADDR 0x21  // I2C bus address for saddlebag ADCs
 #define SBADC_ADDR 0x08  // I2C bus address for saddlebag bus expanders
-#define SBLED_ADDR 0x80  // port address of LED
 #define NSBG 4           // ones-base number of saddlebags, used in error checking
 
 struct saddlebagParams {
@@ -244,10 +244,12 @@ struct saddlebagParams {
 /* Vane definitions */
 // Use many definitions from saddlebags since interface hardware is identical
 
-#define VANE_SWADDR 0x08 // for testing, on SSC3/SSD3
-//#define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
-#define VANEINPORT 0x04
-#define VANEOUTPORT 0x08
+//#define VANE_SWADDR 0x08 // for testing, on SSC3/SSD3
+//#define VANE_SWADDR 0x00 // for testing, no connection
+#define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
+#define VANEOBSCMD 0x7b
+#define VANECALCMD 0x77
+#define VANEMANCMD 0x7f
 
 struct vaneParams {
 	float adcv[8];
