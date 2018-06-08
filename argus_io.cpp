@@ -2964,7 +2964,7 @@ void init_vane(void)
 	writeBEX(0xff, SBBEX_ADDR);   // set all ports high; turns off both LED and motor
 	// Turn on LED to show complete
 	OSTimeDly(5);                // wait to allow perceptible off time for blink
-	writeBEX(0x7f, SBBEX_ADDR);   // turn on LED, leave other port values high
+	writeBEX(VANEMANCMD, SBBEX_ADDR);   // turn on LED, leave other port values high
 
 	// Close communication
 	address = SB_SSBADDR;  // Close subsubbus

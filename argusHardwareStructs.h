@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20180607_b"
+#define VER "comap_20180608_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -247,9 +247,9 @@ struct saddlebagParams {
 //#define VANE_SWADDR 0x08 // for testing, on SSC3/SSD3
 //#define VANE_SWADDR 0x00 // for testing, no connection
 #define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
-#define VANEOBSCMD 0x5f // P5
-#define VANECALCMD 0x3f // P6
-#define VANEMANCMD 0x7f
+#define VANEOBSCMD (BYTE)(~0x80 & ~0x20) // P5 low, LED on (low)
+#define VANECALCMD (BYTE)(~0x80 & ~0x40) // P6 low, LED on (low)
+#define VANEMANCMD (BYTE)(~0x80 & ~0x00) // All Px high except LED on (low)
 
 struct vaneParams {
 	float adcv[8];
