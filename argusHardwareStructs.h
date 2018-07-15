@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 0  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20180519_d"
+#define VER "comap_20180715_d"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE

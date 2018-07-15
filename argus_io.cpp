@@ -1707,7 +1707,13 @@ int dcm2_ledOnOff(char *inp)
 	int I2CStatus = openI2Csbus(DCM2_SBADDR, DCM2PERIPH_SBADDR);  // get bus control
 	if (I2CStatus) return (I2CStatus);
 
-	if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
+	if (!strcasecmp(inp, "ini")) {
+		// Hidden command: configure and initialize BEX on main board
+		openI2Csbus(0x77, DCM2PERIPH_SBADDR);
+		configBEX(BEXCONF0, BEX_ADDR0);
+		writeBEX(BEXINIT0, BEX_ADDR0);
+		closeI2Csbus(0x77);
+	} else if (!strcasecmp(inp, "off") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(readBEX(BEX_ADDR0) | (DCM2_BD_LED | DCM2_FP_LED), BEX_ADDR0); // high for off
 	} else {
 		I2CStatus = writeBEX(readBEX(BEX_ADDR0) & ~(DCM2_BD_LED | DCM2_FP_LED), BEX_ADDR0);  // low for on
@@ -2436,30 +2442,18 @@ int init_dcm2(void)
 	 * For DCM2,  0x80 switch setting from 0x77 connects to main board peripherals, BEX @ 0x21
 	 * For microC, 0x80 switch setting from 0x77 connects to a bias card without BEXs (ADCs and DACs)
 	 * So attempting to address the DCM2 main board BEX will show whether the hardware is bias or DCM2
-	 *
-	 * IMPORTANT: either bias system or DCM2 may be connected, but not both
-	 *
 	 */
 	// DCM2 setups
-
-	// Configure and initialize BEX on main board
-	address = DCM2_SBADDR;           // Open: I2C switch address
-	buffer[0] = DCM2PERIPH_SBADDR;   // I2C channel address
-	I2CStat = I2CSEND1;
-	configBEX(BEXCONF0, BEX_ADDR0);  // configure DCM2 main board BEX
-	writeBEX(BEXINIT0, BEX_ADDR0);   // initialize DCM2 main board BEX
-	address = DCM2_SBADDR;           // Close: I2C switch address
-	buffer[0] = 0x00;                // open switches
-	I2CStat = I2CSEND1;
 
     // Configure and initialize BEXs on DCM2 modules
 	int m;  // loop counter
 	for (m=0; m<NRX; m++){
+
 		// select, configure, and initialize A bank; keep track in status element
-		address = DCM2_SBADDR;            // I2C switch address 0x77 for top-level switch
+		address = 0x77;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-		address = DCM2_SSBADDR;
+		address = 0x73;
 		buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 		I2CSEND1;
 		dcm2Apar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);     // zero if BEX responds to init
@@ -2469,10 +2463,10 @@ int init_dcm2(void)
 		J2[28].clr();  // enable I2C switches
 
 		// select, configure, and initialize B bank; keep track in status element
-		address = DCM2_SBADDR;            // I2C switch address 0x77 for top-level switch
+		address = 0x77;            // I2C switch address 0x77 for top-level switch
 		buffer[0] = dcm2sw.sb[m];  // pick subbus
 		I2CSEND1;
-		address = DCM2_SSBADDR;
+		address = 0x73;
 		buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
 		I2CSEND1;
 		dcm2Bpar.status[m] = (BYTE)configBEX(BEXCONF, BEX_ADDR);       // zero if BEX responds to config
@@ -2481,27 +2475,23 @@ int init_dcm2(void)
 		OSTimeDly(1);
 		J2[28].clr();  // enable I2C switches
 	}
-	address = DCM2_SSBADDR; // open subsubbus switch
-	buffer[0] = 0x00;
-	I2CStat = I2CSEND1;
-	address = DCM2_SBADDR;  // open subbus switch
-	buffer[0] = 0x00;
-	I2CStat = I2CSEND1;
+	closeI2Cssbus(0x77, 0x73);
 
-	// release bus for rest of init
-	i2cBusBusy = 0;
+	// Configure and initialize BEX on main board
+	openI2Csbus(0x77, DCM2PERIPH_SBADDR);
+	configBEX(BEXCONF0, BEX_ADDR0);
+	writeBEX(BEXINIT0, BEX_ADDR0);
+	closeI2Csbus(0x77);
 
-	// Read out once to initialize (but these will also unset/set bus lock)
+	// Read out once to initialize
 	dcm2_readMBadc();
-	dcm2_readMBtemp();
-	dcm2_readAllModTemps();
-	dcm2_readAllModTotPwr();
+    dcm2_readMBtemp();
+    dcm2_readAllModTemps();
+    dcm2_readAllModTotPwr();
 	// Set to max atten
 	dcm2_setAllAttens(MAXATTEN);
 
-    // Blink LED, leave LED on when init is complete
-    dcm2_ledOnOff("off");
-	OSTimeDly(10);
+    // LED on when init is complete
     dcm2_ledOnOff("on");
 
 	return 0;
