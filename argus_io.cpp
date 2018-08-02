@@ -2860,7 +2860,7 @@ int vane_obscal(char *inp)
 
 	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);   // stop motor if running
-		OSTimeDly( TICKS_PER_SECOND * 1.5 );            // delay 1.5 sec
+		OSTimeDly( TICKS_PER_SECOND * 3 / 2 );            // delay 1.5 sec
 		I2CStatus += writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
     		vanePar.vaneFlag = 0; // record command position as obs, out of beam
@@ -2871,7 +2871,7 @@ int vane_obscal(char *inp)
     	}
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
 		I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);   // stop motor if running
-		OSTimeDly( TICKS_PER_SECOND * 1.5 );            // delay 1.5 sec
+		OSTimeDly( TICKS_PER_SECOND * 3 / 2 );            // delay 1.5 sec
 		I2CStatus += writeBEX(VANECALCMD, SBBEX_ADDR);  // pin value low to drive to cal, all others but LED high
 		if (!I2CStatus) {
     		vanePar.vaneFlag = 1; // record command position as cal, fully in beam

@@ -2274,6 +2274,57 @@ void Correlator::execVane(return_type status, argument_type arg)
 
 /*************************************************************************************/
 /**
+  \brief JSON vane control.
+
+  This method controls the vane control card and readouts, JSON return strings.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJVane(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[Command]\r\n"
+      "  Vane commands:\r\n"
+      "    OBS moves ambient vane out of the beam.\r\n"
+	  "    CAL moves ambient vane into calibration position.\r\n"
+      "    MAN switches off both relays for manual control.\r\n"
+	  "  No argument returns monitor point data.\r\n"
+			  ;
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  int narg = sscanf(arg.str, "%3s", kw);
+
+	  if (narg == 1) {
+	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
+	    	  rtn = vane_obscal(kw);
+	    	  sprintf(status, "{\"vane\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+	      } else {
+	    	  longHelp(status, usage, &Correlator::execVane);
+	      }
+	  } else {
+		  longHelp(status, usage, &Correlator::execVane);
+	  }
+	} else {
+	  rtn = vane_readADC();
+      sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.3f], \"Tvane\":[%.3f], "
+    		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0], \"state\":[%d.0]}}\r\n",
+    		  (!rtn ? "true" : "false"),
+    		  vanePar.adcv[0], vanePar.adcv[4], vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7], vanePar.vaneFlag, 0);
+	}
+  } else {
+	  longHelp(status, usage, &Correlator::execVane);
+  }
+}
+
+/*************************************************************************************/
+/**
   \brief Argus lock test command.
 
   This method tests the lockout scheme.
