@@ -164,18 +164,6 @@ struct cryostatParams cryoPar = {
 float pwrCtrlPar[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
 
 
-/*struct calSysParams {
-	float adcv[8]; 		// includes angle [V], temperature [C], and motorMeanI[A]
-	float minAngle; 	// minimum vane angle [V]
-	float maxAngle; 	// maximum vane angle [V]
-	float meanCurr; 	// mean motor current [A]
-	float maxCurr;      // maximum motor current [A]
-	float varCurr;  	// motor current variance [A]
-	char state[15];     // system state
-};*/
-struct calSysParams calSysPar = {
-	{99., 99., 99., 99., 99., 99., 99., 99.}, 99., 99., 99., 99., 99., " "
-};
 
 /**************************/
 // DACs
@@ -2874,7 +2862,7 @@ int vane_obscal(char *inp)
 		OSTimeDly( TICKS_PER_SECOND * 3 / 2 );            // delay 1.5 sec
 		I2CStatus += writeBEX(VANECALCMD, SBBEX_ADDR);  // pin value low to drive to cal, all others but LED high
 		if (!I2CStatus) {
-    		vanePar.vaneFlag = 1; // record command position as cal, fully in beam
+    		vanePar.vaneFlag = 2; // record command position as cal, fully in beam
 			vanePar.vanePos = "CAL";
     	} else {
     		vanePar.vaneFlag = I2CStatus; // indeterminate state
@@ -2883,7 +2871,7 @@ int vane_obscal(char *inp)
 	} else {
 		I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);  // motor relays off; all pin values but led high
     	if (!I2CStatus) {
-    		vanePar.vaneFlag = 2; // record command position as in beam, actual position unknown
+    		vanePar.vaneFlag = 5; // record command position as in beam, actual position unknown
 			vanePar.vanePos = "MAN";
     	} else {
     		vanePar.vaneFlag = I2CStatus; // indeterminate

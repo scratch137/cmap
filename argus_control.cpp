@@ -2304,7 +2304,7 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	  if (narg == 1) {
 	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
 	    	  rtn = vane_obscal(kw);
-	    	  sprintf(status, "{\"vane\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+	    	  sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"state\":[%d.0]}}\r\n", (!rtn ? "true" : "false"), 2);
 	      } else {
 	    	  longHelp(status, usage, &Correlator::execVane);
 	      }
@@ -2316,7 +2316,8 @@ void Correlator::execJVane(return_type status, argument_type arg)
       sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.3f], \"Tvane\":[%.3f], "
     		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0], \"state\":[%d.0]}}\r\n",
     		  (!rtn ? "true" : "false"),
-    		  vanePar.adcv[0], vanePar.adcv[4], vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7], vanePar.vaneFlag, 0);
+    		  vanePar.adcv[0], vanePar.adcv[4], vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
+    		  vanePar.vaneFlag, 0);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execVane);
