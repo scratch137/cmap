@@ -2286,7 +2286,7 @@ void Correlator::execJVane(return_type status, argument_type arg)
 {
 	  static const char *usage =
 	  "[Command]\r\n"
-      "  Vane commands:\r\n"
+      "  Vane commands with JSON returns:\r\n"
       "    OBS moves ambient vane out of the beam.\r\n"
 	  "    CAL moves ambient vane into calibration position.\r\n"
       "    MAN switches off both relays for manual control.\r\n"
@@ -2306,10 +2306,10 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	    	  rtn = vane_obscal(kw);
 	    	  sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"state\":[%d.0]}}\r\n", (!rtn ? "true" : "false"), 2);
 	      } else {
-	    	  longHelp(status, usage, &Correlator::execVane);
+	    	  longHelp(status, usage, &Correlator::execJVane);
 	      }
 	  } else {
-		  longHelp(status, usage, &Correlator::execVane);
+		  longHelp(status, usage, &Correlator::execJVane);
 	  }
 	} else {
 	  rtn = vane_readADC();
@@ -2320,7 +2320,7 @@ void Correlator::execJVane(return_type status, argument_type arg)
     		  vanePar.vaneFlag, 0);
 	}
   } else {
-	  longHelp(status, usage, &Correlator::execVane);
+	  longHelp(status, usage, &Correlator::execJVane);
   }
 }
 
