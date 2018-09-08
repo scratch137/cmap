@@ -38,6 +38,8 @@ int lnaPwrState = 0;
 unsigned char lnaPSlimitsBypass = BYPASS;  // bypass LNA power supply limits when = 1
 unsigned char lnaLimitsBypass = BYPASS;    // bypass soft limits on LNA bias when = 1
 float gvdiv;
+float vaneScale;
+float vaneOffset;
 unsigned char i2cBusBusy = 1;              // set to 1 when I2C bus is busy (clears in argus_init())
 unsigned int busLockCtr = 0;               // I2C successful bus lock request counter
 unsigned int busNoLockCtr = 0;             // I2C unsuccessful bus lock request counter
@@ -3121,6 +3123,8 @@ void argus_init(const flash_t *flash)
 	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
 	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
 	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
+	vaneScale = flash->vaneScale;  // vaneScale is initialized as a global variable
+	vaneOffset = flash->vaneOffset;  // vaneOffset is initialized as a global variable
 
 	// start I2C interface
 	I2CInit( 0xaa, 0x1a );   // Initialize I2C and set NB device slave address and I2C clock

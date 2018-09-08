@@ -42,6 +42,8 @@ extern unsigned char cifPSlimitsBypass; // bypass cold IF power supply limits wh
 extern unsigned char lnaLimitsBypass;   // bypass soft limits on LNA bias when = 1
 extern unsigned char stopVaneOnStall;   // bypass timeout on vane stall = 0
 extern float gvdiv;                     // Gate voltage divider factor
+extern float vaneScale;                 // Vane scale for angle
+extern float vaneOffset;                // Vane offset for angle
 extern unsigned char i2cBusBusy;        // I2C bus is busy when = 1
 extern unsigned int busLockCtr;         // I2C successful bus lock request counter
 extern unsigned int busNoLockCtr;       // I2C unsuccessful bus lock request counter

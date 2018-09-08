@@ -366,6 +366,10 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		  else if (strcasecmp(keywd, "hwtype") == 0) flashData.hw = (zpec_hw_t)value;
     		  else if (strcasecmp(keywd, "gvdiv") == 0) // check for out of range values in argus_init
     		    flashData.gvdiv = (float)value;
+    		  else if (strcasecmp(keywd, "vanescale") == 0)
+    		    flashData.vaneScale = (float)value;
+    		  else if (strcasecmp(keywd, "vaneoffset") == 0)
+    		    flashData.vaneOffset = (float)value;
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
     		    // Move LNA bias settings to flashData; storage is g, d  (matches argus_LNApresets)
     		    short i, j, k;
@@ -439,6 +443,11 @@ void Correlator::execFlash(return_type status, argument_type arg)
 			  	  	  );
   		  len += sprintf(status+len,
   				  "  Gate voltage divisor %f\r\n", flashData.gvdiv);
+  		  len += sprintf(status+len,
+  				  "  Vane scaling for angle %f\r\n", flashData.vaneScale);
+  		  len += sprintf(status+len,
+  				  "  Vane offset for angle %f\r\n", flashData.vaneOffset);
+
   	  } else {
   		  siprintf(status, "%sUser flash area invalid (or uninitialized).\r\n",
   				  statusERR);
