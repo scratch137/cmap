@@ -251,8 +251,15 @@ struct saddlebagParams {
 #define VANECALCMD (BYTE)(~0x80 & ~0x40) // P6 low, LED on (low)
 #define VANEMANCMD (BYTE)(~0x80 & ~0x00) // All Px high except LED on (low)
 
+#define VANESWINGANGLE 90.   // vane swing angle from cal (0 deg) to stow, in degrees
+#define VANEMAXERRANGLE 5.   // maximum absolute error for vane to arrive at cal, stow
+#define VANECLEARANGLE 45.   // angle to declare vane clear of beams
+#define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
+#define VANESTALLTIME 0.5    // seconds; if negligible movement in this time, declare stall
+
 struct vaneParams {
 	float adcv[8];
+	float vaneAngleDeg;
 	BYTE vaneFlag;
 	char *vanePos;
 };

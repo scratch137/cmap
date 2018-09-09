@@ -38,8 +38,8 @@ int lnaPwrState = 0;
 unsigned char lnaPSlimitsBypass = BYPASS;  // bypass LNA power supply limits when = 1
 unsigned char lnaLimitsBypass = BYPASS;    // bypass soft limits on LNA bias when = 1
 float gvdiv;
-float vaneScale;
-float vaneOffset;
+float vaneOffset;                          // Vane offset voltage for angle calculation
+float vaneV2Deg;                           // Vane volts to degrees
 unsigned char i2cBusBusy = 1;              // set to 1 when I2C bus is busy (clears in argus_init())
 unsigned int busLockCtr = 0;               // I2C successful bus lock request counter
 unsigned int busNoLockCtr = 0;             // I2C unsuccessful bus lock request counter
@@ -2817,13 +2817,14 @@ void init_saddlebags(void)
 /*
 struct vaneParams {
 	float adcv[8];
+	float angleDeg;
 	BYTE vaneFlag;
 	char *vanePos;
 };
-with ADC order: Vin, NC, NC, NC, angle, temp_load, temp_outside, temp_shroud
+with ADC order: Vin, NC, NC, NC, angleSens, temp_load, temp_outside, temp_shroud
 */
 struct vaneParams vanePar = {
-		  {999., 999., 999., 999., 999., 999., 999., 999.}, 99, "N/A"
+		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "N/A"
 };
 
 
@@ -2845,39 +2846,59 @@ int vane_obscal(char *inp)
 
 	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                    // check for freeze
 
+
+	// VANETIMEOUT, VANESTALLTIME for timeout, interval to check for time
+	int tStallCheck = (int)((float)TICKS_PER_SECOND * VANESTALLTIME);  // time between checks
+	int ncheck = (int) VANETIMEOUT/VANESTALLTIME;  // number of stall checks to timeout
+	int i;  // loop counter
+
+
 	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, VANE_SWADDR);
 	if (I2CStatus) return (I2CStatus);
 
 	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
 		I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);   // stop motor if running
-		OSTimeDly( TICKS_PER_SECOND * 3 / 2 );            // delay 1.5 sec
+		OSTimeDly( TICKS_PER_SECOND * 3 / 2 );          // delay 1.5 sec
 		I2CStatus += writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
-    		vanePar.vaneFlag = 0; // record command position as obs, out of beam
-    		vanePar.vanePos = "OBS";
+    		vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
+       		if (abs(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEMAXERRANGLE) {
+       			vanePar.vaneFlag = 0; // record command position as obs, out of beam
+       			vanePar.vanePos = "OBS";
+       		} else {
+    			vanePar.vaneFlag = 5; // record command position as in beam, actual position unknown
+    			vanePar.vanePos = "UNK";
+       		}
     	} else {
     		vanePar.vaneFlag = I2CStatus; // indeterminate state
-    		sprintf(vanePar.vanePos, "ERR-%d", vanePar.vaneFlag);
+    		sprintf(vanePar.vanePos, "ERR %d", vanePar.vaneFlag);
     	}
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
 		I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);   // stop motor if running
-		OSTimeDly( TICKS_PER_SECOND * 3 / 2 );            // delay 1.5 sec
+		OSTimeDly( TICKS_PER_SECOND * 3 / 2 );          // delay 1.5 sec
 		I2CStatus += writeBEX(VANECALCMD, SBBEX_ADDR);  // pin value low to drive to cal, all others but LED high
 		if (!I2CStatus) {
-    		vanePar.vaneFlag = 2; // record command position as cal, fully in beam
-			vanePar.vanePos = "CAL";
+    		vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
+    		if (abs(vanePar.vaneAngleDeg) < VANEMAXERRANGLE) {
+    			vanePar.vaneFlag = 2; // record command position as cal, fully in beam
+    			vanePar.vanePos = "CAL";
+    		} else {
+    			vanePar.vaneFlag = 5; // record command position as in beam, actual position unknown
+    			vanePar.vanePos = "UNK";
+    		}
     	} else {
     		vanePar.vaneFlag = I2CStatus; // indeterminate state
-    		sprintf(vanePar.vanePos, "ERR-%d", vanePar.vaneFlag);
+    		sprintf(vanePar.vanePos, "ERR %d", vanePar.vaneFlag);
     	}
 	} else {
 		I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);  // motor relays off; all pin values but led high
     	if (!I2CStatus) {
+    		vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
     		vanePar.vaneFlag = 5; // record command position as in beam, actual position unknown
 			vanePar.vanePos = "MAN";
     	} else {
     		vanePar.vaneFlag = I2CStatus; // indeterminate
-    		sprintf(vanePar.vanePos, "ERR-%d", vanePar.vaneFlag);
+    		sprintf(vanePar.vanePos, "ERR %d", vanePar.vaneFlag);
     	}
 	}
 
@@ -3123,8 +3144,8 @@ void argus_init(const flash_t *flash)
 	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
 	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
 	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
-	vaneScale = flash->vaneScale;  // vaneScale is initialized as a global variable
-	vaneOffset = flash->vaneOffset;  // vaneOffset is initialized as a global variable
+	vaneOffset = flash->vaneVcal;   // vane offset (voltage in cal position, defines 0 deg)
+	vaneV2Deg = VANESWINGANGLE/(flash->vaneVstow - flash->vaneVcal); // vane conversion from volts to degrees
 
 	// start I2C interface
 	I2CInit( 0xaa, 0x1a );   // Initialize I2C and set NB device slave address and I2C clock

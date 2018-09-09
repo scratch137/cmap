@@ -86,14 +86,14 @@ typedef struct flash_struct {
 		         valid;     /**< Structure validity flag. */
   zpec_hw_t      hw;        /**< Hardware variant. */
   float          gvdiv;     /**< Gate voltage divider ratio. */
-  float 		 vaneScale; /**< Scaling factor for vane angle */
-  float 		 vaneOffset;/**< Offset for vane angle */
   float          lnaGsets[NRX*NSTAGES]; /**< Gate voltages, stored by RX:[stage, stage...], RX:[stage, stage...] */
   float          lnaDsets[NRX*NSTAGES]; /**< Drain voltages, stored by RX:[stage, stage...], RX:[stage, stage...] */
   BYTE	         attenAI[NRX]; /**< IF system attenuations */
   BYTE	         attenAQ[NRX]; /**< IF system attenuations */
   BYTE	         attenBI[NRX]; /**< IF system attenuations */
   BYTE	         attenBQ[NRX]; /**< IF system attenuations */
+  float          vaneVcal;     /**< Vane readback voltage in cal position */
+  float          vaneVstow;    /**< Vane readback voltage in stow position */
 } flash_t;
 
 extern void zpec_readFlash(flash_t *flashData);
