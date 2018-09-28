@@ -97,7 +97,7 @@ extern int  sb_setAllAmps(char *inp);
 extern void init_saddlebags(void);
 
 extern int  vane_obscal(char *inp);
-extern int  vane_readADC(void);
+extern int  vane_readADC(int adcN);
 extern void init_vane(void);
 
 extern int  comap_presets(const flash_t *flash);

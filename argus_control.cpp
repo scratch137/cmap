@@ -2257,7 +2257,7 @@ void Correlator::execVane(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execVane);
 	  }
 	} else {
-	  rtn = vane_readADC();
+	  rtn = vane_readADC(7);
       sprintf(status, "%sVane position is %s    (status %d):\r\n"
     		  "  V_supp =   %5.3f [V]\r\n"
     		  "  Angle =    %5.3f [V]\r\n"
@@ -2312,7 +2312,7 @@ void Correlator::execJVane(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execJVane);
 	  }
 	} else {
-	  rtn = vane_readADC();
+	  rtn = vane_readADC(7);
       sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.3f], \"Tvane\":[%.3f], "
     		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0], \"state\":[%d.0]}}\r\n",
     		  (!rtn ? "true" : "false"),

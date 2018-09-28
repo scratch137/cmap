@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20180802_b"
+#define VER "comap_20180928_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -251,9 +251,10 @@ struct saddlebagParams {
 #define VANECALCMD (BYTE)(~0x80 & ~0x40) // P6 low, LED on (low)
 #define VANEMANCMD (BYTE)(~0x80 & ~0x00) // All Px high except LED on (low)
 
-#define VANESWINGANGLE 90.   // vane swing angle from cal (0 deg) to stow, in degrees
-#define VANEMAXERRANGLE 5.   // maximum absolute error for vane to arrive at cal, stow
-#define VANECLEARANGLE 45.   // angle to declare vane clear of beams
+#define VANESWINGANGLE 180.  // vane swing angle from cal (0 deg) to stow, in degrees
+#define VANECALERRANGLE 1.   // maximum absolute error for vane to arrive at cal position
+#define VANEOBSERRANGLE 5.   // maximum absolute error for vane to arrive at obs (stow) position
+#define STALLERRANG 5.       // minimum absolute angle vane must move to avoid stall designation
 #define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
 #define VANESTALLTIME 0.5    // seconds; if negligible movement in this time, declare stall
 
