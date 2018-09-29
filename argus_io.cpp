@@ -2824,7 +2824,7 @@ struct vaneParams {
 with ADC order: Vin, NC, NC, NC, angleSens, temp_load, temp_outside, temp_shroud
 */
 struct vaneParams vanePar = {
-		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "N/A"
+		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "UNAVAILABLE"
 };
 
 /**
@@ -2919,19 +2919,23 @@ int vane_obscal(char *inp)
 	OSTimeDly( TICKS_PER_SECOND * 3 / 2 );          // delay 1.5 sec before anything else
 
 	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
-		I2CStatus += writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
+		I2CStatus = writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
     		for (n=0; n<nmax; n++){
     			vane_readADC(4);
     			vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
-    			if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE || vanePar.vaneAngleDeg > VANESWINGANGLE) {
-    				writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
+    			if (vanePar.vaneAngleDeg >= VANESWINGANGLE - VANECALERRANGLE) {
     				vanePar.vaneFlag = 0; // record command position as obs, out of beam
     				vanePar.vanePos = "OBS";
     				break;
-    			} else if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
-    				writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
-    				vanePar.vaneFlag = 3; // record position as stalled
+    			}
+    			if (vanePar.vaneAngleDeg >= VANESWINGANGLE + VANECALERRANGLE) {
+    				vanePar.vaneFlag = 5; // record command position as error, moved too far
+    				vanePar.vanePos = "OVERSHOT";
+    				break;
+    			}
+    			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
+    				vanePar.vaneFlag = 2; // record position as stalled
     				vanePar.vanePos = "STALL";
     				break;
     			}
@@ -2939,29 +2943,32 @@ int vane_obscal(char *inp)
     			OSTimeDly(tStallCheck);  // wait for next angle check
     		}
 			if (n == nmax) {  // timeout
-				writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
-				vanePar.vaneFlag = 4; // timeout; unknown position
+				vanePar.vaneFlag = 3; // timeout; unknown position
 				vanePar.vanePos = "TIMEOUT";
 			}
     	} else {  // I2C bus error
-			writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
-			vanePar.vaneFlag = 5; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "UNK";
+			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
+			vanePar.vanePos = "UNKNOWN";
     	}
+		writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
-		I2CStatus += writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
+		I2CStatus = writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
     		for (n=0; n<nmax; n++){
     			vane_readADC(4);
     			vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
-    			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE || vanePar.vaneAngleDeg < 0.) {
-    				writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
-    				vanePar.vaneFlag = 1; // record command position as obs, out of beam
+    			if (vanePar.vaneAngleDeg <= VANEOBSERRANGLE) {
+    				vanePar.vaneFlag = 1; // record command position as cal, in beam
     				vanePar.vanePos = "CAL";
     				break;
-    			} else if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
-    				writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
-    				vanePar.vaneFlag = 3; // record position as stalled
+    			}
+    			if (vanePar.vaneAngleDeg <= -VANEOBSERRANGLE) {
+    				vanePar.vaneFlag = 5; // record command position as error, moved too far
+    				vanePar.vanePos = "OVERSHOT";
+    				break;
+    			}
+    			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
+    				vanePar.vaneFlag = 2; // record position as stalled
     				vanePar.vanePos = "STALL";
     				break;
     			}
@@ -2969,15 +2976,14 @@ int vane_obscal(char *inp)
     			OSTimeDly(tStallCheck);  // wait for next angle check
     		}
 			if (n == nmax) {  // timeout
-				writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
-				vanePar.vaneFlag = 4; // timeout; unknown position
+				vanePar.vaneFlag = 3; // timeout; unknown position
 				vanePar.vanePos = "TIMEOUT";
 			}
     	} else {  // I2C bus error
-			writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
-			vanePar.vaneFlag = 5; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "UNK";
+			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
+			vanePar.vanePos = "UNKNOWN";
     	}
+		writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
 	}
 
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);

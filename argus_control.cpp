@@ -2260,12 +2260,12 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  rtn = vane_readADC(7);
       sprintf(status, "%sVane position is %s    (status %d):\r\n"
     		  "  V_supp =   %5.3f [V]\r\n"
-    		  "  Angle =    %5.3f [V]\r\n"
+    		  "  Angle =    %5.1f [deg]\r\n"
     		  "  T_vane =   %5.3f [C]\r\n"
     		  "  T_amb =    %5.3f [C]\r\n"
     		  "  T_shroud = %5.3f [C]\r\n\r\n",
     	  	  (!rtn ? statusOK : statusERR), vanePar.vanePos, rtn,
-    	  	 vanePar.adcv[0],  vanePar.adcv[4],  vanePar.adcv[5],  vanePar.adcv[6],  vanePar.adcv[7]);
+    	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[5],  vanePar.adcv[6],  vanePar.adcv[7]);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execVane);
@@ -2313,10 +2313,10 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	  }
 	} else {
 	  rtn = vane_readADC(7);
-      sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.3f], \"Tvane\":[%.3f], "
+      sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
     		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0], \"state\":[%d.0]}}\r\n",
     		  (!rtn ? "true" : "false"),
-    		  vanePar.adcv[0], vanePar.adcv[4], vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
+    		  vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
     		  vanePar.vaneFlag, 0);
 	}
   } else {
