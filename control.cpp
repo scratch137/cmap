@@ -345,6 +345,8 @@ void Correlator::execFlash(return_type status, argument_type arg)
   "  Key = SERIALNO  CPU serial number (unsigned short).\r\n"
   "  Key = HWTYPE    Hardware subtype (0 = GBT, 1 = RLT, 2 = POW, 3 = ARG).\r\n"
   "  Key = GVDIV     Gate voltage divider ratio (0 < GVDIV <=1) for LNAs\r\n"
+  "  Key = VANEVCAL  Vane angle readout voltage in calibration position\r\n"
+  "  Key = VANEVSTOW  Vane angle readout voltage in stow position\r\n"
   "  Key = SETS      Keep current LNA bias settings as preset for LNAs \r\n";
 
   if (!arg.help) {

@@ -2260,12 +2260,13 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  rtn = vane_readADC(7);
       sprintf(status, "%sVane position is %s    (status %d):\r\n"
     		  "  V_supp =   %5.3f [V]\r\n"
-    		  "  Angle =    %5.1f [deg]\r\n"
+    		  "  Angle =    %5.1f [deg] (%5.3f [V])\r\n"
     		  "  T_vane =   %5.3f [C]\r\n"
     		  "  T_amb =    %5.3f [C]\r\n"
     		  "  T_shroud = %5.3f [C]\r\n\r\n",
     	  	  (!rtn ? statusOK : statusERR), vanePar.vanePos, rtn,
-    	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[5],  vanePar.adcv[6],  vanePar.adcv[7]);
+    	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
+    	  	 vanePar.adcv[6],  vanePar.adcv[7]);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execVane);
@@ -2303,8 +2304,8 @@ void Correlator::execJVane(return_type status, argument_type arg)
 
 	  if (narg == 1) {
 	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
-	    	  rtn = vane_obscal(kw);
-	    	  sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"state\":[%d.0]}}\r\n", (!rtn ? "true" : "false"), 2);
+	    	  sprintf(status, "{\"vane\": {\"cmdOK\": true, \"state\":[%d.0]}}\r\n", 2);
+	    	  //rtn = vane_obscal(kw);
 	      } else {
 	    	  longHelp(status, usage, &Correlator::execJVane);
 	      }

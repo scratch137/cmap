@@ -2880,6 +2880,8 @@ int vane_readADC(int adcN)
 		else vanePar.adcv[adcN] = 9999.;  // error condition
 	}
 
+	vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
+
 	// release I2C bus
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 
@@ -2923,13 +2925,12 @@ int vane_obscal(char *inp)
     	if (!I2CStatus) {
     		for (n=0; n<nmax; n++){
     			vane_readADC(4);
-    			vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
-    			if (vanePar.vaneAngleDeg >= VANESWINGANGLE - VANECALERRANGLE) {
+    			if (vanePar.vaneAngleDeg >= (VANESWINGANGLE - VANEOBSERRANGLE)) {
     				vanePar.vaneFlag = 0; // record command position as obs, out of beam
     				vanePar.vanePos = "OBS";
     				break;
     			}
-    			if (vanePar.vaneAngleDeg >= VANESWINGANGLE + VANECALERRANGLE) {
+    			if (vanePar.vaneAngleDeg >= (VANESWINGANGLE + VANEOBSERRANGLE)) {
     				vanePar.vaneFlag = 5; // record command position as error, moved too far
     				vanePar.vanePos = "OVERSHOT";
     				break;
@@ -2957,12 +2958,12 @@ int vane_obscal(char *inp)
     		for (n=0; n<nmax; n++){
     			vane_readADC(4);
     			vanePar.vaneAngleDeg = (vanePar.adcv[4] - vaneOffset) * vaneV2Deg; // vane angle, deg
-    			if (vanePar.vaneAngleDeg <= VANEOBSERRANGLE) {
+    			if (vanePar.vaneAngleDeg <= VANECALERRANGLE) {
     				vanePar.vaneFlag = 1; // record command position as cal, in beam
     				vanePar.vanePos = "CAL";
     				break;
     			}
-    			if (vanePar.vaneAngleDeg <= -VANEOBSERRANGLE) {
+    			if (vanePar.vaneAngleDeg <= -VANECALERRANGLE) {
     				vanePar.vaneFlag = 5; // record command position as error, moved too far
     				vanePar.vanePos = "OVERSHOT";
     				break;
