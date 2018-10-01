@@ -2248,8 +2248,16 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  if (narg == 1) {
 	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
 	    	  rtn = vane_obscal(kw);
-	    	  sprintf(status, "%svane_obscal(%s) returned with status %d\r\n",
-	    			  (!rtn ? statusOK : statusERR), kw, rtn);
+	    	  vane_readADC();
+	          sprintf(status, "%sVane position is %s    (status %d):\r\n"
+	        		  "  V_supp =   %5.3f [V]\r\n"
+	        		  "  Angle =    %5.1f [deg] (%5.3f [V])\r\n"
+	        		  "  T_vane =   %5.3f [C]\r\n"
+	        		  "  T_amb =    %5.3f [C]\r\n"
+	        		  "  T_shroud = %5.3f [C]\r\n\r\n",
+	        	  	  (!rtn ? statusOK : statusERR), vanePar.vanePos, rtn,
+	        	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
+	        	  	 vanePar.adcv[6],  vanePar.adcv[7]);
 	      } else {
 	    	  longHelp(status, usage, &Correlator::execVane);
 	      }
