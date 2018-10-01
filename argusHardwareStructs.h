@@ -257,7 +257,7 @@ struct saddlebagParams {
 #define VANEOBSERRANGLE 5.   // maximum absolute error for vane to arrive at obs (stow) position
 #define STALLERRANG 5.       // minimum absolute angle vane must move to avoid stall designation
 #define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
-#define VANESTALLTIME 0.5    // seconds; if negligible movement in this time, declare stall
+#define VANESTALLTIME 5    // seconds; if negligible movement in this time, declare stall
 
 struct vaneParams {
 	float adcv[8];

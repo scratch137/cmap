@@ -2824,7 +2824,7 @@ struct vaneParams {
 with ADC order: Vin, NC, NC, NC, angleSens, temp_load, temp_outside, temp_shroud
 */
 struct vaneParams vanePar = {
-		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "UNKNOWN"
+		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "INTERMEDIATE"
 };
 
 // Scale and offset for vane ADC channels
@@ -3203,7 +3203,7 @@ void argus_init(const flash_t *flash)
 	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
 	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
 	vaneOffset = flash->vaneVcal;   // vane offset (voltage in cal position, defines 0 deg)
-	vaneV2Deg = VANESWINGANGLE/(flash->vaneVstow - flash->vaneVcal); // vane conversion from volts to degrees
+	vaneV2Deg = VANESWINGANGLE/(flash->vaneVobs - flash->vaneVcal); // vane conversion from volts to degrees
 
 	// start I2C interface
 	I2CInit( 0xaa, 0x1a );   // Initialize I2C and set NB device slave address and I2C clock

@@ -93,7 +93,7 @@ typedef struct flash_struct {
   BYTE	         attenBI[NRX]; /**< IF system attenuations */
   BYTE	         attenBQ[NRX]; /**< IF system attenuations */
   float          vaneVcal;     /**< Vane readback voltage in cal position */
-  float          vaneVstow;    /**< Vane readback voltage in stow position */
+  float          vaneVobs;     /**< Vane readback voltage in observing (stow) position */
 } flash_t;
 
 extern void zpec_readFlash(flash_t *flashData);

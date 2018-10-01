@@ -346,7 +346,7 @@ void Correlator::execFlash(return_type status, argument_type arg)
   "  Key = HWTYPE    Hardware subtype (0 = GBT, 1 = RLT, 2 = POW, 3 = ARG).\r\n"
   "  Key = GVDIV     Gate voltage divider ratio (0 < GVDIV <=1) for LNAs\r\n"
   "  Key = VANEVCAL  Vane angle readout voltage in calibration position\r\n"
-  "  Key = VANEVSTOW  Vane angle readout voltage in stow position\r\n"
+  "  Key = VANEVOBS  Vane angle readout voltage in observing position\r\n"
   "  Key = SETS      Keep current LNA bias settings as preset for LNAs \r\n";
 
   if (!arg.help) {
@@ -370,8 +370,8 @@ void Correlator::execFlash(return_type status, argument_type arg)
     		    flashData.gvdiv = (float)value;
     		  else if (strcasecmp(keywd, "vanevcal") == 0)
     		    flashData.vaneVcal = (float)value;
-    		  else if (strcasecmp(keywd, "vanevstow") == 0)
-    		    flashData.vaneVstow = (float)value;
+    		  else if (strcasecmp(keywd, "vanevobs") == 0)
+    		    flashData.vaneVobs = (float)value;
     		  else if (strcasecmp(keywd, "sets") == 0){ ;
     		    // Move LNA bias settings to flashData; storage is g, d  (matches argus_LNApresets)
     		    short i, j, k;
@@ -448,7 +448,7 @@ void Correlator::execFlash(return_type status, argument_type arg)
   		  len += sprintf(status+len,
   				  "  Vane readback voltage in cal position %f\r\n", flashData.vaneVcal);
   		  len += sprintf(status+len,
-  				  "  Vane readback voltage in stow postion %f\r\n", flashData.vaneVstow);
+  				  "  Vane readback voltage in stow postion %f\r\n", flashData.vaneVobs);
 
   	  } else {
   		  siprintf(status, "%sUser flash area invalid (or uninitialized).\r\n",

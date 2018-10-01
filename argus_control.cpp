@@ -2266,6 +2266,14 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  }
 	} else {
 	  rtn = vane_readADC();
+	  // check vane position
+	  if (vanePar.vaneAngleDeg >= (VANESWINGANGLE - VANEOBSERRANGLE)) {
+		  vanePar.vanePos = "OBS";
+	  } else if (vanePar.vaneAngleDeg <= VANECALERRANGLE && vanePar.vaneAngleDeg > -VANECALERRANGLE) {
+		  vanePar.vanePos = "CAL";
+	  } else {
+		  vanePar.vanePos = "BAD";
+	  }
       sprintf(status, "%sVane position is %s    (status %d):\r\n"
     		  "  V_supp =   %5.3f [V]\r\n"
     		  "  Angle =    %5.1f [deg] (%5.3f [V])\r\n"
@@ -2322,6 +2330,13 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	  }
 	} else {
 	  rtn = vane_readADC();
+	  if (vanePar.vaneAngleDeg >= (VANESWINGANGLE - VANEOBSERRANGLE)) {
+		  vanePar.vaneFlag = 0; // record command position as obs, out of beam
+	  } else if (vanePar.vaneAngleDeg <= VANECALERRANGLE) {
+		  vanePar.vaneFlag = 1; // record command position as cal, in beam
+	  } else {
+		  vanePar.vaneFlag = 4; // record command position as unknown
+	  }
       sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
     		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0], \"state\":[%d.0]}}\r\n",
     		  (!rtn ? "true" : "false"),
