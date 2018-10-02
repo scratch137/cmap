@@ -2265,23 +2265,24 @@ void Correlator::execVane(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execVane);
 	  }
 	} else {
-	  rtn = vane_readADC();
+		vane_readADC();
+
 	  // check vane position
-	  if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+	  /*if (rtn) {                // I2C bus error
+		  vanePar.vaneFlag = 4;
+		  vanePar.vanePos = "ERROR";
+	  } else if (vanePar.vaneFlag > 1 && vanePar.vaneFlag < 8) {
+		 // nothing; don't change output if stall or other error reported
+	  } else if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
 		  vanePar.vaneFlag = 1; // record command position as cal, in beam
 		  vanePar.vanePos = "CAL";
 	  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
 		  vanePar.vaneFlag = 0; // record command position as obs, out of beam
 		  vanePar.vanePos = "OBS";
-	  } else if (vanePar.vaneFlag > 1 && vanePar.vaneFlag < 8) {
-		 // don't change output if stall or other error reported
-	  } else if (!rtn) {   // I2C bus error
-		  vanePar.vaneFlag = 99;
-		  vanePar.vanePos = "ERROR";
-	  } else {             // report if not in position and no known error
+	  } else {                  // report if not in position and no known error
 		  vanePar.vaneFlag = 8;
 		  vanePar.vanePos = "UNKNOWN";
-	  }
+	  }*/
 
 	  sprintf(status, "%sVane position is %s    (status %d):\r\n"
     		  "  V_supp =   %5.3f [V]\r\n"

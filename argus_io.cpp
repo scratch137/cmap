@@ -2945,7 +2945,11 @@ int vane_obscal(char *inp)
     		    // read ADC to get angle
     			vane_angle();
      			// check vane position
-    			if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) break;
+    			if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+    				vanePar.vaneFlag = 0;  // record position as obs
+    				vanePar.vanePos = "OBS";
+    				break;
+    			}
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled
     				vanePar.vanePos = "STALL";
@@ -2969,7 +2973,11 @@ int vane_obscal(char *inp)
     		    // read ADC to get angle
     			vane_angle();
      			// check vane position
-    			if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) break;
+    			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+    				vanePar.vaneFlag = 1;  // record position as cal
+    				vanePar.vanePos = "CAL";
+    				break;
+    			}
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled
     				vanePar.vanePos = "STALL";
@@ -3045,8 +3053,8 @@ void init_vane(void)
 	buffer[0] = 0x00;
 	I2CSEND1;
 
-	vanePar.vanePos = "UNCLEAR";
-	vanePar.vaneFlag = 8;
+	vanePar.vanePos = "UNINIT";
+	vanePar.vaneFlag = 99;  // code for unititialized
 
 	return;
 }
