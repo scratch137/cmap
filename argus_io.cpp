@@ -2964,7 +2964,7 @@ int vane_obscal(char *inp)
 			}
     	} else {  // I2C bus error
 			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "ERROR";
+			vanePar.vanePos = "BUS_ERR";
     	}
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
 		I2CStatus = writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
@@ -2992,22 +2992,11 @@ int vane_obscal(char *inp)
 			}
     	} else {  // I2C bus error
 			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "ERROR";
+			vanePar.vanePos = "BUS_ERR";
     	}
-		writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
 	}
 
-	// disable motor drive, see where the vane is
-	writeBEX(VANEMANCMD, SBBEX_ADDR);
-	vane_angle();
-	if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
-		vanePar.vaneFlag = 1; // record command position as cal, in beam
-		vanePar.vanePos = "CAL";
-	} else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
-			vanePar.vaneFlag = 0; // record command position as obs, out of beam
-			vanePar.vanePos = "OBS";
-	}
-
+	writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
 	// clean up and return
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 
