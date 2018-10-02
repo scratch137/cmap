@@ -2824,7 +2824,7 @@ struct vaneParams {
 with ADC order: Vin, NC, NC, NC, angleSens, temp_load, temp_outside, temp_shroud
 */
 struct vaneParams vanePar = {
-		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "INTERMEDIATE"
+		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "UNCLEAR"
 };
 
 // Scale and offset for vane ADC channels
@@ -2877,6 +2877,35 @@ int vane_readADC(void)
 	return (I2CStat);
 }
 
+
+/**
+  \brief Get vane angle.
+
+  This function reads the cal vane angle.
+
+  Bus expander must be configured externally
+
+  \return NB error code for write to BEX.
+*/
+int vane_angle(void)
+{
+	unsigned short int rawu;
+
+	address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
+	buffer[0] = (BYTE)pcRead.add[vaneAngleChan];    // internal address for channel
+	I2CStat = I2CSEND1;                 // send command for conversion
+	I2CREAD2;                           // read device buffer back
+	if (I2CStat == 0) {                 // convert if valid, else write error defaults
+		rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
+		vanePar.adcv[vaneAngleChan] = rawu*scale[vaneAngleChan]*4.096/65535 + offset[vaneAngleChan];
+			vanePar.vaneAngleDeg = (vanePar.adcv[vaneAngleChan] - vaneOffset) * vaneV2Deg; // vane angle, deg
+	} else {
+		vanePar.adcv[vaneAngleChan] = 9999.;  // error condition
+		vanePar.vaneAngleDeg = 9999.;
+	}
+	return (I2CStat);
+}
+
 /**
   \brief Move vane in or out.
 
@@ -2900,8 +2929,6 @@ int vane_obscal(char *inp)
 	int n;  // loop counter
 	float lastAng = -1000.;   // last angle read, for stall comparison
 
-	unsigned short int rawu;
-
 	// open communication channel
 	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, VANE_SWADDR);
 	if (I2CStatus) return (I2CStatus);
@@ -2916,29 +2943,9 @@ int vane_obscal(char *inp)
     	if (!I2CStatus) {
     		for (n=0; n<nmax; n++){
     		    // read ADC to get angle
-    			address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
-    			buffer[0] = (BYTE)pcRead.add[vaneAngleChan];    // internal address for channel
-    			I2CStat = I2CSEND1;                 // send command for conversion
-    			I2CREAD2;                           // read device buffer back
-    			if (I2CStat == 0) {                 // convert if valid, else write error defaults
-    				rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
-    				vanePar.adcv[vaneAngleChan] = rawu*scale[vaneAngleChan]*4.096/65535 + offset[vaneAngleChan];
-    	   			vanePar.vaneAngleDeg = (vanePar.adcv[vaneAngleChan] - vaneOffset) * vaneV2Deg; // vane angle, deg
-    			} else {
-    				vanePar.adcv[vaneAngleChan] = 9999.;  // error condition
-    	   			vanePar.vaneAngleDeg = 9999.;
-    			}
+    			vane_angle();
      			// check vane position
-    			if (vanePar.vaneAngleDeg >= (VANESWINGANGLE - VANEOBSERRANGLE)) {
-    				vanePar.vaneFlag = 0; // record command position as obs, out of beam
-    				vanePar.vanePos = "OBS";
-    				break;
-    			}
-    			if (vanePar.vaneAngleDeg >= (VANESWINGANGLE + VANEOBSERRANGLE)) {
-    				vanePar.vaneFlag = 5; // record command position as error, moved too far
-    				vanePar.vanePos = "OVERSHOT";
-    				break;
-    			}
+    			if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) break;
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled
     				vanePar.vanePos = "STALL";
@@ -2953,37 +2960,16 @@ int vane_obscal(char *inp)
 			}
     	} else {  // I2C bus error
 			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "UNKNOWN";
+			vanePar.vanePos = "ERROR";
     	}
-		writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
 		I2CStatus = writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
     		for (n=0; n<nmax; n++){
     		    // read ADC to get angle
-    			address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
-    			buffer[0] = (BYTE)pcRead.add[vaneAngleChan];    // internal address for channel
-    			I2CStat = I2CSEND1;                 // send command for conversion
-    			I2CREAD2;                           // read device buffer back
-    			if (I2CStat == 0) {                 // convert if valid, else write error defaults
-    				rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
-    				vanePar.adcv[vaneAngleChan] = rawu*scale[vaneAngleChan]*4.096/65535 + offset[vaneAngleChan];
-    	   			vanePar.vaneAngleDeg = (vanePar.adcv[vaneAngleChan] - vaneOffset) * vaneV2Deg; // vane angle, deg
-    			} else {
-    				vanePar.adcv[vaneAngleChan] = 9999.;  // error condition
-    	   			vanePar.vaneAngleDeg = 9999.;
-    			}
+    			vane_angle();
      			// check vane position
-    			if (vanePar.vaneAngleDeg <= VANECALERRANGLE) {
-    				vanePar.vaneFlag = 1; // record command position as cal, in beam
-    				vanePar.vanePos = "CAL";
-    				break;
-    			}
-    			if (vanePar.vaneAngleDeg <= -VANECALERRANGLE) {
-    				vanePar.vaneFlag = 5; // record command position as error, moved too far
-    				vanePar.vanePos = "OVERSHOT";
-    				break;
-    			}
+    			if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) break;
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled
     				vanePar.vanePos = "STALL";
@@ -2998,11 +2984,23 @@ int vane_obscal(char *inp)
 			}
     	} else {  // I2C bus error
 			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "UNKNOWN";
+			vanePar.vanePos = "ERROR";
     	}
 		writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
 	}
 
+	// disable motor drive, see where the vane is
+	writeBEX(VANEMANCMD, SBBEX_ADDR);
+	vane_angle();
+	if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+		vanePar.vaneFlag = 1; // record command position as cal, in beam
+		vanePar.vanePos = "CAL";
+	} else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+			vanePar.vaneFlag = 0; // record command position as obs, out of beam
+			vanePar.vanePos = "OBS";
+	}
+
+	// clean up and return
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 
 	return(I2CStatus);
@@ -3046,6 +3044,9 @@ void init_vane(void)
 	address = SB_SBADDR;  // Close subbus
 	buffer[0] = 0x00;
 	I2CSEND1;
+
+	vanePar.vanePos = "UNCLEAR";
+	vanePar.vaneFlag = 8;
 
 	return;
 }
