@@ -248,10 +248,6 @@ struct saddlebagParams {
 //#define VANE_SWADDR 0x00 // for testing, no connection
 //#define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
 
-#define VANEOBSCMD (BYTE)(~0x80 & ~0x20) // P5 low, LED on (low)
-#define VANECALCMD (BYTE)(~0x80 & ~0x40) // P6 low, LED on (low)
-#define VANEMANCMD (BYTE)(~0x80 & ~0x00) // All Px high except LED on (low)
-
 #define VANESWINGANGLE 180.  // vane swing angle from cal (0 deg) to stow, in degrees
 #define VANECALERRANGLE 1.   // maximum absolute error for vane to arrive at cal position
 #define VANEOBSERRANGLE 5.   // maximum absolute error for vane to arrive at obs (stow) position

@@ -2832,7 +2832,38 @@ struct vaneParams vanePar = {
 const float offset[8] = {0, 0, 0, 0, 0., -50., -50., -50.};
 const float scale[8] = {10., -10., 1., 1., 1., 100., 100., 100.};
 
-#define vaneAngleChan 4
+#define vaneAngleChan 4  // ADC channel for angle readout
+#define VANEOBSCMD (BYTE)(~0x80 & ~0x20) // P5 low, LED on (low)
+#define VANECALCMD (BYTE)(~0x80 & ~0x40) // P6 low, LED on (low)
+#define VANEMANCMD (BYTE)(~0x80)         // All Px high except LED on (low)
+
+/**
+  \brief Vane drive relay control.
+
+  This function configures and loads the bus expander to control the vane relays.
+  Note: communication to relay BEX must be established and removed externally.
+
+  \par inp : Relay state (cal, obs, or man; last is default)
+
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+int vane_relayCtrl(char *inp)
+{
+	if (!foundLNAbiasSys) return WRONGBOX;
+
+	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
+		I2CStat = configBEX(VANEOBSCMD, SBBEX_ADDR);  // clear obs and led config bits for H/L
+		writeBEX(VANEOBSCMD, SBBEX_ADDR);             // set obs control and LED bits L
+	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
+		I2CStat = configBEX(VANECALCMD, SBBEX_ADDR);  // clear cal and led config bits for H/L
+		writeBEX(VANECALCMD, SBBEX_ADDR);             // set cal control and LED bits L
+	} else {
+		I2CStat = configBEX(VANEMANCMD, SBBEX_ADDR);  // set all config bits high for Z, except LED
+	}
+
+	return (I2CStat);
+}
+
 
 /**
   \brief Read all channels of the vane ADC.
@@ -2934,12 +2965,12 @@ int vane_obscal(char *inp)
 	if (I2CStatus) return (I2CStatus);
 
 	// ensure delay with motor stopped before further motion
-	I2CStatus = writeBEX(VANEMANCMD, SBBEX_ADDR);   // stop motor if running
-	OSTimeDly( TICKS_PER_SECOND * 3 / 2 );          // delay 1.5 sec before anything else
+	I2CStatus = vane_relayCtrl("man");        // stop motor if running
+	OSTimeDly( TICKS_PER_SECOND * 3 / 2 );    // delay 1.5 sec before anything else
 
 	// move to obs or cal positions
 	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
-		I2CStatus = writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
+		I2CStatus = vane_relayCtrl("obs");  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
     		for (n=0; n<nmax; n++){
     		    // read ADC to get angle
@@ -2967,7 +2998,7 @@ int vane_obscal(char *inp)
 			vanePar.vanePos = "BUS_ERR";
     	}
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
-		I2CStatus = writeBEX(VANEOBSCMD, SBBEX_ADDR);  // pin value low to drive to obs, all others but LED high
+		I2CStatus = vane_relayCtrl("cal");  // pin value low to drive to obs, all others but LED high
     	if (!I2CStatus) {
     		for (n=0; n<nmax; n++){
     		    // read ADC to get angle
@@ -2996,7 +3027,7 @@ int vane_obscal(char *inp)
     	}
 	}
 
-	writeBEX(VANEMANCMD, SBBEX_ADDR);  // turn off motor
+	vane_relayCtrl("man");  // turn off motor
 	// clean up and return
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 
@@ -3027,9 +3058,7 @@ void init_vane(void)
 
 	// Configure BEX on vane interface card
 	writeBEX(0xff, SBBEX_ADDR);   // prepare with all ports high; turns off both LED and motor
-	BYTE configByte = VANEOBSCMD & VANECALCMD & 0x7f;  // configure BEX by clearing write bits
-	configBEX(configByte, SBBEX_ADDR);
-	writeBEX(0xff, SBBEX_ADDR);   // set all ports high; turns off both LED and motor
+	configBEX(VANEMANCMD, SBBEX_ADDR);  // configure BEX by setting all bits to Z except LED
 	// Turn on LED to show complete
 	OSTimeDly(5);                // wait to allow perceptible off time for blink
 	writeBEX(VANEMANCMD, SBBEX_ADDR);   // turn on LED, leave other port values high
