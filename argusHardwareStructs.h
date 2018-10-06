@@ -254,12 +254,12 @@ struct saddlebagParams {
 #define STALLERRANG 5.       // minimum absolute angle vane must move to avoid stall designation
 #define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
 #define VANESTALLTIME 0.5    // seconds; if negligible movement in this time, declare stall
+#define VANEFLAGUNINIT 10    // highest value for vanePar.vaneFlag
 
 struct vaneParams {
 	float adcv[8];
 	float vaneAngleDeg;
 	BYTE vaneFlag;
-	char *vanePos;
 };
 
 #endif

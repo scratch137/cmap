@@ -57,6 +57,17 @@ char *vnames[] = {"Vin    [V]",
 				   "Vane pos. ",
                    "          "};
 
+char *vanePos[] = {"OBS    ",       // number of entries should match 0..VANEFLAGUNINIT
+				 "CAL    ",
+				 "STALL  ",
+				 "TIMEOUT",
+				 "BUS_ERR",
+				 "MOVING ",
+				 "RES    ",
+				 "RES    ",
+				 "RES    ",
+				 "UNINIT "};
+
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
 
@@ -2251,11 +2262,11 @@ void Correlator::execVane(return_type status, argument_type arg)
 	    	  vane_readADC();
 	          sprintf(status, "%sVane position is %s    (status %d):\r\n"
 	        		  "  V_supp =   %5.3f [V]\r\n"
-	        		  "  Angle =    %5.1f [deg] (%5.3f [V])\r\n"
+	        		  "  Angle =    %5.1f [deg], or %5.3f [V]\r\n"
 	        		  "  T_vane =   %5.3f [C]\r\n"
 	        		  "  T_amb =    %5.3f [C]\r\n"
 	        		  "  T_shroud = %5.3f [C]\r\n\r\n",
-	        	  	  (!rtn ? statusOK : statusERR), vanePar.vanePos, rtn,
+	        	  	  (!rtn ? statusOK : statusERR), vanePos[vanePar.vaneFlag], rtn,
 	        	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
 	        	  	 vanePar.adcv[6],  vanePar.adcv[7]);
 	      } else {
@@ -2269,29 +2280,24 @@ void Correlator::execVane(return_type status, argument_type arg)
 
 	  // check vane position for bus errors and at startup (uninitialized)
 	  if (rtn) {
-		  vanePar.vaneFlag = rtn;
-		  vanePar.vanePos = "BUS_ERR";
-	  } else if (vanePar.vaneFlag > 100) {  // if uninitialized
+		  vanePar.vaneFlag = 4;
+	  } else if (vanePar.vaneFlag == VANEFLAGUNINIT) {  // if uninitialized
 		  if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
 			  vanePar.vaneFlag = 1; // record command position as cal, in beam
-			  vanePar.vanePos = "CAL";
 		  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
 			  vanePar.vaneFlag = 0; // record command position as obs, out of beam
-			  vanePar.vanePos = "OBS";
 		  } else {
-			  vanePar.vaneFlag = 5; // record command position as unknown
-			  vanePar.vanePos = "UNINIT";
-
+			  vanePar.vaneFlag = VANEFLAGUNINIT; // record command position as uninitialized
 		  }
 	  }
 
 	  sprintf(status, "%sVane position is %s    (status %d):\r\n"
     		  "  V_supp =   %5.3f [V]\r\n"
-    		  "  Angle =    %5.1f [deg] (%5.3f [V])\r\n"
+    		  "  Angle =    %5.1f [deg], or %5.3f [V]\r\n"
     		  "  T_vane =   %5.3f [C]\r\n"
     		  "  T_amb =    %5.3f [C]\r\n"
     		  "  T_shroud = %5.3f [C]\r\n\r\n",
-    	  	  (!rtn ? statusOK : statusERR), vanePar.vanePos, rtn,
+    	  	  (!rtn ? statusOK : statusERR), vanePos[vanePar.vaneFlag], rtn,
     	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
     	  	 vanePar.adcv[6],  vanePar.adcv[7]);
 	}
@@ -2331,7 +2337,8 @@ void Correlator::execJVane(return_type status, argument_type arg)
 
 	  if (narg == 1) {
 	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
-	    	  sprintf(status, "{\"vane\": {\"cmdOK\": true, \"state\":[%d.0]}}\r\n", 2);
+	    	  // send back "moving" information, then move the vane
+	    	  sprintf(status, "{\"vane\": {\"cmdOK\": true, \"position\":[5.0]}}\r\n");
 	    	  rtn = vane_obscal(kw);
 	      } else {
 	    	  longHelp(status, usage, &Correlator::execJVane);
@@ -2342,26 +2349,23 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	} else {
 		  rtn = vane_readADC();
 		  // check vane position
-		  if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
-			  vanePar.vaneFlag = 1; // record command position as cal, in beam
-			  vanePar.vanePos = "CAL";
-		  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
-			  vanePar.vaneFlag = 0; // record command position as obs, out of beam
-			  vanePar.vanePos = "OBS";
-		  } else if (vanePar.vaneFlag > 1 && vanePar.vaneFlag < 8) {
-			 // don't change output if stall or other error reported
-		  } else if (!rtn) {   // I2C bus error
-			  vanePar.vaneFlag = 99;
-			  vanePar.vanePos = "ERROR";
-		  } else {             // report if not in position and no known error
-			  vanePar.vaneFlag = 8;
-			  vanePar.vanePos = "UNKNOWN";
+		  // check vane position for bus errors and at startup (uninitialized)
+		  if (rtn) {
+			  vanePar.vaneFlag = 4;
+		  } else if (vanePar.vaneFlag == VANEFLAGUNINIT) {  // if uninitialized
+			  if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+				  vanePar.vaneFlag = 1; // record command position as cal, in beam
+			  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+				  vanePar.vaneFlag = 0; // record command position as obs, out of beam
+			  } else {
+				  vanePar.vaneFlag = VANEFLAGUNINIT; // record command position as uninitialized
+			  }
 		  }
       sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
-    		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0], \"state\":[%d.0]}}\r\n",
+    		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0]}}\r\n",
     		  (!rtn ? "true" : "false"),
     		  vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
-    		  vanePar.vaneFlag, 0);
+    		  vanePar.vaneFlag);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execJVane);

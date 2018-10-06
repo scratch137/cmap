@@ -2819,12 +2819,11 @@ struct vaneParams {
 	float adcv[8];
 	float angleDeg;
 	BYTE vaneFlag;
-	char *vanePos;
 };
 with ADC order: Vin, NC, NC, NC, angleSens, temp_load, temp_outside, temp_shroud
 */
 struct vaneParams vanePar = {
-		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99, "UNCLEAR"
+		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99,
 };
 
 // Scale and offset for vane ADC channels
@@ -2978,12 +2977,10 @@ int vane_obscal(char *inp)
      			// check vane position
     			if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
     				vanePar.vaneFlag = 0;  // record position as obs
-    				vanePar.vanePos = "OBS";
     				break;
     			}
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled
-    				vanePar.vanePos = "STALL";
     				break;
     			}
     			lastAng = vanePar.vaneAngleDeg;  // update angle for stall check
@@ -2991,11 +2988,9 @@ int vane_obscal(char *inp)
     		}
 			if (n == nmax) {  // timeout
 				vanePar.vaneFlag = 3; // timeout; unknown position
-				vanePar.vanePos = "TIMEOUT";
 			}
     	} else {  // I2C bus error
 			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "BUS_ERR";
     	}
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
 		I2CStatus = vane_relayCtrl("cal");  // pin value low to drive to obs, all others but LED high
@@ -3006,12 +3001,10 @@ int vane_obscal(char *inp)
      			// check vane position
     			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
     				vanePar.vaneFlag = 1;  // record position as cal
-    				vanePar.vanePos = "CAL";
     				break;
     			}
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled
-    				vanePar.vanePos = "STALL";
     				break;
     			}
     			lastAng = vanePar.vaneAngleDeg;  // update angle for stall check
@@ -3019,11 +3012,9 @@ int vane_obscal(char *inp)
     		}
 			if (n == nmax) {  // timeout
 				vanePar.vaneFlag = 3; // timeout; unknown position
-				vanePar.vanePos = "TIMEOUT";
 			}
     	} else {  // I2C bus error
 			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
-			vanePar.vanePos = "BUS_ERR";
     	}
 	}
 
@@ -3072,7 +3063,7 @@ void init_vane(void)
 	buffer[0] = 0x00;
 	I2CSEND1;
 
-	vanePar.vaneFlag = 120;  // code for unititialized
+	vanePar.vaneFlag = VANEFLAGUNINIT;  // code for unititialized
 
 	return;
 }
