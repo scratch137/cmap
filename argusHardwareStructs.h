@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20181002_b"
+#define VER "comap_20181006_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -244,16 +244,16 @@ struct saddlebagParams {
 /* Vane definitions */
 // Use many definitions from saddlebags since interface hardware is identical
 
-#define VANE_SWADDR 0x08 // for testing, on SSC3/SSD3
+//#define VANE_SWADDR 0x08 // for testing, on SSC3/SSD3; may also want to disable init_saddlebags() in argus_init
 //#define VANE_SWADDR 0x00 // for testing, no connection
-//#define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
+#define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
 
 #define VANESWINGANGLE 180.  // vane swing angle from cal (0 deg) to stow, in degrees
-#define VANECALERRANGLE 1.   // maximum absolute error for vane to arrive at cal position
+#define VANECALERRANGLE 2.   // maximum absolute error for vane to arrive at cal position
 #define VANEOBSERRANGLE 5.   // maximum absolute error for vane to arrive at obs (stow) position
 #define STALLERRANG 5.       // minimum absolute angle vane must move to avoid stall designation
 #define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
-#define VANESTALLTIME 5    // seconds; if negligible movement in this time, declare stall
+#define VANESTALLTIME 0.5    // seconds; if negligible movement in this time, declare stall
 
 struct vaneParams {
 	float adcv[8];

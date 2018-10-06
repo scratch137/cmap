@@ -2267,18 +2267,22 @@ void Correlator::execVane(return_type status, argument_type arg)
 	} else {
 	  rtn = vane_readADC();
 
-	  // check vane position
+	  // check vane position for bus errors and at startup (uninitialized)
 	  if (rtn) {
 		  vanePar.vaneFlag = rtn;
 		  vanePar.vanePos = "BUS_ERR";
-	  } else if (vanePar.vaneFlag > 1 && vanePar.vaneFlag < 99) {
-		 // nothing; don't change output if stall or other error reported
-	  } else if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
-		  vanePar.vaneFlag = 1; // record command position as cal, in beam
-		  vanePar.vanePos = "CAL";
-	  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
-		  vanePar.vaneFlag = 0; // record command position as obs, out of beam
-		  vanePar.vanePos = "OBS";
+	  } else if (vanePar.vaneFlag > 100) {  // if uninitialized
+		  if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+			  vanePar.vaneFlag = 1; // record command position as cal, in beam
+			  vanePar.vanePos = "CAL";
+		  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+			  vanePar.vaneFlag = 0; // record command position as obs, out of beam
+			  vanePar.vanePos = "OBS";
+		  } else {
+			  vanePar.vaneFlag = 5; // record command position as unknown
+			  vanePar.vanePos = "UNINIT";
+
+		  }
 	  }
 
 	  sprintf(status, "%sVane position is %s    (status %d):\r\n"

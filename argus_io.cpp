@@ -3057,10 +3057,11 @@ void init_vane(void)
 	I2CSEND1;
 
 	// Configure BEX on vane interface card
-	writeBEX(0xff, SBBEX_ADDR);   // prepare with all ports high; turns off both LED and motor
+	writeBEX(0xff, SBBEX_ADDR);   // prepare with all ports high; LED and motors off
 	configBEX(VANEMANCMD, SBBEX_ADDR);  // configure BEX by setting all bits to Z except LED
+	writeBEX(0xff, SBBEX_ADDR);   // prepare with all ports high; LED and motors off
 	// Turn on LED to show complete
-	OSTimeDly(5);                // wait to allow perceptible off time for blink
+	OSTimeDly(10);                // wait to allow perceptible off time for blink
 	writeBEX(VANEMANCMD, SBBEX_ADDR);   // turn on LED, leave other port values high
 
 	// Close communication
@@ -3071,8 +3072,7 @@ void init_vane(void)
 	buffer[0] = 0x00;
 	I2CSEND1;
 
-	vanePar.vanePos = "UNINIT";
-	vanePar.vaneFlag = 99;  // code for unititialized
+	vanePar.vaneFlag = 120;  // code for unititialized
 
 	return;
 }
