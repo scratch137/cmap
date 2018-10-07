@@ -2338,8 +2338,18 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	  if (narg == 1) {
 	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
 	    	  // send back "moving" information, then move the vane
-	    	  sprintf(status, "{\"vane\": {\"cmdOK\": true, \"position\":[5.0]}}\r\n");
-	    	  rtn = vane_obscal(kw);
+			  rtn = vane_readADC();
+			  if (rtn) {
+				  vanePar.vaneFlag = 4;
+			  } else {
+				  vanePar.vaneFlag = 5;
+			  }
+			  sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
+	    		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0]}}\r\n",
+	    		  (!rtn ? "true" : "false"),
+	    		  vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
+	    		  vanePar.vaneFlag);
+	    	  vane_obscal(kw);
 	      } else {
 	    	  longHelp(status, usage, &Correlator::execJVane);
 	      }
