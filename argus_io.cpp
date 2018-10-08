@@ -2889,9 +2889,9 @@ int vane_readADC(void)
 	for (i = 0 ;  i < 8 ; i++) {
 		address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
 		buffer[0] = (BYTE)pcRead.add[i];    // internal address for channel
-		I2CStat = I2CSEND1;                 // send command for conversion
+		I2CStatus = I2CSEND1;                 // send command for conversion
 		I2CREAD2;                           // read device buffer back
-		if (I2CStat == 0) {
+		if (I2CStatus == 0) {
 			rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
 			vanePar.adcv[i] = rawu*scale[i]*4.096/65535 + offset[i];
    			vanePar.vaneAngleDeg = (vanePar.adcv[vaneAngleChan] - vaneOffset) * vaneV2Deg; // vane angle, deg
@@ -2904,7 +2904,7 @@ int vane_readADC(void)
 	// release I2C bus
 	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
 
-	return (I2CStat);
+	return (I2CStatus);
 }
 
 
@@ -2923,9 +2923,9 @@ int vane_angle(void)
 
 	address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
 	buffer[0] = (BYTE)pcRead.add[vaneAngleChan];    // internal address for channel
-	I2CStat = I2CSEND1;                 // send command for conversion
+	int I2CStatus = I2CSEND1;           // send command for conversion
 	I2CREAD2;                           // read device buffer back
-	if (I2CStat == 0) {                 // convert if valid, else write error defaults
+	if (I2CStatus == 0) {                 // convert if valid, else write error defaults
 		rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
 		vanePar.adcv[vaneAngleChan] = rawu*scale[vaneAngleChan]*4.096/65535 + offset[vaneAngleChan];
 			vanePar.vaneAngleDeg = (vanePar.adcv[vaneAngleChan] - vaneOffset) * vaneV2Deg; // vane angle, deg
@@ -2933,7 +2933,7 @@ int vane_angle(void)
 		vanePar.adcv[vaneAngleChan] = 9999.;  // error condition
 		vanePar.vaneAngleDeg = 9999.;
 	}
-	return (I2CStat);
+	return (I2CStatus);
 }
 
 /**
@@ -2990,7 +2990,7 @@ int vane_obscal(char *inp)
 				vanePar.vaneFlag = 3; // timeout; unknown position
 			}
     	} else {  // I2C bus error
-			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
+			vanePar.vaneFlag = 4;
     	}
 	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
 		I2CStatus = vane_relayCtrl("cal");  // pin value low to drive to obs, all others but LED high

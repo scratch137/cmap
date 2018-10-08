@@ -66,6 +66,7 @@ char *vanePos[] = {"OBS    ",       // number of entries should match 0..VANEFLA
 				 "RES    ",
 				 "RES    ",
 				 "RES    ",
+				 "RES    ",
 				 "UNINIT "};
 
 // decimal points for display in exexArgusMonPts
@@ -2277,8 +2278,7 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  }
 	} else {
 	  rtn = vane_readADC();
-
-	  // check vane position for bus errors and at startup (uninitialized)
+	  // check vane position for bus error or uninitialized
 	  if (rtn) {
 		  vanePar.vaneFlag = 4;
 	  } else if (vanePar.vaneFlag == VANEFLAGUNINIT) {  // if uninitialized
@@ -2290,16 +2290,17 @@ void Correlator::execVane(return_type status, argument_type arg)
 			  vanePar.vaneFlag = VANEFLAGUNINIT; // record command position as uninitialized
 		  }
 	  }
-
+	  //sprintf(status, "rtn is %d, vanePar.vaneFlag is %d\r\n", rtn, vanePar.vaneFlag);
+	  // echo to terminal
 	  sprintf(status, "%sVane position is %s    (status %d):\r\n"
-    		  "  V_supp =   %5.3f [V]\r\n"
-    		  "  Angle =    %5.1f [deg], or %5.3f [V]\r\n"
-    		  "  T_vane =   %5.3f [C]\r\n"
-    		  "  T_amb =    %5.3f [C]\r\n"
-    		  "  T_shroud = %5.3f [C]\r\n\r\n",
-    	  	  (!rtn ? statusOK : statusERR), vanePos[vanePar.vaneFlag], rtn,
-    	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
-    	  	 vanePar.adcv[6],  vanePar.adcv[7]);
+			  "  V_supp =   %5.3f [V]\r\n"
+			  "  Angle =    %5.1f [deg], or %5.3f [V]\r\n"
+			  "  T_vane =   %5.3f [C]\r\n"
+			  "  T_amb =    %5.3f [C]\r\n"
+			  "  T_shroud = %5.3f [C]\r\n\r\n",
+			  (!rtn ? statusOK : statusERR), vanePos[vanePar.vaneFlag], rtn,
+			  vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
+			  vanePar.adcv[6],  vanePar.adcv[7]);
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execVane);
@@ -2358,8 +2359,7 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	  }
 	} else {
 		  rtn = vane_readADC();
-		  // check vane position
-		  // check vane position for bus errors and at startup (uninitialized)
+		  // check vane position for uninitialized or bus error
 		  if (rtn) {
 			  vanePar.vaneFlag = 4;
 		  } else if (vanePar.vaneFlag == VANEFLAGUNINIT) {  // if uninitialized
@@ -2371,7 +2371,7 @@ void Correlator::execJVane(return_type status, argument_type arg)
 				  vanePar.vaneFlag = VANEFLAGUNINIT; // record command position as uninitialized
 			  }
 		  }
-      sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
+     sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
     		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0]}}\r\n",
     		  (!rtn ? "true" : "false"),
     		  vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
