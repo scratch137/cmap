@@ -2976,8 +2976,16 @@ int vane_obscal(char *inp)
     			vane_angle();
      			// check vane position
     			if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
-    				vanePar.vaneFlag = 0;  // record position as obs
-    				break;
+    				// vane reaches obs position
+        			OSTimeDly(TICKS_PER_SECOND);  // 1 sec settling delay before checking position
+    				// check final position
+    				if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+    					vanePar.vaneFlag = 0;  // record position as obs
+    					break;
+    				} else {
+    					vanePar.vaneFlag = 6;  // record position as near obs
+    					break;
+    				}
     			}
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled
@@ -3000,8 +3008,16 @@ int vane_obscal(char *inp)
     			vane_angle();
      			// check vane position
     			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
-    				vanePar.vaneFlag = 1;  // record position as cal
-    				break;
+    				// vane should be in cal position
+        			OSTimeDly(TICKS_PER_SECOND);  // 1 sec settling delay before checking final
+    				// check final position
+    	   			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+    					vanePar.vaneFlag = 1;  // record position as cal
+    					break;
+    				} else {
+    					vanePar.vaneFlag = 7;  // record position as near cal
+    					break;
+    				}
     			}
     			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
     				vanePar.vaneFlag = 2; // record position as stalled

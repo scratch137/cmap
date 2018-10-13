@@ -57,17 +57,17 @@ char *vnames[] = {"Vin    [V]",
 				   "Vane pos. ",
                    "          "};
 
-char *vanePos[] = {"OBS    ",       // number of entries should match 0..VANEFLAGUNINIT
-				 "CAL    ",
-				 "STALL  ",
-				 "TIMEOUT",
-				 "BUS_ERR",
-				 "MOVING ",
-				 "RES    ",
-				 "RES    ",
-				 "RES    ",
-				 "RES    ",
-				 "UNINIT "};
+char *vanePos[] = {"OBS     ",       // number of entries should match 0..VANEFLAGUNINIT
+				 "CAL     ",  // 1
+				 "STALL   ",  // 2
+				 "TIMEOUT ",  // 3
+				 "BUS_ERR ",  // 4
+				 "MOVING  ",  // 5
+				 "NEAR_OBS",  // 6
+				 "NEAR_CAL",  // 7
+				 "RES     ",  // 8
+				 "RES     ",  // 9
+				 "UNINIT  "}; // 10
 
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
