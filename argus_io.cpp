@@ -2979,6 +2979,7 @@ int vane_obscal(char *inp)
     				// vane reaches obs position
         			OSTimeDly(TICKS_PER_SECOND);  // 1 sec settling delay before checking position
     				// check final position
+        			vane_angle();
     				if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
     					vanePar.vaneFlag = 0;  // record position as obs
     					break;
@@ -3011,6 +3012,7 @@ int vane_obscal(char *inp)
     				// vane should be in cal position
         			OSTimeDly(TICKS_PER_SECOND);  // 1 sec settling delay before checking final
     				// check final position
+        			vane_angle();
     	   			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
     					vanePar.vaneFlag = 1;  // record position as cal
     					break;
@@ -3079,7 +3081,7 @@ void init_vane(void)
 	buffer[0] = 0x00;
 	I2CSEND1;
 
-	vanePar.vaneFlag = VANEFLAGUNINIT;  // code for unititialized
+	vanePar.vaneFlag = VANEFLAGNOPOS;  // code for unititialized
 
 	return;
 }

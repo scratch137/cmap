@@ -57,17 +57,17 @@ char *vnames[] = {"Vin    [V]",
 				   "Vane pos. ",
                    "          "};
 
-char *vanePos[] = {"OBS     ",       // number of entries should match 0..VANEFLAGUNINIT
-				 "CAL     ",  // 1
-				 "STALL   ",  // 2
-				 "TIMEOUT ",  // 3
-				 "BUS_ERR ",  // 4
-				 "MOVING  ",  // 5
-				 "NEAR_OBS",  // 6
-				 "NEAR_CAL",  // 7
-				 "RES     ",  // 8
-				 "RES     ",  // 9
-				 "UNINIT  "}; // 10
+char *vanePos[] = {"OBS     ",       // number of entries should match 0..VANEFLAGNOPOS
+				 "CAL      ",  // 1
+				 "STALL    ",  // 2
+				 "TIMEOUT  ",  // 3
+				 "BUS ERROR",  // 4
+				 "MOVING   ",  // 5
+				 "NEAR OBS?",  // 6
+				 "NEAR CAL?",  // 7
+				 "RES      ",  // 8
+				 "RES      ",  // 9
+				 "??????   "}; // 10
 
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
@@ -2281,16 +2281,14 @@ void Correlator::execVane(return_type status, argument_type arg)
 	  // check vane position for bus error or uninitialized
 	  if (rtn) {
 		  vanePar.vaneFlag = 4;
-	  } else if (vanePar.vaneFlag == VANEFLAGUNINIT) {  // if uninitialized
-		  if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
-			  vanePar.vaneFlag = 1; // record command position as cal, in beam
-		  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
-			  vanePar.vaneFlag = 0; // record command position as obs, out of beam
-		  } else {
-			  vanePar.vaneFlag = VANEFLAGUNINIT; // record command position as uninitialized
-		  }
-	  }
-	  //sprintf(status, "rtn is %d, vanePar.vaneFlag is %d\r\n", rtn, vanePar.vaneFlag);
+	  } else if (vanePar.vaneFlag >= 2 && vanePar.vaneFlag <= 4) {
+		  // no change for stall, timeout, or bus error
+	  } else if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+		  vanePar.vaneFlag = 1; // record command position as cal, in beam
+	  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+		  vanePar.vaneFlag = 0; // record command position as obs, out of beam
+	  } else vanePar.vaneFlag = VANEFLAGNOPOS;
+
 	  // echo to terminal
 	  sprintf(status, "%sVane position is %s    (status %d):\r\n"
 			  "  V_supp =   %5.3f [V]\r\n"
@@ -2359,24 +2357,22 @@ void Correlator::execJVane(return_type status, argument_type arg)
 	  }
 	} else {
 		  rtn = vane_readADC();
-		  // check vane position for uninitialized or bus error
+		  // check vane position for bus error or uninitialized
 		  if (rtn) {
 			  vanePar.vaneFlag = 4;
-		  } else if (vanePar.vaneFlag == VANEFLAGUNINIT) {  // if uninitialized
-			  if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
-				  vanePar.vaneFlag = 1; // record command position as cal, in beam
-			  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
-				  vanePar.vaneFlag = 0; // record command position as obs, out of beam
-			  } else {
-				  vanePar.vaneFlag = VANEFLAGUNINIT; // record command position as uninitialized
-			  }
-		  }
-     sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
-    		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0]}}\r\n",
-    		  (!rtn ? "true" : "false"),
-    		  vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
-    		  vanePar.vaneFlag);
+		  } else if (vanePar.vaneFlag >= 2 && vanePar.vaneFlag <= 4) {
+			  // no change for stall, timeout, or bus error
+		  } else if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+			  vanePar.vaneFlag = 1; // record command position as cal, in beam
+		  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+			  vanePar.vaneFlag = 0; // record command position as obs, out of beam
+		  } else vanePar.vaneFlag = VANEFLAGNOPOS;
 	}
+	sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
+			"\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0]}}\r\n",
+			(!rtn ? "true" : "false"),
+			vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
+			vanePar.vaneFlag);
   } else {
 	  longHelp(status, usage, &Correlator::execJVane);
   }

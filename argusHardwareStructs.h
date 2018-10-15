@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20181013_b"
+#define VER "comap_20181015_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -254,7 +254,7 @@ struct saddlebagParams {
 #define STALLERRANG 5.       // minimum absolute angle vane must move to avoid stall designation
 #define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
 #define VANESTALLTIME 0.5    // seconds; if movement in this time < STALLERRANG, declare stall
-#define VANEFLAGUNINIT 10    // highest integer value for vanePar.vaneFlag returns from vanePos[]
+#define VANEFLAGNOPOS 10     // highest integer value for vanePar.vaneFlag returns from vanePos[]; unclear position
 
 struct vaneParams {
 	float adcv[8];
