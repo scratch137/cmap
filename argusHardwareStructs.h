@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20181015_b"
+#define VER "comap_20181018_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -43,7 +43,7 @@ AH 2014.07.01
 // Hardware parameters -- must match structure definitions in argusHardwareStructs.h!
 #define NUM_ELEM(x) (sizeof(x) / sizeof(*(x)))
 #define NRX 20      // number of receivers
-#define JNRX 19     // number of receivers to read out in JSON commands, 1:JNRX (19)
+#define JNRX 20     // number of receivers to read out in JSON commands, 1:JNRX (19)
 #define NRXPERBC 4  // number of receivers per bias card
 #define NSTAGES 2   // number of amplifier stages in each receiver
 #define NBCMP 2     // number of monitor point sets for each bias card
