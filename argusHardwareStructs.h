@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20181101_b"
+#define VER "comap_20181117_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -52,10 +52,10 @@ AH 2014.07.01
 
 // Software limits for bias settings
 #define VDGMAX 1.7    // Max drain-gate voltage [V]
-#define VGMIN -0.3    // Min allowable gate voltage [V]
-#define VGMAX 0.3     // Max allowable gate voltage [V]
+#define VGMIN -0.351  // Min allowable gate voltage [V]
+#define VGMAX 0.351   // Max allowable gate voltage [V]
 #define VDMIN 0.0     // Min allowable drain voltage [V]
-#define VDMAX 1.8     // Max allowable drain voltage [V]
+#define VDMAX 1.01    // Max allowable drain voltage [V]
 #define VMMIN -.25    // Min allowable mixer voltage [V]
 #define VMMAX 5.0     // Max allowable mixer voltage [V]
 #define IDMIN 10.0    // Min operating drain current [mA]
@@ -249,8 +249,8 @@ struct saddlebagParams {
 #define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
 
 #define VANESWINGANGLE 180.  // vane swing angle from cal (0 deg) to stow, in degrees
-#define VANECALERRANGLE 2.   // maximum absolute error for vane to arrive at cal position
-#define VANEOBSERRANGLE 5.   // maximum absolute error for vane to arrive at obs (stow) position
+#define VANECALERRANGLE 1.   // maximum absolute error for vane to arrive at cal position
+#define VANEOBSERRANGLE 2.   // maximum absolute error for vane to arrive at obs (stow) position
 #define STALLERRANG 5.       // minimum absolute angle vane must move to avoid stall designation
 #define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
 #define VANESTALLTIME 0.5    // seconds; if movement in this time < STALLERRANG, declare stall
