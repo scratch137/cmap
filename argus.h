@@ -80,6 +80,7 @@ extern int  dcm2_readMBadc(void);
 extern int  dcm2_readMBtemp(void);
 extern int  dcm2_readAllModTemps(void);
 extern int  dcm2_readAllModTotPwr(void);
+extern float dcm2_readOneModTotPwr(int m, char *ab, char *iq);
 extern int  dcm2_blockMod(char *ch, char *ab);
 extern int  dcm2_setPow(int m, char *ab, char *iq, float pow);
 extern int  dcm2_setAllPow(float pow);

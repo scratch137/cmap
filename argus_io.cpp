@@ -2045,6 +2045,74 @@ int dcm2_readAllModTotPwr(void)
 
 /*******************************************************************/
 /**
+  \brief Read the power detector voltages of a single DCM2 module.
+
+  This function reads the I&Q power detector voltages from one DCM2 modules.
+  Writes values into dcm2Apar and dcm2Bpar structures.
+  BEXs initialized in dcm2_init() function.
+
+  \return Power detector output in dBm.
+*/
+float dcm2_readOneModTotPwr(int m, char *ab, char *iq)
+{
+
+	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
+
+	// check that I2C bus is available, else return
+	// use this approach to lock bus during multiple readouts
+	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
+	i2cBusBusy = 1;
+	busLockCtr += 1;
+
+	float pdet = -99;
+	BYTE ssbusAddr, iqSel, chStatus;
+
+	// check for out-of-range channel number
+	if (m > NRX) {
+		return -10;
+	}
+	// select card for band A or B, set pointer to correct parameter structure
+	if (!strcasecmp(ab, "a")) {
+		ssbusAddr = dcm2sw.ssba[m];
+		chStatus = dcm2Apar.status[m];
+	} else if (!strcasecmp(ab, "b")) {
+		ssbusAddr = dcm2sw.ssbb[m];
+		chStatus = dcm2Bpar.status[m];
+	} else {
+		return -20;
+	}
+	// select card for band A or B, set pointer to correct parameter structure
+	if (!strcasecmp(iq, "i")) {
+		iqSel = ILOG_CS;
+	} else if (!strcasecmp(iq, "q")) {
+		iqSel = QLOG_CS;
+	} else {
+		return -30;
+	}
+
+	if (!chStatus) {
+		// first set addresses to select band for DCM2 module
+		address = DCM2_SBADDR;     // I2C switch address DCM2_SBADDR for top-level switch
+		buffer[0] = dcm2sw.sb[m];  // pick subbus
+		I2CSEND1;
+		// select, then read powDets using subsubbus for bank
+		address = DCM2_SSBADDR;
+		buffer[0] = ssbusAddr;
+		I2CSEND1;
+		// read voltage, convert to dBm
+		pdet = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, iqSel, ADCVREF, BEX_ADDR);
+		pdet = (pdet < ADCVREF ? pdet*DBMSCALE + DBMOFFSET : -99.);
+	}
+
+	// close switches and release bus
+	int I2CStat = closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
+
+	return (I2CStat == 0 ? pdet : (float)I2CStat);
+
+}
+
+/*******************************************************************/
+/**
   \brief SPI bit-bang write to 6-bit step attenuator.
 
   This function converts an unsigned integer to a series of I2C commands

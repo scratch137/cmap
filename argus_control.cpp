@@ -2016,6 +2016,52 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 }
 
 /**
+  \brief Read single DCM2 power detector, JSON return.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPlogp(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M AB IQ]\r\n"
+  "  Read single DCM2 power detector.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m;
+    char ab[4], iq[4];
+
+   if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%1s%1s", &m, ab, iq);
+      if (narg < 3) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJCOMAPlogp);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX){
+    		// convert from user's 1-base to code's 0-base
+    		float logp = dcm2_readOneModTotPwr(m-1, ab, iq);
+   			sprintf(status, "{\"dcm2logp\": {\"cmdOK\":%s, \"logp\":[%f]}}\r\n", (logp<0 ? "true" : "false"), logp);
+    	} else {
+   			sprintf(status, "{\"dcm2logp\": {\"cmdOK\":false}}\r\n");
+    	}
+     }
+  } else {
+      // Command called without arguments
+      longHelp(status, usage, &Correlator::execJCOMAPlogp);
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJCOMAPlogp);
+  }
+}
+
+/**
   \brief Saddlebag control.
 
   This method controls the saddlebag card contols and readouts.
