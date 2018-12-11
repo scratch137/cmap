@@ -2064,12 +2064,12 @@ float dcm2_readOneModTotPwr(int m, char *ab, char *iq)
 	i2cBusBusy = 1;
 	busLockCtr += 1;
 
-	float pdet = -99;
+	float pdet = -99.;
 	BYTE ssbusAddr, iqSel, chStatus;
 
 	// check for out-of-range channel number
 	if (m > NRX) {
-		return -10;
+		return 8010;
 	}
 	// select card for band A or B, set pointer to correct parameter structure
 	if (!strcasecmp(ab, "a")) {
@@ -2079,7 +2079,7 @@ float dcm2_readOneModTotPwr(int m, char *ab, char *iq)
 		ssbusAddr = dcm2sw.ssbb[m];
 		chStatus = dcm2Bpar.status[m];
 	} else {
-		return -20;
+		return 8020;
 	}
 	// select card for band A or B, set pointer to correct parameter structure
 	if (!strcasecmp(iq, "i")) {
@@ -2087,7 +2087,7 @@ float dcm2_readOneModTotPwr(int m, char *ab, char *iq)
 	} else if (!strcasecmp(iq, "q")) {
 		iqSel = QLOG_CS;
 	} else {
-		return -30;
+		return 8030;
 	}
 
 	if (!chStatus) {
@@ -2107,7 +2107,7 @@ float dcm2_readOneModTotPwr(int m, char *ab, char *iq)
 	// close switches and release bus
 	int I2CStat = closeI2Cssbus(DCM2_SBADDR, DCM2_SSBADDR);
 
-	return (I2CStat == 0 ? pdet : (float)I2CStat);
+	return (I2CStat == 0 ? pdet : (float)(I2CStat+1000));
 
 }
 
