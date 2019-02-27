@@ -170,6 +170,14 @@ float pwrCtrlPar[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
 /**************************/
 // DACs
 
+/* struct chSet {  // set DACs
+  char i2c[8];  // board-level i2c addr
+  char add[8];  // addr in device
+  float sc;     // scale for setting
+  float offset; // offset for setting
+  char bip;     // bipolar or unipolar, bipolar = 1
+}; */
+
 // drain voltage setups
 struct chSet vdSet = {
 		{0x40, 0x40, 0x40, 0x40, 0x31, 0x31, 0x31, 0x31},
@@ -195,6 +203,14 @@ struct chSet voSet = {
 		0.001, 2.047, 1};  // offset in mV
 /**************************/
 //ADCs
+
+/* struct chRead { // read ADCs
+  char i2c[8];  // board-level i2c addr
+  char add[8];  // addr in device
+  float sc;     // scale for reading
+  float offset; // offset for reading
+  char bip;     // bipolar or unipolar, bipolar = 1
+}; */
 
 // drain voltage monitor points
 struct chRead vdRead = {
@@ -373,6 +389,8 @@ int argus_setLNAbias(char *term, int m, int n, float v, unsigned char busyOverri
 		}
 		v = v/gvdiv;  // convert from gate voltage to bias card output voltage
 		address = vgSet.i2c[rxPar[m].bcChan[n]];
+		if (m==16 && n==0) address = 0x32;  // override lookups to fix cross-wired connector for pixel 17
+		if (m==16 && n==1) address = 0x41;  // override lookups to fix cross-wired connector for pixel 17
 		buffer[0] = vgSet.add[rxPar[m].bcChan[n]];
 		dacw = v2dac(v, vgSet.sc, vgSet.offset, vgSet.bip);
 		baseAdd = 0;
@@ -571,6 +589,8 @@ int argus_readLNAbiasADCs(char *sw)
 			// loop over stages
 			for (m = 0 ;  m < mmax ; m++) {
 				address = chReadPtr->i2c[rxPar[n].bcChan[m]];    // chip i2c address on card
+				if (n==16 && m==0 && baseAddr==0) address = 0x09;  // override lookups to fix cross-wired connector for pixel 17
+				if (n==16 && m==1 && baseAddr==0) address = 0x18;  // override lookups to fix cross-wired connector for pixel 17
 				buffer[0] = chReadPtr->add[rxPar[n].bcChan[m]];  // internal address for channel
 				I2CStat = I2CSEND1;        // send command for conversion
 				I2CREAD2;   // read device buffer back
