@@ -139,6 +139,7 @@ void initCommandShell()
       ::zpecShell["thaw"]      = &Correlator::execArgusThaw;
       ::zpecShell["jthaw"]     = &Correlator::execJArgusThaw;
       ::zpecShell["jlna"]      = &Correlator::execJCOMAPlna;
+      ::zpecShell["jlnatest"]  = &Correlator::execJCOMAPlnaTestRet;
       ::zpecShell["jsets"]     = &Correlator::execJCOMAPsets;
       ::zpecShell["jcryo"]     = &Correlator::execJCOMAPcryo;
       ::zpecShell["dcm2"]      = &Correlator::execDCM2;

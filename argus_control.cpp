@@ -1379,6 +1379,56 @@ void Correlator::execJCOMAPlna(return_type status, argument_type arg)
 }
 
 /**
+  \brief COMAP LNA test values JSON returns.
+
+  Return JSON string with test values.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPlnaTestRet(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "  No argument returns test data for LNA monitor points.\r\n"
+		  ;
+
+  if (!arg.help) {
+
+	  int i, n0, n1, n2, n3, n4, n5;
+	  int n = sprintf(outStr, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f], "
+			  "\"powSupp\": [%.1f,%.1f,%.1f], \"Tchassis\": [%.2f], ",
+			  "true", 1., 15.01, -15.02, 5.03, 27.04);
+
+	  n0 = sprintf(str0, "\"vg1\":[%.3f", 100.);
+	  n1 = sprintf(str1, "\"vd1\":[%.3f", 200.);
+	  n2 = sprintf(str2, "\"id1\":[%.3f", 300.);
+	  n3 = sprintf(str3, "\"vg2\":[%.3f", 400.);
+	  n4 = sprintf(str4, "\"vd2\":[%.3f", 500.);
+	  n5 = sprintf(str5, "\"id2\":[%.3f", 600.);
+	  for (i=1; i<JNRX; i++){
+		  n0 += sprintf(&str0[n0], ",%.3f", 100.+(float)i);
+		  n1 += sprintf(&str1[n1], ",%.3f", 200.+(float)i);
+		  n2 += sprintf(&str2[n2], ",%.3f", 300.+(float)i);
+		  n3 += sprintf(&str3[n3], ",%.3f", 400.+(float)i);
+		  n4 += sprintf(&str4[n4], ",%.3f", 500.+(float)i);
+		  n5 += sprintf(&str5[n5], ",%.3f", 600.+(float)i);
+	  }
+	  n0 += sprintf(&str0[n0], "]");
+	  n1 += sprintf(&str1[n1], "]");
+	  n2 += sprintf(&str2[n2], "]");
+	  n3 += sprintf(&str3[n3], "]");
+	  n4 += sprintf(&str4[n4], "]");
+	  n5 += sprintf(&str5[n5], "]");
+
+	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str3, str4, str5);
+	  sprintf(status, outStr);
+  } else {
+    longHelp(status, usage, &Correlator::execJCOMAPlnaTestRet);
+  }
+}
+
+/**
   \brief COMAP LNA power monitor and control: read set points.  JSON returns.
 
   Turn LNA power on and off, provide monitoring, for COMAP.  JSON returns.

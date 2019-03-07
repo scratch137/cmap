@@ -315,6 +315,7 @@ public:
   void execJArgusThaw(return_type status, argument_type arg);
   void execArgusLock(return_type status, argument_type arg);
   void execJCOMAPlna(return_type status, argument_type arg);
+  void execJCOMAPlnaTestRet(return_type status, argument_type arg);
   void execJCOMAPsets(return_type status, argument_type arg);
   void execDCM2(return_type status, argument_type arg);
   void execJDCM2(return_type status, argument_type arg);
