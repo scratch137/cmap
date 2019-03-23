@@ -1859,6 +1859,9 @@ int dcm2_readAllModTemps(void)
 
 	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
+
 	// use this approach to lock bus for multiple readouts
 	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
 	i2cBusBusy = 1;
@@ -1997,6 +2000,9 @@ int dcm2_readAllModTotPwr(void)
 
 	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
 
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
+
 	// check that I2C bus is available, else return
 	// use this approach to lock bus during multiple readouts
 	if (i2cBusBusy) {busNoLockCtr += 1; return I2CBUSERRVAL;}
@@ -2057,6 +2063,9 @@ float dcm2_readOneModTotPwr(int m, char *ab, char *iq)
 {
 
 	if (foundLNAbiasSys) return WRONGBOX;  // return if no DCM2 is present
+
+	// check for freeze
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}
 
 	// check that I2C bus is available, else return
 	// use this approach to lock bus during multiple readouts
