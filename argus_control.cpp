@@ -1098,7 +1098,7 @@ void Correlator::execJCOMAPpresets(return_type status, argument_type arg)
 	zpec_readFlash(&flashData);
 	OSTimeDly(CMDDELAY);
 	int rtn = comap_presets(&flashData);
-    sprintf(status, "\"presets\": {\"cmdOK\":%s}}\r\n",
+    sprintf(status, "{\"presets\": {\"cmdOK\":%s}}\r\n",
     		(rtn==0 ? "true" : "false"));
   } else {
 	longHelp(status, usage, &Correlator::execJCOMAPpresets);
