@@ -1924,6 +1924,10 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
 	short unsigned int val_m;       // Mask
 
 	// get command state of output pins on interface
+	x = readBEX(addr);
+
+	/*
+	// get state of output pins on interface
 	address = addr;      // I2C address for BEX chip on board
 	buffer[0] = 0x01;    // output port register
 	I2CStat = I2CSEND1;  // set register
@@ -1931,6 +1935,7 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
 	if (I2CStat) return (9000+I2CStat);
 	I2CREAD1;            // get pin data
 	x = buffer[0];       // update working byte
+	*/
 
 	// set up for read
 	x |= spi_csb_m;       // ensure CS is high at start
