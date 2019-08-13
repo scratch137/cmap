@@ -1750,6 +1750,9 @@ float AD7814_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, BYTE ad
 	// get command state of output pins on interface
 	x = readBEX(addr);
 
+	// COMAP special: force CS& high on all devices to start
+	x |= (QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS);
+
     buffer[0] = 0x01;    // write register
 	address = addr;      // I2C address for BEX chip on board
 	// set up for read
@@ -1926,16 +1929,8 @@ float AD7860_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float v
 	// get command state of output pins on interface
 	x = readBEX(addr);
 
-	/*
-	// get state of output pins on interface
-	address = addr;      // I2C address for BEX chip on board
-	buffer[0] = 0x01;    // output port register
-	I2CStat = I2CSEND1;  // set register
-	// kick out for I2C bus errors
-	if (I2CStat) return (9000+I2CStat);
-	I2CREAD1;            // get pin data
-	x = buffer[0];       // update working byte
-	*/
+	// COMAP special: force CS& high on all devices to start
+	x |= (QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS);
 
 	// set up for read
 	x |= spi_csb_m;       // ensure CS is high at start
@@ -2154,6 +2149,9 @@ int HMC624_SPI_bitbang(BYTE spi_clk_m, BYTE spi_dat_m, BYTE spi_csb_m, float att
 
 	// get command state of output pins on interface
 	x = readBEX(addr);
+
+	// COMAP special: force CS& high on all devices to start
+	x |= (QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS);
 
     buffer[0] = 0x01;    // write register
 	address = addr;      // I2C address for BEX chip on board
