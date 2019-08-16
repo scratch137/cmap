@@ -2011,6 +2011,21 @@ int dcm2_readAllModTotPwr(void)
 
 	int m;  // loop counter
 	for (m=0; m<NRX; m++){
+		if (!dcm2Bpar.status[m]) {
+			// first set addresses to select B band DCM2 module
+			address = DCM2_SBADDR;            // I2C switch address DCM2_SBADDR for top-level switch
+			buffer[0] = dcm2sw.sb[m];  // pick subbus
+			I2CSEND1;
+			// select, configure, then read powDets B bank
+			address = DCM2_SSBADDR;
+			buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
+			I2CSEND1;
+			dcm2Bpar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
+			dcm2Bpar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
+			dcm2Bpar.powDetI[m] = (dcm2Bpar.powDetI[m] < ADCVREF ? dcm2Bpar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
+			dcm2Bpar.powDetQ[m] = (dcm2Bpar.powDetQ[m] < ADCVREF ? dcm2Bpar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
+		}
+
 		if (!dcm2Apar.status[m]) {
 			// first set addresses to select A band DCM2 module
 			address = DCM2_SBADDR;            // I2C switch address DCM2_SBADDR for top-level switch
@@ -2020,25 +2035,10 @@ int dcm2_readAllModTotPwr(void)
 			address = DCM2_SSBADDR;
 			buffer[0] = dcm2sw.ssba[m];  // I2C subsubbus address
 			I2CSEND1;
-			dcm2Apar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
 			dcm2Apar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
+			dcm2Apar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
 			dcm2Apar.powDetI[m] = (dcm2Apar.powDetI[m] < ADCVREF ? dcm2Apar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
 			dcm2Apar.powDetQ[m] = (dcm2Apar.powDetQ[m] < ADCVREF ? dcm2Apar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
-		}
-
-		if (!dcm2Bpar.status[m]) {
-			// first set addresses to select A band DCM2 module
-			address = DCM2_SBADDR;            // I2C switch address DCM2_SBADDR for top-level switch
-			buffer[0] = dcm2sw.sb[m];  // pick subbus
-			I2CSEND1;
-			// select, configure, then read powDets B bank
-			address = DCM2_SSBADDR;
-			buffer[0] = dcm2sw.ssbb[m];  // I2C subsubbus address
-			I2CSEND1;
-			dcm2Bpar.powDetI[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, ILOG_CS, ADCVREF, BEX_ADDR);
-			dcm2Bpar.powDetQ[m] = AD7860_SPI_bitbang(SPI_CLK_M, SPI_MISO_M, QLOG_CS, ADCVREF, BEX_ADDR);
-			dcm2Bpar.powDetI[m] = (dcm2Bpar.powDetI[m] < ADCVREF ? dcm2Bpar.powDetI[m]*DBMSCALE + DBMOFFSET : -99.);
-			dcm2Bpar.powDetQ[m] = (dcm2Bpar.powDetQ[m] < ADCVREF ? dcm2Bpar.powDetQ[m]*DBMSCALE + DBMOFFSET : -99.);
 		}
 	}
 
