@@ -25,15 +25,16 @@ extern struct chRead *chReadPtr;
 extern float dcm2MBpar[];
 extern struct dcm2params dcm2Apar;
 extern struct dcm2params dcm2Bpar;
-
+// saddlebag defs
+extern struct saddlebagParams sbPar[];
 
 extern "C" {
 #endif
 
 /* All C declarations in this region. */
 
-extern char lnaPwrState;  // LNA power supply state
-extern char cifPwrState;  // Cold IF power state
+extern int lnaPwrState;  // LNA power supply state
+extern int sbAmpState;   // Saddlebag amplifiers power state
 extern unsigned char lnaPSlimitsBypass; // bypass LNA power supply limits when = 1
 extern unsigned char cifPSlimitsBypass; // bypass cold IF power supply limits when = 1
 extern unsigned char lnaLimitsBypass;   // bypass soft limits on LNA bias when = 1
@@ -48,6 +49,7 @@ extern unsigned int thawCtr;            // thaw request counter
 extern unsigned int freezeErrCtr;       // freeze error counter (access request while frozen)
 extern short unsigned int biasSatus[NRX]; // receiver status word, see argus_rxCheck(void)
 extern int i2cState[];                  // I2C bus SCL (0/1) and SDA (0/2) values
+extern int foundLNAbiasSys;                      // 0 when DCM2 board is detected
 
 extern void argus_init(const flash_t *flash);
 extern int  argus_test(int foo, float bar);
@@ -59,18 +61,9 @@ extern int  argus_readLNAbiasADCs(char *sw);
 extern int  argus_readPwrADCs(void);
 extern int  argus_readBCpsV(void);
 extern int  argus_readThermADCs(void);
-extern int  argus_LNApresets(const flash_t *flash);
-extern unsigned char argus_lnaPowerPIO(void);
-extern int  argus_readWIFpsADCs(void);
-extern int  argus_setWIFswitches(char *term, int m, char val, unsigned char busyOverride);
-extern int  argus_setAllWIFswitches(char *inp, char val);
-extern int  argus_readWIF(void);
+extern int  argus_lnaPowerPIO(void);
 extern int  argus_openSubbusC(BYTE addr);
 extern int  argus_closeSubbusC(void);
-extern int  readCalSysADC(int ch);
-extern int  argus_readAllCalSysADC(void);
-extern int  argus_setVaneBits(BYTE cmd);
-extern int  argus_driveVane(BYTE cmd, short int nmax, float stopv, float deltastop);
 extern int  argus_clearBus(void);
 extern int  argus_readAllSystemADCs(void);
 extern int  argus_biasCheck(void);
@@ -88,7 +81,18 @@ extern int  dcm2_readMBtemp(void);
 extern int  dcm2_readAllModTemps(void);
 extern int  dcm2_readAllModTotPwr(void);
 extern int  dcm2_blockMod(char *ch, char *ab);
+extern int  dcm2_setPow(int m, char *ab, char *iq, float pow);
+extern int  dcm2_setAllPow(float pow);
 extern int  init_dcm2(void);
+
+extern int  sb_ampPow(char *inp, int sbNum);
+extern int  sb_ledOnOff(char *inp, int sbNum);
+extern int  sb_readADC(int sbNum);
+extern int  sb_readPLLmon(int sbNum);
+extern int  sb_setAllAmps(char *inp);
+extern void  init_saddlebags(void);
+
+extern int  comap_presets(const flash_t *flash);
 
 /**************************************************************************/
 

@@ -114,25 +114,40 @@ void initCommandShell()
       ::zpecShell["power"]     = &Correlator::execPower;
       break;
 
-    case ZPEC_HW_ARG:    // edited for comap, AH 2017-08-12, dcm2 2017-12-30
+    case ZPEC_HW_ARG:    // edited for comap, AH 2017-08-12, dcm2 2017-12-30, JSON 1018-02
       //::zpecShell["test"]      = &Correlator::execArgusTest;
-      ::zpecShell["init"]      = &Correlator::execArgusInit;
+      //::zpecShell["init"]      = &Correlator::execArgusInit;
       ::zpecShell["limits"]    = &Correlator::execArgusLimits;
+      ::zpecShell["jlimits"]   = &Correlator::execJArgusLimits;
       ::zpecShell["all"]       = &Correlator::execArgusSetAll;
+      ::zpecShell["jall"]      = &Correlator::execJArgusSetAll;
       ::zpecShell["g"]         = &Correlator::execArgusGate;
+      ::zpecShell["jg"]        = &Correlator::execJArgusGate;
       ::zpecShell["d"]         = &Correlator::execArgusDrain;
-      ::zpecShell["a"]         = &Correlator::execArgusAtten;
+      ::zpecShell["jd"]        = &Correlator::execJArgusDrain;
+      ::zpecShell["a"]         = &Correlator::execCOMAPatten;
+      ::zpecShell["ja"]        = &Correlator::execJCOMAPatten;
       ::zpecShell["lna"]       = &Correlator::execArgusPwrCtrl;
       ::zpecShell["cryo"]      = &Correlator::execArgusCryo;
       ::zpecShell["c"]         = &Correlator::execArgusCryo;
       ::zpecShell["mon"]       = &Correlator::execArgusMonPts;
-      ::zpecShell["presets"]   = &Correlator::execArgusPresets;
+      ::zpecShell["presets"]   = &Correlator::execCOMAPpresets;
+      ::zpecShell["jpresets"]  = &Correlator::execJCOMAPpresets;
       ::zpecShell["engr"]      = &Correlator::execArgusEngr;
       ::zpecShell["freeze"]    = &Correlator::execArgusFreeze;
+      ::zpecShell["jfreeze"]   = &Correlator::execJArgusFreeze;
       ::zpecShell["thaw"]      = &Correlator::execArgusThaw;
-      ::zpecShell["jlna"]      = &Correlator::execCOMAPjlna;
-      ::zpecShell["jcryo"]     = &Correlator::execCOMAPjcryo;
+      ::zpecShell["jthaw"]     = &Correlator::execJArgusThaw;
+      ::zpecShell["jlna"]      = &Correlator::execJCOMAPlna;
+      ::zpecShell["jsets"]     = &Correlator::execJCOMAPsets;
+      ::zpecShell["jcryo"]     = &Correlator::execJCOMAPcryo;
       ::zpecShell["dcm2"]      = &Correlator::execDCM2;
+      ::zpecShell["jdcm2"]     = &Correlator::execJDCM2;
+      ::zpecShell["sbag"]      = &Correlator::execSaddlebag;
+      ::zpecShell["jsbag"]     = &Correlator::execJSaddlebag;
+      ::zpecShell["jtime"]     = &Correlator::execjUpTime;
+      ::zpecShell["p"]         = &Correlator::execCOMAPpow;
+      ::zpecShell["jp"]        = &Correlator::execJCOMAPpow;
       break;
 
     default:
@@ -168,7 +183,6 @@ void initCommandShell()
   ::zpecShell["reboot"]    = &Correlator::execReboot;
 
   ::zpecShell["time"]      = &Correlator::execTime;
-
   ::zpecShell["verbose"]   = &Correlator::execVerbose;
 }
 

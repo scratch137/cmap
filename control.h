@@ -276,6 +276,8 @@ public:
   void execStatus(return_type status, argument_type arg);
   void execSync(return_type status, argument_type arg);
   void execTime(return_type status, argument_type arg);
+  void execjUpTime(return_type status, argument_type arg);
+
   void execTotalPower(return_type status, argument_type arg);
   void execVerbose(return_type status, argument_type arg);
   void execVersion(return_type status, argument_type arg);
@@ -286,28 +288,40 @@ public:
   void execArgusTest(return_type status, argument_type arg);
   void execArgusInit(return_type status, argument_type arg);
   void execArgusLimits(return_type status, argument_type arg);
+  void execJArgusLimits(return_type status, argument_type arg);
   void execArgusDrain(return_type status, argument_type arg);
+  void execJArgusDrain(return_type status, argument_type arg);
   void execArgusGate(return_type status, argument_type arg);
+  void execJArgusGate(return_type status, argument_type arg);
   void execArgusMixer(return_type status, argument_type arg);
   void execArgusPwrCtrl(return_type status, argument_type arg);
   void execArgusCIFPwrCtrl(return_type status, argument_type arg);
   void execArgusWIFCtrl(return_type status, argument_type arg);
   void execArgusSetAll(return_type status, argument_type arg);
+  void execJArgusSetAll(return_type status, argument_type arg);
   void execArgusCryo(return_type status, argument_type arg);
+  void execJCOMAPcryo(return_type status, argument_type arg);
   void execArgusMonPts(return_type status, argument_type arg);
-  void execArgusPresets(return_type status, argument_type arg);
+  void execCOMAPpresets(return_type status, argument_type arg);
+  void execJCOMAPpresets(return_type status, argument_type arg);
   void execArgusEngr(return_type status, argument_type arg);
-  void execArgusAtten(return_type status, argument_type arg);
-  void execArgusSB(return_type status, argument_type arg);
-  void execArgusYIG(return_type status, argument_type arg);
+  void execCOMAPatten(return_type status, argument_type arg);
+  void execJCOMAPatten(return_type status, argument_type arg);
   void execArgusVane(return_type status, argument_type arg);
   void execArgusRxHealth(return_type status, argument_type arg);
   void execArgusFreeze(return_type status, argument_type arg);
+  void execJArgusFreeze(return_type status, argument_type arg);
   void execArgusThaw(return_type status, argument_type arg);
+  void execJArgusThaw(return_type status, argument_type arg);
   void execArgusLock(return_type status, argument_type arg);
-  void execCOMAPjlna(return_type status, argument_type arg);
-  void execCOMAPjcryo(return_type status, argument_type arg);
+  void execJCOMAPlna(return_type status, argument_type arg);
+  void execJCOMAPsets(return_type status, argument_type arg);
   void execDCM2(return_type status, argument_type arg);
+  void execJDCM2(return_type status, argument_type arg);
+  void execSaddlebag(return_type status, argument_type arg);
+  void execJSaddlebag(return_type status, argument_type arg);
+  void execCOMAPpow(return_type status, argument_type arg);
+  void execJCOMAPpow(return_type status, argument_type arg);
 
 private:
   /// Alias map container type.

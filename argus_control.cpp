@@ -10,16 +10,40 @@
 #include "control.h"
 #include "math.h"
 
-// names for cryostat test points
-char *cnames[] = {"T0:", "T1:", "T2:", "T3:", "T4:", "T5:", "Pressure:"};
-/*char *cnames[] = {"20K cold head: ",
-		          "NC:            ",
-		          "20K plate:     ",
-		          "70 K plate:    ",
-		          "70 K cold head:",
-		          "Card cage:     ",
-		          "Pressure:      "}; */
+// temporary strings for JSON output work
+char outStr[8192] = {0};
+char str0[512] = {0};
+char str1[512] = {0};
+char str2[512] = {0};
+char str3[512] = {0};
+char str4[512] = {0};
+char str5[512] = {0};
+char str6[512] = {0};
+char str7[512] = {0};
+char str8[512] = {0};
+char str9[512] = {0};
 
+// names for cryostat test points
+//char *cnames[] = {"T0", "T1", "T2", "T3", "T4", "T5", "Pressure"};
+char *cnames[] = {"T_stage_1 ",
+		          "T_stage_2 ",
+		          "T_bulkhead",
+		          "T_plate_2 ",
+		          "T_pixel_1 ",
+		          "T_pixel_2 ",
+		          "Pressure  "};
+
+// names for saddlebag test points; names in JSaddlebag should match these
+char *sbnames[] = {"+12V   [V]",
+		           "-8V    [V]",
+		           "Fan 1 [Hz]",
+		           "Fan 2 [Hz]",
+		           "Temp 1 [C]",
+		           "Temp 2 [C]",
+		           "Temp 3 [C]",
+		           "Temp 4 [C]",
+				   "PLL lock  ",
+                   "Amp on    "};
 
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
@@ -125,9 +149,35 @@ void Correlator::execArgusFreeze(return_type status, argument_type arg)
 }
 
 /**
+  \brief Argus freeze command, JSON return.
+
+  This method sets a bit to freeze the system state, generally meant for during integrations.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusFreeze(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Freeze system state (see thaw) to prevent changes to settings.\r\n";
+
+
+  if (!arg.help && !arg.str) {
+	  freezeSys = 1;
+	  freezeCtr += 1;
+	  sprintf(status, "{\"freeze\": {\"cmdOK\":true}}\r\n");
+  } else {
+	    longHelp(status, usage, &Correlator::execJArgusFreeze);
+  }
+}
+
+/**
   \brief Argus thaw command.
 
   This method clears a bit to unfreeze the system state, generally meant for not during integrations.
+  JSON return
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
@@ -145,6 +195,30 @@ void Correlator::execArgusThaw(return_type status, argument_type arg)
 	  sprintf(status, "%sfreezeSys = %u\r\n", statusOK, freezeSys);
   } else {
     	longHelp(status, usage, &Correlator::execArgusThaw);
+  }
+}
+
+/**
+  \brief Argus thaw command, JSON return.
+
+  This method clears a bit to unfreeze the system state, generally meant for not during integrations.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusThaw(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Thaw system state (see freeze) to permit changes to settings.\r\n";
+
+  if (!arg.help && !arg.str) {
+	  freezeSys = 0;
+	  thawCtr += 1;
+	  sprintf(status, "{\"thaw\": {\"cmdOK\":true}}\r\n");
+  } else {
+    	longHelp(status, usage, &Correlator::execJArgusThaw);
   }
 }
 
@@ -172,12 +246,11 @@ void Correlator::execArgusRxHealth(return_type status, argument_type arg)
 	  int rtnStatus = argus_systemState();
 	  argus_readAllSystemADCs();
 	  int rtnPow = argus_powCheck();
-	  int rtnIF = argus_ifCheck();
 	  int rtnTherm = argus_thermCheck();
 	  int rtnRx = argus_biasCheck();
 	  sprintf(status, "%sState and error flags:\r\n"
 			  "System status 0x%04x\r\n"
-			  "Power errors 0x%04x\r\n"
+			  //"Power errors 0x%04x\r\n"
 			  "IF output power errors 0x%04x\r\n"
 			  "Thermal errors 0x%04x\r\n"
 			  "LNA bias error state 0x%04x\r\n"
@@ -187,122 +260,13 @@ void Correlator::execArgusRxHealth(return_type status, argument_type arg)
 			  "0x%04x 0x%04x 0x%04x 0x%04x\r\n"
 			  "0x%04x 0x%04x 0x%04x 0x%04x\r\n\r\n",
               (!freezeSys ? statusOK : statusERR),
-              rtnStatus, rtnPow, rtnIF, rtnTherm, rtnRx,
+              rtnStatus, rtnPow, rtnTherm, rtnRx,
               biasSatus[0], biasSatus[1], biasSatus[2],
               biasSatus[3], biasSatus[4], biasSatus[5], biasSatus[6], biasSatus[7], biasSatus[8],
               biasSatus[9], biasSatus[10], biasSatus[11], biasSatus[12], biasSatus[13], biasSatus[14],
               biasSatus[15]);
   } else {
     longHelp(status, usage, &Correlator::execArgusRxHealth);
-  }
-}
-
-/**
-  \brief Argus vane control.
-
-  This method covers the vane and cal sys control.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-void Correlator::execArgusVane(return_type status, argument_type arg)
-{
-  static const char *usage =
-  "[KEYWORD] \r\n"
-  "  KEYWORD  A keyword, either CAL, OBS, STOP, or STATS.\r\n";
-
-  int rtn = 0;
-  if (!arg.help) {
-    if (arg.str) {
-
-      // Command called with one or more arguments.
-    	char kw[15] = {0};
-        int narg = sscanf(arg.str, "%s", kw);
-        if (narg == 1) {
-          // Execute the command.
-        	int rtn = 0;
-         	if (!strcasecmp(kw, "obs")) {
-        		// uses vmax from either cal or stats
-         		OSTimeDly(CMDDELAY);
-          		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			// first find max, min angles
-        			rtn += argus_driveVane(VANERUN, VANENMAX, 0., VANEDELTA);
-        			// then drive to obs position
-        			rtn += argus_driveVane(VANERUN, VANENMAX, calSysPar.maxAngle, VANEDELTA);
-        			rtn += readCalSysADC(VANEANGLEADC);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane to obs position: %s, angle = %.2f (status %d).\r\n",
-        				(rtn==0 ? statusOK : statusERR), calSysPar.state, calSysPar.maxAngle, rtn);
-        			if (!strcmp(calSysPar.state, "found")) calSysPar.state = "obs";
-        		}
-         	}
-        	else if (!strcasecmp(kw, "cal")) {
-        		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			// first find max, min angles
-        			rtn += argus_driveVane(VANERUN, VANENMAX, 0., VANEDELTA);
-        			// then drive to cal position
-        			// multiply by fudge factor to get vane centered over aperture
-        			// changed from 1.15 to 1.07 17.01.25 AH
-        			rtn += argus_driveVane(VANERUN, VANENMAX, calSysPar.minAngle*1.07, VANEDELTA);
-        			rtn += readCalSysADC(VANEANGLEADC);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane to cal position: %s, angle = %.2f (status %d).\r\n",
-        				(rtn==0 ? statusOK : statusERR), calSysPar.state, calSysPar.minAngle, rtn);
-        			if (!strcmp(calSysPar.state, "found")) calSysPar.state = "cal";
-        		}
-        	}
-        	else if (!strcasecmp(kw, "stop")) {
-        		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			rtn += argus_setVaneBits(VANESTOP);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane stop: stop, angle = %.2f (status %d).\r\n",
-         				(rtn==0 ? statusOK : statusERR), calSysPar.adcv[VANEANGLEADC], rtn);
-        		}
-        	}
-        	else if (!strcasecmp(kw, "stats")) {
-        		rtn = argus_openSubbusC(VANE_I2CADDR);
-        		if (rtn) {
-        			sprintf(status, "%sI2C bus error, status %d\r\n", statusERR, rtn);
-        		} else {
-        			rtn += argus_driveVane(VANERUN, VANENMAX, 0., VANEDELTA);
-        			rtn += argus_closeSubbusC();
-        			sprintf(status, "%sVane stats: %s (status %d).\r\n",
-         				(rtn==0 ? statusOK : statusERR), calSysPar.state, rtn);
-        		}
-        	}
-        	else {
-        		longHelp(status, usage, &Correlator::execArgusVane);
-        	}
-      	} else {
-        // Wrong number of arguments; return help string.
-      		longHelp(status, usage, &Correlator::execArgusVane);
-      	}
-    } else {
-    	// first update angle, current, temp:
-    	rtn = argus_readAllCalSysADC();
-    	sprintf(status, "%sVane parameters:\r\n"
-    			"Temperature: %.1f [C] \r\nState: %s \r\n"
-    			"Angle: %.3f; min: %.3f, max: %.3f [V] \r\n"
-    			"Curr: %.2f; mean: %.2f, max: %.2f, stdev: %.2f [A] \r\n"
-    			"Supply to interface: %.2f (%.2f extrapolated)\r\n",
-    			( (rtn==0 && calSysPar.adcv[0] < 10.) ? statusOK : statusERR),  // check for ADC 99s
-     		   calSysPar.adcv[2], calSysPar.state,
-    		   calSysPar.adcv[0], calSysPar.minAngle, calSysPar.maxAngle,
-    		   calSysPar.adcv[1], calSysPar.meanCurr, calSysPar.maxCurr, sqrt(calSysPar.varCurr),
-    		   calSysPar.adcv[3], calSysPar.adcv[3]+VANEVINOFFS);
-   }
-  } else {
-    longHelp(status, usage, &Correlator::execArgusVane);
   }
 }
 
@@ -322,10 +286,7 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
   "  Set engineering mode functions.\r\n"
   "    KEYWORD         VALUE:\r\n"
   "    bypassLNApsLims  x   magic number x to bypass LNA power supply limits.\r\n"
-//  "    bypassCIFpsLim  x   magic number x bypass cold IF power supply limits.\r\n"
   "    bypassLNAlims   y   magic number y to bypass soft limits on LNA biases.\r\n"
-  "    stopVaneOnStall x   0 to ignore vane auto-stop when vane stalled.\r\n"
-  "    sendVane        z   send vane drive hardware integer z.\r\n"
   "    dec             n   n decimal places for MON LNA, MON MIX, MON SETS display\r\n"
   "    clearBus            clear I2C bus busy bit, open main bus switches.\r\n"
   "    clrCtr              clear counters for I2C bus and freeze/thaw.\r\n"
@@ -341,16 +302,7 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
       if (narg == 2) {
         // Execute the command.
       	if (!strcasecmp(kw, "bypassLNApsLims")) lnaPSlimitsBypass = (val == 37 ? 1 : 0);
-//      	else if (!strcasecmp(kw, "bypassCIFpsLim")) cifPSlimitsBypass = (val == 37 ? 1 : 0);
       	else if (!strcasecmp(kw, "bypassLNAlims"))  lnaLimitsBypass = (val == 74 ? 1 : 0);
-      	else if (!strcasecmp(kw, "stopVaneOnStall"))  lnaLimitsBypass = (val == 0 ? 0 : 1);
-      	else if (!strcasecmp(kw, "sendVane")) {
-      		OSTimeDly(CMDDELAY);
-      		if (!argus_openSubbusC(VANE_I2CADDR)) {
-      			argus_setVaneBits((BYTE)(val-200));
-      			argus_closeSubbusC();
-      		}
-      	}
       	else if (!strcasecmp(kw, "dec")) {
     		if (val > 2) {
     			d1 = d2 = val;
@@ -384,21 +336,28 @@ void Correlator::execArgusEngr(return_type status, argument_type arg)
       	}
     } else {
     	OSTimeDly(CMDDELAY);
-    	sprintf(status, "%sEngineering:\r\n"
-    		"  i2cBusBusy = %d, freeze = %u\r\n"
-            "  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
-            "  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
-    		"  bypassLNApsLim = %d\r\n"
-    		"  bypassCIFpsLim = %d\r\n"
-       		"  bypassLNAlims = %d\r\n"
-       		"  stopVaneOnStall = %d\r\n"
-    		"  decimal points: %d, %d\r\n"
-       		"  power control PIO byte = 0x%02x\r\n"
-    		"  version %s\r\n",
-    		statusOK, i2cBusBusy, freezeSys,
-    		busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
-    		lnaPSlimitsBypass, cifPSlimitsBypass, lnaLimitsBypass,
-    		stopVaneOnStall, d1, d2, argus_lnaPowerPIO(), VER);
+     	if (foundLNAbiasSys) {
+     		sprintf(status, "%sEngineering report, Front-end system:\r\n"
+     				"  i2cBusBusy = %d, freeze = %u\r\n"
+     				"  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
+     				"  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
+     				"  bypassLNApsLim = %d\r\n"
+     				"  bypassLNAlims = %d\r\n"
+     				"  decimal points: %d, %d\r\n"
+     				"  power control PIO byte = 0x%02x\r\n"
+     				"  version %s\r\n",
+     				statusOK, i2cBusBusy, freezeSys,
+     				busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr,
+     				lnaPSlimitsBypass, lnaLimitsBypass, d1, d2, argus_lnaPowerPIO(), VER);
+    	} else {
+    		sprintf(status, "%sEngineering report, DCM2 system:\r\n"
+    				"  i2cBusBusy = %d, freeze = %u\r\n"
+    				"  successful and unsuccessful I2C bus lock requests since clrCtr = %u and %u\r\n"
+    				"  freeze and thaw requests since clrCtr = %u and %u, denials while frozen = %u\r\n"
+    				"  version %s\r\n",
+    				statusOK, i2cBusBusy, freezeSys,
+    				busLockCtr, busNoLockCtr, freezeCtr, thawCtr, freezeErrCtr, VER);
+    	}
     }
   } else {
 	  longHelp(status, usage, &Correlator::execArgusEngr);
@@ -420,16 +379,41 @@ void Correlator::execArgusLimits(return_type status, argument_type arg)
   static const char *usage =
   "\r\n"
   "  Return bias setting limits in order:\r\n"
-  "  VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX, VMMIN, VMMAX [V], IDMIN, IDMAX, IMMIN, IMMAX [mA],\r\n"
-  "  MAXATTEN [dB]\r\n"
+  "  VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX [V], IDMIN, IDMAX [mA], MAXATTEN [dB]\r\n"
 		  ;
 
   if (!arg.help) {
-	  sprintf(status, "%s %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %f \r\n",
-	      				statusOK, VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX, VMMIN, VMMAX,
-	      				IDMIN, IDMAX, IMMIN, IMMAX, MAXATTEN);
+	  sprintf(status, "%s %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f %f \r\n",
+	      				statusOK, VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX,
+	      				IDMIN, IDMAX, MAXATTEN);
   } else {
     longHelp(status, usage, &Correlator::execArgusLimits);
+  }
+}
+
+/**
+  \brief Argus setting limits, JSON version.
+
+  Return values of bias setting limits when queried.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusLimits(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Return bias setting limits in JSON format:\r\n"
+  "  Voltages in V, currents in mA, attenuation in dB. \r\n"
+		  ;
+
+  if (!arg.help) {
+	  sprintf(status, "{\"biasLimits\": {\"cmdOK\": true, \"vdmax\":[%.1f], \"vgminmax\":[%.1f,%.1f], "
+			  	  "\"vdminmax\":[%.1f,%.1f], \"idminmax\":[%.1f,%.1f], \"maxatten\":[%.1f]}}\r\n",
+			  	  VDGMAX, VGMIN, VGMAX, VDMIN, VDMAX, IDMIN, IDMAX, MAXATTEN);
+  } else {
+    longHelp(status, usage, &Correlator::execJArgusLimits);
   }
 }
 
@@ -484,6 +468,58 @@ void Correlator::execArgusDrain(return_type status, argument_type arg)
      }
   } else {
     longHelp(status, usage, &Correlator::execArgusDrain);
+  }
+}
+
+/**
+  \brief Argus individual drain bias control, JSON response.
+
+  Set or read a single LNA drain bias for Argus.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusDrain(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M N V]\r\n"
+  "  Set an LNA drain voltage.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  N is the Nth stage within receiver to set.\r\n"
+  "  V is the voltage in V to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m, n;
+    float v = 0.0;
+    if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%d%f", &m, &n, &v);
+      if (narg < 3) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJArgusDrain);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX && n > 0 && n <= NSTAGES){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = argus_setLNAbias("d", m-1, n-1, v, 0);
+    		if (rtn == -10) {
+        		sprintf(status, "{\"biasD\":{\"cmdOK\":false}}\r\n"); //LNA cards are not powered
+    		} else {
+        		sprintf(status, "{\"biasD\":{\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+    		}
+    	} else {
+    		sprintf(status, "{\"biasD\":{\"cmdOK\":false}}\r\n"); //Receiver or stage number out of range
+    	}
+     }
+  } else {
+      // Command called without arguments; read drain values
+      longHelp(status, usage, &Correlator::execJArgusDrain);  //here dummy
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJArgusDrain);
   }
 }
 
@@ -543,15 +579,68 @@ void Correlator::execArgusGate(return_type status, argument_type arg)
 
 
 /**
-  \brief Argus individual receiver attenuator control.
+  \brief Argus individual gate bias control, JSON version.
 
-  Set a single receiver's warm IF attenuation for Argus.
+  Set or read a single LNA gate bias for Argus system.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusAtten(return_type status, argument_type arg)
+void Correlator::execJArgusGate(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M N V]\r\n"
+  "  Set an LNA gate voltage.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  N is the Nth stage within receiver to set.\r\n"
+  "  V is the voltage in V to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m, n;
+    float v = 0.0;
+    if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%d%f", &m, &n, &v);
+      if (narg < 3) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJArgusGate);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX && n > 0 && n <= NSTAGES){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = argus_setLNAbias("g", m-1, n-1, v, 0);
+    		if (rtn == -10) {
+        		sprintf(status, "{\"biasG\":{\"cmdOK\":false}}\r\n"); // LNA cards are not powered
+    		} else {
+        		sprintf(status, "{\"biasG\":{\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+    		}
+    	} else {
+    		sprintf(status, "{\"biasG\":{\"cmdOK\":false}}\r\n"); //Receiver or stage number out of range
+    	}
+     }
+  } else {
+      // Command called without arguments; read gate values
+      longHelp(status, usage, &Correlator::execJArgusGate);  //here dummy
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJArgusGate);
+  }
+}
+
+
+/**
+  \brief COMAP individual receiver attenuator control.
+
+  Set a single receiver's warm IF attenuation for COMAP.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execCOMAPatten(return_type status, argument_type arg)
 {
   static const char *usage =
   "[M AB IQ dB]\r\n"
@@ -572,7 +661,7 @@ void Correlator::execArgusAtten(return_type status, argument_type arg)
       int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
       if (narg < 4) {
         // Too few arguments; return help string.
-        longHelp(status, usage, &Correlator::execArgusAtten);
+        longHelp(status, usage, &Correlator::execCOMAPatten);
       } else {
         // Execute the command.
     	if (m > 0 && m <= NRX){
@@ -585,59 +674,164 @@ void Correlator::execArgusAtten(return_type status, argument_type arg)
     		sprintf(status, "%sReceiver number out of range\r\n", statusERR);
     	}
      }
-  } else {
-      // Command called without arguments; read gate values
-      longHelp(status, usage, &Correlator::execArgusAtten);  //here dummy
+  } else {  // no argument: return atten vals?
+      longHelp(status, usage, &Correlator::execCOMAPatten);
      }
   } else {
-    longHelp(status, usage, &Correlator::execArgusAtten);
+    longHelp(status, usage, &Correlator::execCOMAPatten);
   }
 }
 
 /**
-  \brief Argus individual receiver sideband control.
+  \brief COMAP individual receiver attenuator control, JSON version.
 
-  Set a single receiver's warm IF sideband for Argus.
+  Set a single receiver's warm IF attenuation for COMAP.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusSB(return_type status, argument_type arg)
+void Correlator::execJCOMAPatten(return_type status, argument_type arg)
 {
   static const char *usage =
-  "[M S]\r\n"
-  "  Set a receiver sideband.\r\n"
+  "[M AB IQ dB]\r\n"
+  "  Set a receiver warm IF attenuation.\r\n"
   "  M is the Mth receiver to set.\r\n"
-  "  S is the sideband: 0 for LSB, 1 for USB.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+  "  dB is the attenuation in dB to set.\r\n"
 		  ;
 
   if (!arg.help) {
-    int m, s;
+    int m;
+    char ab[4], iq[4];
+    float atten;
+
    if (arg.str) {
       // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%d%d", &m, &s);
-      if (narg < 2) {
+      int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
+      if (narg < 4) {
         // Too few arguments; return help string.
-        longHelp(status, usage, &Correlator::execArgusSB);
+        longHelp(status, usage, &Correlator::execJCOMAPatten);
       } else {
         // Execute the command.
     	if (m > 0 && m <= NRX){
     		// convert from user's 1-base to code's 0-base
     		OSTimeDly(CMDDELAY);
-    		/* int rtn = argus_setWIFswitches("s", m-1, s, 0); // NEEDS WORK ???
-   			sprintf(status, "%sargus_setWIFswitches(s, %d, %d, 0) returned status %d.\r\n",
-    					(rtn==0 ? statusOK : statusERR), m, s, rtn); */
+    		int rtn = dcm2_setAtten(m-1, ab, iq, atten);
+   			sprintf(status, "{\"dcm2atten\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+    	} else {
+   			sprintf(status, "{\"dcm2atten\": {\"cmdOK\":false}}\r\n");
+    	}
+     }
+  } else {
+      // Command called without arguments; return atten values?
+      longHelp(status, usage, &Correlator::execJCOMAPatten);  //here dummy
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJCOMAPatten);
+  }
+}
+
+/**
+  \brief COMAP individual receiver attenuator control.
+
+  Set a single receiver's warm IF attenuation for COMAP.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execCOMAPpow(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M AB IQ dB]\r\n"
+  "  Set a receiver warm IF attenuation.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+  "  dB is the power level dB to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m;
+    char ab[4], iq[4];
+    float atten;
+
+   if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
+      if (narg < 4) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execCOMAPpow);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = dcm2_setPow(m-1, ab, iq, atten);
+   			sprintf(status, "%sdcm2_setPow(%d, %s, %s, %f) returned status %d.\r\n",
+    					(rtn==0 ? statusOK : statusERR), m, ab, iq, atten, rtn);
     	} else {
     		sprintf(status, "%sReceiver number out of range\r\n", statusERR);
     	}
      }
-  } else {
-      // Command called without arguments; read gate values
-      longHelp(status, usage, &Correlator::execArgusSB);  //here dummy
+  } else {  // no argument: return atten vals?
+      longHelp(status, usage, &Correlator::execCOMAPpow);
      }
   } else {
-    longHelp(status, usage, &Correlator::execArgusSB);
+    longHelp(status, usage, &Correlator::execCOMAPpow);
+  }
+}
+
+/**
+  \brief COMAP individual receiver attenuator control, JSON version.
+
+  Set a single receiver's warm IF attenuation for COMAP.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPpow(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[M AB IQ dB]\r\n"
+  "  Set a receiver warm IF attenuation.\r\n"
+  "  M is the Mth receiver to set.\r\n"
+  "  AB is either A or B IF bank.\r\n"
+  "  IQ is either I or Q.\r\n"
+  "  dB is the power level in dB to set.\r\n"
+		  ;
+
+  if (!arg.help) {
+    int m;
+    char ab[4], iq[4];
+    float atten;
+
+   if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%d%1s%1s%f", &m, ab, iq, &atten);
+      if (narg < 4) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJCOMAPpow);
+      } else {
+        // Execute the command.
+    	if (m > 0 && m <= NRX){
+    		// convert from user's 1-base to code's 0-base
+    		OSTimeDly(CMDDELAY);
+    		int rtn = dcm2_setPow(m-1, ab, iq, atten);
+   			sprintf(status, "{\"dcm2pow\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+    	} else {
+   			sprintf(status, "{\"dcm2pow\": {\"cmdOK\":false}}\r\n");
+    	}
+     }
+  } else {
+      // Command called without arguments; return atten values?
+      longHelp(status, usage, &Correlator::execJCOMAPpow);  //here dummy
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJCOMAPpow);
   }
 }
 
@@ -660,29 +854,47 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
   "    G  gate [V].\r\n"
   "    D  drain [V].\r\n"
   "    A  attenuation [dB].\r\n"
-  "  Value V or dB is the set value.\r\n"
+  "    P  DCM2 power levels [dBm].\r\n"
+  "    S  saddlebag amp power [on/off].\r\n"
+  "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
 		  ;
 
   if (!arg.help) {
     float v = 0.0;
-    char inp[2] = {0};
+    char inp[10] = {0};
+    char act[10] = {0};
 
     if (arg.str) {
       // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%1s%f", inp, &v);
+      int narg = sscanf(arg.str, "%s %s", inp, act);
       if (narg < 2) {
         // Too few arguments; return help string.
         longHelp(status, usage, &Correlator::execArgusSetAll);
       } else if (!strcmp(inp, "a")) {
-    	// Set atten, sb
+    	// Set atten
    		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
         int rtn = dcm2_setAllAttens(v);
 		sprintf(status, "%sdcm2_setAllAttens(%f) returned status %d.\r\n",
 					(rtn==0 ? statusOK : statusERR), v, rtn);
-      } else {
+      } else if (!strcmp(inp, "p")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllPow(v);
+		sprintf(status, "%sdcm2_setAllPow(%f) returned status %d.\r\n",
+					(rtn==0 ? statusOK : statusERR), v, rtn);
+      } else if (!strcmp(inp, "s")) {
+      	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
+     	OSTimeDly(CMDDELAY);
+        int rtn = sb_setAllAmps(act);
+  		sprintf(status, "%ssb_setAllAmps(%d) returned status %d.\r\n",
+  					(rtn==0 ? statusOK : statusERR), (int)v, rtn);
+        } else {
         // Set G, D, M biases
     	OSTimeDly(CMDDELAY);
-    	int rtn = argus_setAllBias(inp, v, 0);
+   		sscanf(act, "%f", &v);
+   		int rtn = argus_setAllBias(inp, v, 0);
     	if (rtn == -10) {
         	sprintf(status, "%sLNA cards are not powered, returned status %d.\r\n",
         			statusERR, rtn);
@@ -698,6 +910,80 @@ void Correlator::execArgusSetAll(return_type status, argument_type arg)
      }
   } else {
     longHelp(status, usage, &Correlator::execArgusSetAll);
+  }
+}
+
+/**
+  \brief Argus: set all gate, drain biases and attenuations to a common value, JSON response.
+
+  Set all gate, drain biases and attenuations to a common value.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJArgusSetAll(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "[KEYWORD VALUE]\r\n"
+  "  Set choice of LNA gate/drain bias voltages or \r\n"
+  "  receiver warm IF attenuations to a common value.\r\n"
+  "  Keywords are:\r\n"
+  "    G  gate [V].\r\n"
+  "    D  drain [V].\r\n"
+  "    A  attenuation [dB].\r\n"
+  "    P  DCM2 power levels [dBm].\r\n"
+  "    S  saddlebag amp power [on/off].\r\n"
+  "  Value is the set value in V or dB, or ON or OFF, as appropriate.\r\n"
+		  ;
+
+  if (!arg.help) {
+    float v = 0.0;
+    char inp[10] = {0};
+    char act[10] = {0};
+
+    if (arg.str) {
+      // Command called with one or more arguments.
+      int narg = sscanf(arg.str, "%s %s", inp, act);
+      if (narg < 2) {
+        // Too few arguments; return help string.
+        longHelp(status, usage, &Correlator::execJArgusSetAll);
+      } else if (!strcmp(inp, "a")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllAttens(v);
+		sprintf(status, "{\"allA\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+      } else if (!strcmp(inp, "p")) {
+    	// Set atten
+   		OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+        int rtn = dcm2_setAllPow(v);
+		sprintf(status, "{\"allP\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+      } else if (!strcmp(inp, "s")) {
+      	// Set saddlebag amplifier state  /// zzz need to change from 1/0 to on/off
+     	OSTimeDly(CMDDELAY);
+        int rtn = sb_setAllAmps(act);
+		sprintf(status, "{\"allS\": {\"cmdOK\":%s}}\r\n", (rtn==0 ? "true" : "false"));
+        } else {
+        // Set G, D biases
+    	OSTimeDly(CMDDELAY);
+   		sscanf(act, "%f", &v);
+   		int rtn = argus_setAllBias(inp, v, 0);
+    	if (rtn == -10) {
+    		sprintf(status, "{\"all%c\": {\"cmdOK\":false}}\r\n", toupper(inp[0]));  //LNA cards are not powered
+    	} else {
+    		sprintf(status, "{\"all%c\": {\"cmdOK\":%s}}\r\n",
+    				toupper(inp[0]), (rtn==0 ? "true" : "false"));
+    	}
+      }
+
+  } else {
+      // Command called without arguments
+      longHelp(status, usage, &Correlator::execJArgusSetAll);
+     }
+  } else {
+    longHelp(status, usage, &Correlator::execJArgusSetAll);
   }
 }
 
@@ -720,8 +1006,8 @@ void Correlator::execArgusCryo(return_type status, argument_type arg)
   if (!arg.help) {
 	OSTimeDly(CMDDELAY);
    	int rtn = argus_readThermADCs();
-    sprintf(status, "%sCryostat:\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n"
-    			    "%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1e Torr (%4.3f V)\r\n",
+    sprintf(status, "%sCryostat:\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n"
+    			    "%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1e Torr (%4.3f V)\r\n",
     		(rtn==0 ? statusOK : statusERR), cnames[0], cryoPar.cryoTemps[0], cnames[1], cryoPar.cryoTemps[1],
     		cnames[2], cryoPar.cryoTemps[2], cnames[3], cryoPar.cryoTemps[3], cnames[4], cryoPar.cryoTemps[4],
     		cnames[5], cryoPar.cryoTemps[5], cnames[6],
@@ -730,23 +1016,50 @@ void Correlator::execArgusCryo(return_type status, argument_type arg)
   } else {
 	longHelp(status, usage, &Correlator::execArgusCryo);
   }
-
 }
 
 /**
-  \brief Use Argus LNA presets.
+  \brief COMAP jcryo command.
 
-  Use Argus LNA presets from flash memory.
+  This method returns the LNA monitor points in JSON format.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusPresets(return_type status, argument_type arg)
+void Correlator::execJCOMAPcryo(return_type status, argument_type arg)
 {
   static const char *usage =
   "\r\n"
-  "  Set LNA biases to values stored in memory.\r\n"
+  "  Return cryostat monitor point values in JSON format.\r\n";
+
+  if (!arg.help && !arg.str) {
+	  int rtn = argus_readThermADCs();
+	  sprintf(status, "{\"cryostat\":{\"cmdOK\":%s, \"temps\":"
+			  "[%.1f,%.1f,%.1f,%.1f,%.1f,%.1f], \"press\":[%.6f]}}\r\n",
+			  	(rtn==0 ? "true" : "false"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
+	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
+	    		cryoPar.cryoTemps[5],
+	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.));
+  } else {
+    	longHelp(status, usage, &Correlator::execJCOMAPcryo);
+  }
+}
+
+/**
+  \brief Use COMAP LNA and atten presets.
+
+  Use COMAP LNA and atten presets from flash memory.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execCOMAPpresets(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Set LNA bias or DCM2 attenuations to values stored in memory.\r\n"
   "  (see FLASH command to set).\r\n "
 		  ;
 
@@ -754,11 +1067,41 @@ void Correlator::execArgusPresets(return_type status, argument_type arg)
 	flash_t flashData;
 	zpec_readFlash(&flashData);
 	OSTimeDly(CMDDELAY);
-	int rtn = argus_LNApresets(&flashData);
-    sprintf(status, "%sSet LNA to preset bias values, status %d\r\n",
+	int rtn = comap_presets(&flashData);
+    sprintf(status, "%sSetting parameters to stored values, status %d\r\n",
     		(rtn==0 ? statusOK : statusERR), rtn);
   } else {
-	longHelp(status, usage, &Correlator::execArgusPresets);
+	longHelp(status, usage, &Correlator::execCOMAPpresets);
+  }
+
+}
+
+/**
+  \brief Use Argus LNA presets, JSON return.
+
+  Use Argus LNA presets from flash memory.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPpresets(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  Set LNA bias or DCM2 attenuations to values stored in memory.\r\n"
+  "  (see FLASH command to set).\r\n "
+		  ;
+
+  if (!arg.help) {
+	flash_t flashData;
+	zpec_readFlash(&flashData);
+	OSTimeDly(CMDDELAY);
+	int rtn = comap_presets(&flashData);
+    sprintf(status, "\"presets\": {\"cmdOK\":%s}}\r\n",
+    		(rtn==0 ? "true" : "false"));
+  } else {
+	longHelp(status, usage, &Correlator::execJCOMAPpresets);
   }
 
 }
@@ -892,22 +1235,22 @@ void Correlator::execArgusPwrCtrl(return_type status, argument_type arg)
 }
 
 /**
-  \brief Argus cold IF power control.
+  \brief COMAP LNA power monitor and control.  JSON returns.
 
-  Turn cold IF power on and off for Argus.
+  Turn LNA power on and off, provide monitoring, for COMAP.  JSON returns.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-void Correlator::execArgusCIFPwrCtrl(return_type status, argument_type arg)
+void Correlator::execJCOMAPlna(return_type status, argument_type arg)
 {
   static const char *usage =
   "[STATE]\r\n"
-  "  Turn cold IF power on or off.\r\n"
-  "  STATE  1 or ON to turn cold IF power on.\r\n"
-  "         0 or OFF to turn cold IF power off.\r\n"
-  "  No argument returns power supply state.\r\n"
+  "  Sequence LNA power on or off, query LNA power supply.\r\n"
+  "  STATE  ON or 1 to sequence LNA power on.\r\n"
+  "         OFF or 0 to sequence LNA power off.\r\n"
+  "  No argument returns monitor point data.\r\n"
 		  ;
 
   if (!arg.help) {
@@ -918,105 +1261,165 @@ void Correlator::execArgusCIFPwrCtrl(return_type status, argument_type arg)
       int narg = sscanf(arg.str, "%4s", state);
       if (narg < 1) {
         // Too few arguments; return help string.
-        longHelp(status, usage, &Correlator::execArgusCIFPwrCtrl);
+        sprintf(status, "{\"lna\": {\"cmdOK\":false}}\r\n");
       } else {
         // Execute the command.
-    	if (lnaPwrState) {
-            sprintf(status, "%sNo change in state allowed with LNA bias on.\r\n",
-                             statusERR);
-    	} else {
-    		if (!strcmp(state, "1") || !strcasecmp(state, "ON")) {
-    			OSTimeDly(CMDDELAY);
-    			int rtn = argus_cifPower(1);
-    			sprintf(status, "%sCold IF power commanded on, status %d.\r\n",
-                             (rtn==0 ? statusOK : statusERR), rtn);
-    		}
-    		else if (!strcmp(state, "0") || !strcasecmp(state, "OFF")) {
-    			OSTimeDly(CMDDELAY);
-    			int rtn = argus_cifPower(0);
-    			sprintf(status, "%sCold IF power commanded off, status %d.\r\n",
-                             (rtn==0 ? statusOK : statusERR), rtn);
-    		} else {
-    			longHelp(status, usage, &Correlator::execArgusCIFPwrCtrl);
-    		}
-    	}
+      	if (!strcmp(state, "1") || !strcasecmp(state, "ON")) {
+      		OSTimeDly(CMDDELAY);
+      		int rtn = argus_lnaPower(1);
+            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f]}}\r\n",
+            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? 1.0 : 0.0));
+      	}
+      	else if (!strcmp(state, "0") || !strcasecmp(state, "OFF")) {
+      		OSTimeDly(CMDDELAY);
+      		int rtn = argus_lnaPower(0);
+            sprintf(status, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f]}}\r\n",
+            		(rtn==0 ? "true" : "false"), (lnaPwrState && !rtn ? 1.0 : 0.0));
+     	}
+      	else {
+      		longHelp(status, usage, &Correlator::execJCOMAPlna);
+      	}
       }
+
     } else {
-      // Command called without arguments; echo power state and key values
-      OSTimeDly(CMDDELAY);
-      int rtn = argus_readPwrADCs();
-      sprintf(status, "%sCold IF power state %s.\r\n"
-	          "Supply voltage:  %6.2f V\r\n"
-	          "Output voltage:  %6.2f V, current: %6.2f A\r\n",
-    		  (rtn==0 ? statusOK : statusERR), (cifPwrState==1 ? "ON" : "OFF"),
-    		  pwrCtrlPar[5], pwrCtrlPar[6], pwrCtrlPar[7]);
+      // Command called without arguments; write LNA state
+
+    	int rtn = 0;
+
+    	if (lnaPwrState) {
+    		OSTimeDly(CMDDELAY);
+    		rtn = argus_readPwrADCs();
+    		rtn += argus_readLNAbiasADCs("vg");
+    		rtn += argus_readLNAbiasADCs("vd");
+    		rtn += argus_readLNAbiasADCs("id");
+    	}
+
+		int i, n0, n1, n2, n3, n4, n5;
+    	int n = sprintf(outStr, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f], "
+					"\"powSupp\": [%.1f,%.1f,%.1f], \"Tchassis\": [%.2f], ",
+					(rtn==0 && lnaPwrState==1 ? "true" : "false"), (lnaPwrState && !rtn ? 1.0 : 0.0),
+					pwrCtrlPar[2], pwrCtrlPar[1], pwrCtrlPar[0], pwrCtrlPar[8]);
+
+	    if (lnaPwrState) {
+
+    		n0 = sprintf(str0, "\"vg1\":[%.3f", rxPar[0].LNAmonPts[0]);
+    		n1 = sprintf(str1, "\"vd1\":[%.3f", rxPar[0].LNAmonPts[2]);
+    		n2 = sprintf(str2, "\"id1\":[%.3f", rxPar[0].LNAmonPts[4]);
+    		n3 = sprintf(str3, "\"vg2\":[%.3f", rxPar[0].LNAmonPts[1]);
+    		n4 = sprintf(str4, "\"vd2\":[%.3f", rxPar[0].LNAmonPts[3]);
+    		n5 = sprintf(str5, "\"id2\":[%.3f", rxPar[0].LNAmonPts[5]);
+    		for (i=1; i<JNRX; i++){
+        		n0 += sprintf(&str0[n0], ",%.3f", rxPar[i].LNAmonPts[0]);
+        		n1 += sprintf(&str1[n1], ",%.3f", rxPar[i].LNAmonPts[2]);
+        		n2 += sprintf(&str2[n2], ",%.3f", rxPar[i].LNAmonPts[4]);
+        		n3 += sprintf(&str3[n3], ",%.3f", rxPar[i].LNAmonPts[1]);
+        		n4 += sprintf(&str4[n4], ",%.3f", rxPar[i].LNAmonPts[3]);
+        		n5 += sprintf(&str5[n5], ",%.3f", rxPar[i].LNAmonPts[5]);
+    		}
+    		n0 += sprintf(&str0[n0], "]");
+    		n1 += sprintf(&str1[n1], "]");
+    		n2 += sprintf(&str2[n2], "]");
+    		n3 += sprintf(&str3[n3], "]");
+    		n4 += sprintf(&str4[n4], "]");
+    		n5 += sprintf(&str5[n5], "]");
+
+ 		  } else {
+ 			rtn = argus_readPwrADCs();
+ 			n0 = sprintf(str0, "\"vg1\":[99.0");
+ 			n1 = sprintf(str1, "\"vd1\":[99.0");
+ 			n2 = sprintf(str2, "\"id1\":[99.0");
+ 			n3 = sprintf(str3, "\"vg2\":[99.0");
+ 			n4 = sprintf(str4, "\"vd2\":[99.0");
+ 			n5 = sprintf(str5, "\"id2\":[99.0");
+ 			for (i=1; i<JNRX; i++){
+ 				n0 += sprintf(&str0[n0], ",99.0");
+ 				n1 += sprintf(&str1[n1], ",99.0");
+ 				n2 += sprintf(&str2[n2], ",99.0");
+ 				n3 += sprintf(&str3[n3], ",99.0");
+ 				n4 += sprintf(&str4[n4], ",99.0");
+ 				n5 += sprintf(&str5[n5], ",99.0");
+  	    	}
+ 			n0 += sprintf(&str0[n0], "]");
+ 			n1 += sprintf(&str1[n1], "]");
+ 			n2 += sprintf(&str2[n2], "]");
+ 			n3 += sprintf(&str3[n3], "]");
+ 			n4 += sprintf(&str4[n4], "]");
+ 			n5 += sprintf(&str5[n5], "]");
+		  }
+    	n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str3, str4, str5);
+ 		sprintf(status, outStr);
     }
   } else {
-    longHelp(status, usage, &Correlator::execArgusCIFPwrCtrl);
+    longHelp(status, usage, &Correlator::execJCOMAPlna);
   }
-
 }
-/**
-  \brief Argus warm IF monitor.
 
-  Get and list status of the Argus warm IF system.
+/**
+  \brief COMAP LNA power monitor and control: read set points.  JSON returns.
+
+  Turn LNA power on and off, provide monitoring, for COMAP.  JSON returns.
 
   \param status Storage buffer for return status (should contain at least
                 ControlService::maxLine characters).
   \param arg    Argument list: LEVEL
 */
-/*void Correlator::execArgusWIFCtrl(return_type status, argument_type arg)
+void Correlator::execJCOMAPsets(return_type status, argument_type arg)
 {
   static const char *usage =
-	"\r\n"
-	"  Read all warm IF monitor points, return values to screen.\r\n"
- 		  ;
+  "\r\n"
+  "  Query LNA bias set points.\r\n"
+		  ;
+
+  int i, n, n0, n1, n2, n3;
 
   if (!arg.help) {
-	  OSTimeDly(CMDDELAY);
-	  int rtn = argus_readWIF();     // update total power and temperature in status table
-      rtn += argus_readWIFpsADCs();  // update power supply voltage in status table
-      sprintf(status, "%sWarm IF:\r\n"
-    		  "Supply voltages: %5.2f V, %5.2f V\r\n"
-    		  "Ch    TotPow       Atten    SB    Card T\r\n"
-    		  " 1   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 2   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 3   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 4   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 5   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 6   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 7   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 8   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  " 9   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "10   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "11   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "12   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "13   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "14   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "15   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-    		  "16   %8.4f V    %2d dB    %1d    %5.1f C\r\n",
-    		  (rtn==0 ? statusOK : statusERR), wifPar.psv[0], wifPar.psv[1],
-    		  wifPar.totPow[0], wifPar.atten[0], wifPar.sb[0], wifPar.cardTemp[0],
-    		  wifPar.totPow[1], wifPar.atten[1], wifPar.sb[1], wifPar.cardTemp[1],
-    		  wifPar.totPow[2], wifPar.atten[2], wifPar.sb[2], wifPar.cardTemp[2],
-    		  wifPar.totPow[3], wifPar.atten[3], wifPar.sb[3], wifPar.cardTemp[3],
-    		  wifPar.totPow[4], wifPar.atten[4], wifPar.sb[4], wifPar.cardTemp[4],
-    		  wifPar.totPow[5], wifPar.atten[5], wifPar.sb[5], wifPar.cardTemp[5],
-    		  wifPar.totPow[6], wifPar.atten[6], wifPar.sb[6], wifPar.cardTemp[6],
-    		  wifPar.totPow[7], wifPar.atten[7], wifPar.sb[7], wifPar.cardTemp[7],
-    		  wifPar.totPow[8], wifPar.atten[8], wifPar.sb[8], wifPar.cardTemp[8],
-    		  wifPar.totPow[9], wifPar.atten[9], wifPar.sb[9], wifPar.cardTemp[9],
-    		  wifPar.totPow[10], wifPar.atten[10], wifPar.sb[10], wifPar.cardTemp[10],
-    		  wifPar.totPow[11], wifPar.atten[11], wifPar.sb[11], wifPar.cardTemp[11],
-    		  wifPar.totPow[12], wifPar.atten[12], wifPar.sb[12], wifPar.cardTemp[12],
-    		  wifPar.totPow[13], wifPar.atten[13], wifPar.sb[13], wifPar.cardTemp[13],
-    		  wifPar.totPow[14], wifPar.atten[14], wifPar.sb[14], wifPar.cardTemp[14],
-    		  wifPar.totPow[15], wifPar.atten[15], wifPar.sb[15], wifPar.cardTemp[15]);
+	  if (lnaPwrState) {
+
+		  n = sprintf(outStr, "{\"lnasets\": {\"cmdOK\":true, \"LNAon\": [1.0], ");
+
+		  n0 = sprintf(str0, "\"vg1\":[%.3f", rxPar[0].LNAsets[0]);
+		  n1 = sprintf(str1, "\"vd1\":[%.3f", rxPar[0].LNAsets[2]);
+		  n2 = sprintf(str2, "\"vg2\":[%.3f", rxPar[0].LNAsets[1]);
+		  n3 = sprintf(str3, "\"vd2\":[%.3f", rxPar[0].LNAsets[3]);
+		  for (i=1; i<JNRX; i++){
+			  n0 += sprintf(&str0[n0], ",%.3f", rxPar[i].LNAsets[0]);
+			  n1 += sprintf(&str1[n1], ",%.3f", rxPar[i].LNAsets[2]);
+			  n2 += sprintf(&str2[n2], ",%.3f", rxPar[i].LNAsets[1]);
+			  n3 += sprintf(&str3[n3], ",%.3f", rxPar[i].LNAsets[3]);
+		  }
+		  n0 += sprintf(&str0[n0], "]");
+		  n1 += sprintf(&str1[n1], "]");
+		  n2 += sprintf(&str2[n2], "]");
+		  n3 += sprintf(&str3[n3], "]");
+
+	  } else {
+		  n = sprintf(outStr, "{\"lnasets\": {\"cmdOK\":true, \"LNAon\": [0.0], ");
+
+		  n0 = sprintf(str0, "\"vg1\":[99.0");
+		  n1 = sprintf(str1, "\"vd1\":[99.0");
+		  n2 = sprintf(str2, "\"vg2\":[99.0");
+		  n3 = sprintf(str3, "\"vd2\":[99.0");
+		  for (i=1; i<JNRX; i++){
+			  n0 += sprintf(&str0[n0], ",99.0");
+			  n1 += sprintf(&str1[n1], ",99.0");
+			  n2 += sprintf(&str2[n2], ",99.0");
+			  n3 += sprintf(&str3[n3], ",99.0");
+		  }
+		  n0 += sprintf(&str0[n0], "]");
+		  n1 += sprintf(&str1[n1], "]");
+		  n2 += sprintf(&str2[n2], "]");
+		  n3 += sprintf(&str3[n3], "]");
+
+	  }
+	  n += sprintf(&outStr[n], "%s, %s, %s, %s}}\r\n", str0, str1, str2, str3);
+	  sprintf(status, outStr);
+
   } else {
-    longHelp(status, usage, &Correlator::execArgusWIFCtrl);
+	  longHelp(status, usage, &Correlator::execJCOMAPsets);
   }
 }
-*/
+
+
 /**
   \brief Read and display Argus monitor points.
 
@@ -1165,52 +1568,11 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	   	    		  } else {
 	    			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
 	              }
-	    	 /* } else if (!strcasecmp(state, "wif")) {  /// NEEDS WORK ?????
-      			  OSTimeDly(CMDDELAY);
-	    	      rtn = argus_readWIF();         // update total power and temperature in status table
-	    	      rtn += argus_readWIFpsADCs();  // update power supply voltage in status table
-	    	      sprintf(status, "%sWarm IF:\r\n"
-	    	    		  "Supply voltages: %5.2f V, %5.2f V\r\n"
-	    	    		  "Ch    TotPow       Atten    SB    Card T\r\n"
-	    	    		  " 1   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 2   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 3   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 4   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 5   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 6   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 7   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 8   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  " 9   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  "10   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  "11   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  "12   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  "13   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  "14   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  "15   %8.4f V    %2d dB    %1d    %5.1f C\r\n"
-	    	    		  "16   %8.4f V    %2d dB    %1d    %5.1f C\r\n",
-	    	    		  (rtn==0 ? statusOK : statusERR), wifPar.psv[0], wifPar.psv[1],
-	    	    		  wifPar.totPow[0], wifPar.atten[0], wifPar.sb[0], wifPar.cardTemp[0],
-	    	    		  wifPar.totPow[1], wifPar.atten[1], wifPar.sb[1], wifPar.cardTemp[1],
-	    	    		  wifPar.totPow[2], wifPar.atten[2], wifPar.sb[2], wifPar.cardTemp[2],
-	    	    		  wifPar.totPow[3], wifPar.atten[3], wifPar.sb[3], wifPar.cardTemp[3],
-	    	    		  wifPar.totPow[4], wifPar.atten[4], wifPar.sb[4], wifPar.cardTemp[4],
-	    	    		  wifPar.totPow[5], wifPar.atten[5], wifPar.sb[5], wifPar.cardTemp[5],
-	    	    		  wifPar.totPow[6], wifPar.atten[6], wifPar.sb[6], wifPar.cardTemp[6],
-	    	    		  wifPar.totPow[7], wifPar.atten[7], wifPar.sb[7], wifPar.cardTemp[7],
-	    	    		  wifPar.totPow[8], wifPar.atten[8], wifPar.sb[8], wifPar.cardTemp[8],
-	    	    		  wifPar.totPow[9], wifPar.atten[9], wifPar.sb[9], wifPar.cardTemp[9],
-	    	    		  wifPar.totPow[10], wifPar.atten[10], wifPar.sb[10], wifPar.cardTemp[10],
-	    	    		  wifPar.totPow[11], wifPar.atten[11], wifPar.sb[11], wifPar.cardTemp[11],
-	    	    		  wifPar.totPow[12], wifPar.atten[12], wifPar.sb[12], wifPar.cardTemp[12],
-	    	    		  wifPar.totPow[13], wifPar.atten[13], wifPar.sb[13], wifPar.cardTemp[13],
-	    	    		  wifPar.totPow[14], wifPar.atten[14], wifPar.sb[14], wifPar.cardTemp[14],
-	    	    		  wifPar.totPow[15], wifPar.atten[15], wifPar.sb[15], wifPar.cardTemp[15]);
-	    	    		  */
 	    	  } else if (!strcasecmp(state, "cryo")) {
 	    		  OSTimeDly(CMDDELAY);
 	    		  rtn = argus_readThermADCs();
-	    		  sprintf(status, "%sCryostat:\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n"
-	    		    			   "%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1f K\r\n%s%8.1e Torr (%4.3f V)\r\n",
+	    		  sprintf(status, "%sCryostat:\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n"
+	    		    			   "%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1f K\r\n%s:%8.1e Torr (%4.3f V)\r\n",
 	    		    	    (rtn==0 ? statusOK : statusERR), cnames[0], cryoPar.cryoTemps[0], cnames[1], cryoPar.cryoTemps[1],
 	    		    		cnames[2], cryoPar.cryoTemps[2], cnames[3], cryoPar.cryoTemps[3], cnames[4], cryoPar.cryoTemps[4],
 	    		    		cnames[5], cryoPar.cryoTemps[5],
@@ -1248,79 +1610,114 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
     	  } else if (!strcasecmp(state, "pres")) {
     		  flash_t flashData;
     		  zpec_readFlash(&flashData);
-	      	  sprintf(status, "%sStored bias values.  Voltages in [V]\r\n\r\n"
+    		  if (foundLNAbiasSys) {
+    			  sprintf(status, "%sStored bias values in [V]\n\r\n"
 	      			  "          1               2               3               4\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
-	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          5               6               7               8\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
-	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          9               10              11              12\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
-	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          13              14              15              16\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
-	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
 	      			  "          17              18              19              20\r\n"
 	      			  "VG: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
 	      			  "VD: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
-	      			  //"A : %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
 	      			  statusOK,
 	      			  flashData.lnaGsets[0], flashData.lnaGsets[1], flashData.lnaGsets[2], flashData.lnaGsets[3],
 	      			  flashData.lnaGsets[4], flashData.lnaGsets[5], flashData.lnaGsets[6], flashData.lnaGsets[7],
 	      			  flashData.lnaDsets[0], flashData.lnaDsets[1], flashData.lnaDsets[2], flashData.lnaDsets[3],
 	      			  flashData.lnaDsets[4], flashData.lnaDsets[5], flashData.lnaDsets[6], flashData.lnaDsets[7],
-	      			  //(float)flashData.atten[0]/2., (float)flashData.atten[1]/2., (float)flashData.atten[2]/2., (float)flashData.atten[3]/2.,
-	      			  //(float)flashData.atten[4]/2., (float)flashData.atten[5]/2., (float)flashData.atten[6]/2., (float)flashData.atten[7]/2.,
 
 	      			  flashData.lnaGsets[8], flashData.lnaGsets[9], flashData.lnaGsets[10], flashData.lnaGsets[11],
 	      			  flashData.lnaGsets[12], flashData.lnaGsets[13], flashData.lnaGsets[14], flashData.lnaGsets[15],
 	      			  flashData.lnaDsets[8], flashData.lnaDsets[9], flashData.lnaDsets[10], flashData.lnaDsets[11],
 	      			  flashData.lnaDsets[12], flashData.lnaDsets[13], flashData.lnaDsets[14], flashData.lnaDsets[15],
-	      			  //(float)flashData.atten[8]/2., (float)flashData.atten[9]/2., (float)flashData.atten[10]/2., (float)flashData.atten[11]/2.,
-	      			  //(float)flashData.atten[12]/2., (float)flashData.atten[13]/2., (float)flashData.atten[14]/2., (float)flashData.atten[15]/2.,
 			  
 	      			  flashData.lnaGsets[16], flashData.lnaGsets[17], flashData.lnaGsets[18], flashData.lnaGsets[19],
 	      			  flashData.lnaGsets[20], flashData.lnaGsets[21], flashData.lnaGsets[22], flashData.lnaGsets[23],
 	      			  flashData.lnaDsets[16], flashData.lnaDsets[17], flashData.lnaDsets[18], flashData.lnaDsets[19],
 	      			  flashData.lnaDsets[20], flashData.lnaDsets[21], flashData.lnaDsets[22], flashData.lnaDsets[23],
-	      			  //(float)flashData.atten[16]/2., (float)flashData.atten[17]/2., (float)flashData.atten[18]/2., (float)flashData.atten[19]/2.,
-	      			  //(float)flashData.atten[20]/2., (float)flashData.atten[21]/2., (float)flashData.atten[22]/2., (float)flashData.atten[23]/2.,
 			  
 	      			  flashData.lnaGsets[24], flashData.lnaGsets[25], flashData.lnaGsets[26], flashData.lnaGsets[27],
 	      			  flashData.lnaGsets[28], flashData.lnaGsets[29], flashData.lnaGsets[30], flashData.lnaGsets[31],
 	      			  flashData.lnaDsets[24], flashData.lnaDsets[25], flashData.lnaDsets[26], flashData.lnaDsets[27],
 	      			  flashData.lnaDsets[28], flashData.lnaDsets[29], flashData.lnaDsets[30], flashData.lnaDsets[31],
-	      			  //(float)flashData.atten[24]/2., (float)flashData.atten[25]/2., (float)flashData.atten[26]/2., (float)flashData.atten[27]/2.,
-	      			  //(float)flashData.atten[28]/2., (float)flashData.atten[29]/2., (float)flashData.atten[30]/2., (float)flashData.atten[31]/2.,
 
 	      			  flashData.lnaGsets[32], flashData.lnaGsets[33], flashData.lnaGsets[34], flashData.lnaGsets[35],
 	      			  flashData.lnaGsets[36], flashData.lnaGsets[37], flashData.lnaGsets[38], flashData.lnaGsets[39],
 	      			  flashData.lnaDsets[32], flashData.lnaDsets[33], flashData.lnaDsets[34], flashData.lnaDsets[35],
 	      			  flashData.lnaDsets[36], flashData.lnaDsets[37], flashData.lnaDsets[38], flashData.lnaDsets[39]);
-	      			  //(float)flashData.atten[32]/2., (float)flashData.atten[33]/2., (float)flashData.atten[34]/2., (float)flashData.atten[35]/2.,
-	      			  //(float)flashData.atten[36]/2., (float)flashData.atten[37]/2., (float)flashData.atten[38]/2., (float)flashData.atten[39]/2.);
+    		  } else {
+        		  sprintf(status, "%sStored A-I/Q and B-I/Q atten values in [dB]\r\n\r\n"
+    	      		  "             1               2               3               4\r\n"
+    	      		  "A I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+    	      		  "B I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+    	      		  "             5               6               7               8\r\n"
+    	      		  "A I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+    	      		  "B I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+    	      		  "             9               10              11              12\r\n"
+    	      		  "A I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+    	      		  "B I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+    	      		  "             13              14              15              16\r\n"
+    	      		  "A I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+    	      		  "B I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n"
+    	      		  "             17              18              19              20\r\n"
+    	      		  "A I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n"
+    	      		  "B I,Q: %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f,   %5.2f, %5.2f\r\n\r\n",
+    	      		  statusOK,
+    	      		  (float)flashData.attenAI[0]/2., (float)flashData.attenAQ[0]/2.,
+    	      		  (float)flashData.attenAI[1]/2., (float)flashData.attenAQ[1]/2.,
+    	      		  (float)flashData.attenAI[2]/2., (float)flashData.attenAQ[2]/2.,
+    	      		  (float)flashData.attenAI[3]/2., (float)flashData.attenAQ[3]/2.,
+    	      		  (float)flashData.attenBI[0]/2., (float)flashData.attenBQ[0]/2.,
+    	      		  (float)flashData.attenBI[1]/2., (float)flashData.attenBQ[1]/2.,
+    	      		  (float)flashData.attenBI[2]/2., (float)flashData.attenBQ[2]/2.,
+    	      		  (float)flashData.attenBI[3]/2., (float)flashData.attenBQ[3]/2.,
 
+    	      		  (float)flashData.attenAI[4]/2., (float)flashData.attenAQ[4]/2.,
+   	      			  (float)flashData.attenAI[5]/2., (float)flashData.attenAQ[5]/2.,
+   	      			  (float)flashData.attenAI[6]/2., (float)flashData.attenAQ[6]/2.,
+   	      			  (float)flashData.attenAI[7]/2., (float)flashData.attenAQ[7]/2.,
+   	      			  (float)flashData.attenBI[4]/2., (float)flashData.attenBQ[4]/2.,
+   	      			  (float)flashData.attenBI[5]/2., (float)flashData.attenBQ[5]/2.,
+   	      			  (float)flashData.attenBI[6]/2., (float)flashData.attenBQ[6]/2.,
+   	      			  (float)flashData.attenBI[7]/2., (float)flashData.attenBQ[7]/2.,
 
-	       } else if (!strcasecmp(state, "vane")) {
-	    	OSTimeDly(CMDDELAY);
-	      	rtn = argus_readAllCalSysADC();
-	      	sprintf(status, "%sVane parameters:\r\n"
-	      			"Temperature: %.1f [C] \r\nState: %s \r\n"
-	      			"Angle: %.3f [V] \r\n"
-	      			"Curr: %.2f [A] \r\n",
-	      			( (rtn==0 && calSysPar.adcv[0] < 10.) ? statusOK : statusERR),  // check for ADC 99s
-	       		   calSysPar.adcv[2], calSysPar.state,
-	      		   calSysPar.adcv[0],
-	      		   calSysPar.adcv[1]);
+   	      			  (float)flashData.attenAI[8]/2., (float)flashData.attenAQ[8]/2.,
+   	      			  (float)flashData.attenAI[9]/2., (float)flashData.attenAQ[9]/2.,
+   	      			  (float)flashData.attenAI[10]/2., (float)flashData.attenAQ[10]/2.,
+   	      			  (float)flashData.attenAI[11]/2., (float)flashData.attenAQ[11]/2.,
+   	      			  (float)flashData.attenBI[8]/2., (float)flashData.attenBQ[8]/2.,
+   	      			  (float)flashData.attenBI[9]/2., (float)flashData.attenBQ[9]/2.,
+   	      			  (float)flashData.attenBI[10]/2., (float)flashData.attenBQ[10]/2.,
+   	      			  (float)flashData.attenBI[11]/2., (float)flashData.attenBQ[11]/2.,
 
-		      } else { // no valid argument; list options
-		    	  longHelp(status, usage, &Correlator::execArgusMonPts);
-		      }
+   	      			  (float)flashData.attenAI[12]/2., (float)flashData.attenAQ[12]/2.,
+   	      			  (float)flashData.attenAI[13]/2., (float)flashData.attenAQ[13]/2.,
+   	      			  (float)flashData.attenAI[14]/2., (float)flashData.attenAQ[14]/2.,
+   	      			  (float)flashData.attenAI[15]/2., (float)flashData.attenAQ[15]/2.,
+   	      			  (float)flashData.attenBI[12]/2., (float)flashData.attenBQ[12]/2.,
+   	      			  (float)flashData.attenBI[13]/2., (float)flashData.attenBQ[13]/2.,
+   	      			  (float)flashData.attenBI[14]/2., (float)flashData.attenBQ[14]/2.,
+   	      			  (float)flashData.attenBI[15]/2., (float)flashData.attenBQ[15]/2.,
+
+   	      			  (float)flashData.attenAI[16]/2., (float)flashData.attenAQ[16]/2.,
+   	      			  (float)flashData.attenAI[17]/2., (float)flashData.attenAQ[17]/2.,
+   	      			  (float)flashData.attenAI[18]/2., (float)flashData.attenAQ[18]/2.,
+   	      			  (float)flashData.attenAI[19]/2., (float)flashData.attenAQ[19]/2.,
+   	      			  (float)flashData.attenBI[16]/2., (float)flashData.attenBQ[16]/2.,
+   	      			  (float)flashData.attenBI[17]/2., (float)flashData.attenBQ[17]/2.,
+   	      			  (float)flashData.attenBI[18]/2., (float)flashData.attenBQ[18]/2.,
+   	      			  (float)flashData.attenBI[19]/2., (float)flashData.attenBQ[19]/2.);
+   		  	  }
+	      } else { // no valid argument; list options
+	    	  longHelp(status, usage, &Correlator::execArgusMonPts);
+	      }
 	      }
 	  } else {	 // no argument given; show lna mon points
 		  if (lnaPwrState) {
@@ -1398,70 +1795,8 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
   }
  }
 
-
 /**
-  \brief COMAP jlna command.
-
-  This method returns the LNA monitor points in JSON format.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-void Correlator::execCOMAPjlna(return_type status, argument_type arg)
-{
-  static const char *usage =
-  "\r\n"
-  "  Return LNA monitor point values in JSON format.\r\n";
-
-  if (!arg.help && !arg.str) {
-/*	    short i, j, k;
-		for (i=0; i<NRX; i++) {
-	      for (j=0; j<NSTAGES; j++){
-	    	  k = i*NSTAGES + j;  // index within rxPar.lnaXsets vector
-	    	  // gates, if value is within limits
-	          flashData.lnaGsets[k] = rxPar[i].LNAsets[j];
-	    	  // drains, if value is within limits
-	    		  flashData.lnaDsets[k] = rxPar[i].LNAsets[j+NSTAGES];
-	      }
-	    }
-*/
-	  sprintf(status, "%sStub for jlna.\r\n", statusOK);
-  } else {
-    	longHelp(status, usage, &Correlator::execCOMAPjlna);
-  }
-}
-
-/**
-  \brief COMAP jcryo command.
-
-  This method returns the LNA monitor points in JSON format.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-void Correlator::execCOMAPjcryo(return_type status, argument_type arg)
-{
-  static const char *usage =
-  "\r\n"
-  "  Return cryostat monitor point values in JSON format.\r\n";
-
-  if (!arg.help && !arg.str) {
-	  int rtn = argus_readThermADCs();
-	  sprintf(status, "{\"cryostat\":{\"dataOK\":%s, \"temps\":"
-			  "[%.1f, %.1f, %.1f, %.1f, %.1f, %.1f], \"press\":[%.1f]}}\r\n",
-	    	    (rtn==0 ? "true" : "false"), cryoPar.cryoTemps[0], cryoPar.cryoTemps[1],
-	    		cryoPar.cryoTemps[2], cryoPar.cryoTemps[3], cryoPar.cryoTemps[4],
-	    		cryoPar.cryoTemps[5],
-	    		(cryoPar.auxInputs[0] > 1 ? powf(10., cryoPar.auxInputs[0]-6.) : 0.));
-  } else {
-    	longHelp(status, usage, &Correlator::execCOMAPjcryo);
-  }
-}
-
-/**
-  \brief DCM2 test area.
+  \brief DCM2 control.
 
   This method controls DCM2 and readouts.
 
@@ -1473,11 +1808,13 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 {
 	  static const char *usage =
 	  "[KEYWORD VALUE [VALUE]]\r\n"
-      "  DCM2 commands.\r\n"
+      "  DCM2 commands; no value returns status.\r\n"
       "    KEYWORD   VALUE    VALUE:\r\n"
 	  "    amps      on/off             turns amplifier power on/off\r\n"
 	  "    led       on/off             turns led on/off\r\n"
-	  "    block     ch_no    A/B       blocks DCM2 channel, band A or B\r\n" ;
+	  "    block     ch_no    A/B       blocks DCM2 channel, band A or B\r\n"
+	  "  No argument returns monitor point data.\r\n"
+			  ;
 
   int rtn = 0;
 
@@ -1486,27 +1823,27 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	  // Command called with one or more arguments.
 	  char kw[10] = {0};
 	  char val[4] = {0};
-	  char val2[4] = {0};
-	  int narg = sscanf(arg.str, "%9s %3s %3s", kw, val, val2);
+	  char onoff[4] = {0};
+	  int narg = sscanf(arg.str, "%9s %3s %3s", kw, val, onoff);
 
 	  if (narg == 2) {
 	      // Execute the command.
 	      if (!strcasecmp(kw, "amps")) {
-  		    rtn = dcm2_ampPow(val);
-	        sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
-					(!rtn ? statusOK : statusERR), val, rtn);
+	    	  rtn = dcm2_ampPow(val);
+	    	  sprintf(status, "%sdcm2_ampPow(%s) returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), val, rtn);
 	      } else if (!strcasecmp(kw, "led")) {
-	  		    rtn = dcm2_ledOnOff(val);
-		        sprintf(status, "%sdcm2_ledOnOff(%s) returned with status %d\r\n",
-						(!rtn ? statusOK : statusERR), val, rtn);
+	    	  rtn = dcm2_ledOnOff(val);
+		      sprintf(status, "%sdcm2_ledOnOff(%s) returned with status %d\r\n",
+		    		  (!rtn ? statusOK : statusERR), val, rtn);
 	      } else {
 		      longHelp(status, usage, &Correlator::execDCM2);
 	      }
 	  } else if (narg == 3){
 		  if (!strcasecmp(kw, "block")) {
-			  rtn = dcm2_blockMod(val, val2);
+			  rtn = dcm2_blockMod(val, onoff);
 			  sprintf(status, "%sdcm2_blockMod(%s, %s) returned with status %d\r\n",
-			  		  (!rtn ? statusOK : statusERR), val, val2, rtn);
+			  		  (!rtn ? statusOK : statusERR), val, onoff, rtn);
 		  } else {
 			  longHelp(status, usage, &Correlator::execDCM2);
 		  }
@@ -1514,32 +1851,31 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execDCM2);
 	  }
 	} else {
-      rtn = dcm2_readMBadc();
-      rtn += dcm2_readMBtemp();
-      rtn += dcm2_readAllModTemps();
-      rtn += dcm2_readAllModTotPwr();
+		rtn = dcm2_readMBadc();
+		rtn += dcm2_readMBtemp();
+		rtn += dcm2_readAllModTemps();
+		rtn += dcm2_readAllModTotPwr();
 
       // write output: header, channel reports, then an extra line
 
-      char outStr[2048] = {0};
       int n = 0;
       int i;
       n = sprintf(&outStr[0],
-    		  "%sDCM2 parameters:\r\n"
+    		  "%sDCM2 parameters:    (status %d)\r\n"
     		  //"%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f \r\n"
     		  "DCM2 7 & 12 V supply voltages: %.1f V, %.1f V, fanout board temp.: %.1f C\r\n"
     		  "4 GHz PLL: %s, 8 GHz PLL: %s\r\n"
     		  "Individual DCM2 modules:\r\n"
-    		  "                 Band A               |           Band B\r\n"
-    		  "      Bl AttI AttQ  TPwI  TPwQ   T[C] |Bl AttI AttQ  TPwI  TPwQ   T[C]\r\n",
-    		  (!rtn ? statusOK : statusERR),
+    		  "                   Band A                 |             Band B\r\n"
+    		  "      Bl AttI AttQ    TPwI    TPwQ   T[C] |Bl AttI AttQ    TPwI    TPwQ   T[C]\r\n",
+    		  (!rtn ? statusOK : statusERR), rtn,
     		  //dcm2MBpar[0], dcm2MBpar[1], dcm2MBpar[2], dcm2MBpar[3], dcm2MBpar[4], dcm2MBpar[5], dcm2MBpar[6], dcm2MBpar[7],
     		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
-    		  (dcm2MBpar[2] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"),
-    		  (dcm2MBpar[3] > PLLLOCKTHRESH ? "locked" : "***UNLOCKED***"));
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? "locked" : "***UNLOCKED***"),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? "locked" : "***UNLOCKED***"));
       for (i=0; i<NRX; i++) {
     	  n += sprintf(&outStr[n],
-		     "Ch %2d: %d %4.1f %4.1f %5.1f %5.1f %6.2f | %d %4.1f %4.1f %5.1f %5.1f %6.2f\r\n",
+		     "Ch %2d: %d %4.1f %4.1f %7.3f %7.3f %6.2f | %d %4.1f %4.1f %7.3f %7.3f %6.2f\r\n",
 		     i+1, dcm2Apar.status[i], 
 		     (float)dcm2Apar.attenI[i]/2., (float)dcm2Apar.attenQ[i]/2.,
 		     dcm2Apar.powDetI[i], dcm2Apar.powDetQ[i], 
@@ -1556,6 +1892,317 @@ void Correlator::execDCM2(return_type status, argument_type arg)
 	  longHelp(status, usage, &Correlator::execDCM2);
   }
 }
+
+/**
+  \brief DCM2 control.
+
+  This method controls DCM2 and readouts with JSON responses.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJDCM2(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[KEYWORD VALUE [VALUE]]\r\n"
+      "  JSON format DCM2 commands; no value returns status.\r\n"
+      "    KEYWORD   VALUE    VALUE:\r\n"
+	  "    amps      on/off             turns amplifier power on/off\r\n"
+	  "    led       on/off             turns led on/off\r\n"
+	  "    block     ch_no    A/B       blocks DCM2 channel, band A or B\r\n"
+      "  No argument returns monitor point data.\r\n"
+			  ;
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  char val[4] = {0};
+	  char onoff[4] = {0};
+	  int narg = sscanf(arg.str, "%9s %3s %3s", kw, val, onoff);
+
+	  if (narg == 2) {
+	      // Execute the command.
+	      if (!strcasecmp(kw, "amps")) {
+  		    rtn = dcm2_ampPow(val);
+	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+	      } else if (!strcasecmp(kw, "led")) {
+	  		    rtn = dcm2_ledOnOff(val);
+		    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+	      } else {
+		      longHelp(status, usage, &Correlator::execJDCM2);
+	      }
+	  } else if (narg == 3){
+		  if (!strcasecmp(kw, "block")) {
+			  rtn = dcm2_blockMod(val, onoff);
+	    	  sprintf(status, "{\"dcm2\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+		  } else {
+			  longHelp(status, usage, &Correlator::execJDCM2);
+		  }
+	  } else {
+		  longHelp(status, usage, &Correlator::execJDCM2);
+	  }
+	} else {
+      rtn = dcm2_readMBadc();
+      rtn += dcm2_readMBtemp();
+      rtn += dcm2_readAllModTemps();
+      rtn += dcm2_readAllModTotPwr();
+
+      // write output: build up JSON string
+
+      int n, n0, n1, n2, n3, n4, n5;
+      int i;
+
+      n = sprintf(&outStr[0], "{\"dcm2\": {\"cmdOK\":%s, \"psVolts\":[%.1f,%.1f], "
+    		  "\"temp\":[%.1f], \"pllLock\":[%.1f,%.1f], ",
+    		  (!rtn ? "true" : "false"),
+    		  dcm2MBpar[5], dcm2MBpar[4], dcm2MBpar[7],
+    		  (dcm2MBpar[2] > PLLLOCKTHRESH && dcm2MBpar[2] < 5 ? 1.0 : 0.0),
+    		  (dcm2MBpar[3] > PLLLOCKTHRESH && dcm2MBpar[3] < 5 ? 1.0 : 0.0));
+
+      n0 = sprintf(&str0[0], "\"Astatus\":[%.1f", (float)dcm2Apar.status[0]);
+      n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);
+      n2 = sprintf(&str2[0], "\"AattenQ\":[%.1f", (float)dcm2Apar.attenQ[0]/2.);
+      n3 = sprintf(&str3[0], "\"ApowI\":[%.3f", dcm2Apar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"ApowQ\":[%.3f", dcm2Apar.powDetQ[0]);
+      n5 = sprintf(&str5[0], "\"Atemp\":[%.2f", dcm2Apar.bTemp[0]);
+      for (i=1; i<JNRX; i++) {
+    	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Apar.status[i]);
+    	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Apar.attenI[i]/2.);
+    	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Apar.attenQ[i]/2.);
+    	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Apar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.3f", dcm2Apar.powDetQ[i]);
+    	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Apar.bTemp[i]);
+      }
+	  n0 += sprintf(&str0[n0], "]");
+	  n1 += sprintf(&str1[n1], "]");
+	  n2 += sprintf(&str2[n2], "]");
+	  n3 += sprintf(&str3[n3], "]");
+	  n4 += sprintf(&str4[n4], "]");
+	  n5 += sprintf(&str5[n5], "]");
+
+	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s, ", str0, str1, str2, str3, str4, str5);
+
+      n0 = sprintf(&str0[0], "\"Bstatus\":[%.1f", (float)dcm2Bpar.status[0]);
+      n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
+      n2 = sprintf(&str2[0], "\"BattenQ\":[%.1f", (float)dcm2Bpar.attenQ[0]/2.);
+      n3 = sprintf(&str3[0], "\"BpowI\":[%.3f", dcm2Bpar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"BpowQ\":[%.3f", dcm2Bpar.powDetQ[0]);
+      n5 = sprintf(&str5[0], "\"Btemp\":[%.2f", dcm2Bpar.bTemp[0]);
+      for (i=1; i<JNRX; i++) {
+    	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Bpar.status[i]);
+    	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Bpar.attenI[i]/2.);
+    	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Bpar.attenQ[i]/2.);
+    	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Bpar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.3f", dcm2Bpar.powDetQ[i]);
+    	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Bpar.bTemp[i]);
+      }
+	  n0 += sprintf(&str0[n0], "]");
+	  n1 += sprintf(&str1[n1], "]");
+	  n2 += sprintf(&str2[n2], "]");
+	  n3 += sprintf(&str3[n3], "]");
+	  n4 += sprintf(&str4[n4], "]");
+	  n5 += sprintf(&str5[n5], "]");
+
+	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s}}", str0, str1, str2, str3, str4, str5);
+	  sprintf(status, "%s", outStr);
+	}
+  } else {
+	  longHelp(status, usage, &Correlator::execJDCM2);
+  }
+}
+
+/**
+  \brief Saddlebag control.
+
+  This method controls the saddlebag card contols and readouts.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execSaddlebag(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[KEYWORD VALUE [VALUE]]\r\n"
+      "  Saddlebag commands.\r\n"
+      "    KEYWORD  VALUE  VALUE:\r\n"
+	  "    amp      m      on/off    turns amplifier power for saddlebag m on/off\r\n"
+	  "    led      m      on/off    turns led for saddlebag m on/off\r\n"
+	  "  No argument returns monitor point data.\r\n"
+			  ;
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  int nSbg;
+	  char onoff[4] = {0};
+	  int narg = sscanf(arg.str, "%9s %d %3s", kw, &nSbg, onoff);
+
+	  if (narg == 3) {
+	      // Check for valid saddlebag index number; this is the only place this happens ZZZ doesn't catch error
+		  if (nSbg > NSBG || nSbg < 1) nSbg = NSBG+1;  // go to a null device
+		  nSbg -= 1; // convert from human to index
+
+	      if (!strcasecmp(kw, "amp")) {
+	    	  rtn = sb_ampPow(onoff, nSbg);
+	    	  sprintf(status, "%ssb_ampPow(%s) for amp %d returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), onoff, nSbg+1, rtn);
+	      } else if (!strcasecmp(kw, "led")) {
+	    	  rtn = sb_ledOnOff(onoff, nSbg);
+	    	  sprintf(status, "%ssb_ledOnOff(%s) for LED %d returned with status %d\r\n",
+	    			  (!rtn ? statusOK : statusERR), onoff, nSbg+1, rtn);
+	      } else {
+	    	  longHelp(status, usage, &Correlator::execSaddlebag);
+	      }
+	  } else {
+		  longHelp(status, usage, &Correlator::execSaddlebag);
+	  }
+	} else {
+	  rtn = 0;
+	  int i;
+
+      for (i=0; i<NSBG; i++) {
+    	  rtn += sb_readADC(i);
+    	  sbPar[i].pll = sb_readPLLmon(i);
+      }
+      sprintf(status, "%sSaddlebags:   (status %d)\r\n"
+    		  "               1      2      3      4\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6.1f %6.1f %6.1f %6.1f\r\n"
+    		  "%s: %6s %6s %6s %6s\r\n"
+    		  "%s: %6s %6s %6s %6s\r\n\r\n",
+    	  	  (!rtn ? statusOK : statusERR), rtn,
+    	  	  sbnames[0], sbPar[0].adcv[0], sbPar[1].adcv[0], sbPar[2].adcv[0], sbPar[3].adcv[0],
+    	  	  sbnames[1], sbPar[0].adcv[1], sbPar[1].adcv[1], sbPar[2].adcv[1], sbPar[3].adcv[1],
+    	  	  sbnames[2], sbPar[0].adcv[2], sbPar[1].adcv[2], sbPar[2].adcv[2], sbPar[3].adcv[2],
+    	  	  sbnames[3], sbPar[0].adcv[3], sbPar[1].adcv[3], sbPar[2].adcv[3], sbPar[3].adcv[3],
+    	  	  sbnames[4], sbPar[0].adcv[4], sbPar[1].adcv[4], sbPar[2].adcv[4], sbPar[3].adcv[4],
+    	  	  sbnames[5], sbPar[0].adcv[5], sbPar[1].adcv[5], sbPar[2].adcv[5], sbPar[3].adcv[5],
+    	  	  sbnames[6], sbPar[0].adcv[6], sbPar[1].adcv[6], sbPar[2].adcv[6], sbPar[3].adcv[6],
+    	  	  sbnames[7], sbPar[0].adcv[7], sbPar[1].adcv[7], sbPar[2].adcv[7], sbPar[3].adcv[7],
+    	  	  sbnames[8], (sbPar[0].pll ? "lock" : "UNLOCK"), (sbPar[1].pll ? "lock" : "UNLOCK"),
+    	  	  (sbPar[2].pll ? "lock" : "UNLOCK"), (sbPar[3].pll ? "lock" : "UNLOCK"),
+    	  	  sbnames[9], sbPar[0].ampStatus, sbPar[1].ampStatus, sbPar[2].ampStatus, sbPar[3].ampStatus);
+	}
+  } else {
+	  longHelp(status, usage, &Correlator::execSaddlebag);
+  }
+}
+
+/**
+  \brief JSON saddlebag control.
+
+  This method controls the saddlebag card contols and readouts using JSON formatting.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJSaddlebag(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[KEYWORD VALUE [VALUE]]\r\n"
+      "  Saddlebag commands in JSON.  No argument returns status. \r\n"
+      "    KEYWORD  VALUE  VALUE:\r\n"
+	  "    amp      m      on/off    turns amplifier power for saddlebag m on/off\r\n"
+	  "    led      m      on/off    turns led for saddlebag m on/off\r\n"
+	  "  No argument returns monitor point data.\r\n"
+			  ;
+
+	  int rtn = 0;
+
+	  if (!arg.help) {
+		  if (arg.str) {
+		  // Command called with one or more arguments.
+		  char kw[10] = {0};
+		  int nSbg;
+		  char onoff[4] = {0};
+		  int narg = sscanf(arg.str, "%9s %d %3s", kw, &nSbg, onoff);
+
+		  if (narg == 3) {
+		      // Check for valid saddlebag index number; this is the only place this happens ZZZ doesn't catch error
+			  if (nSbg > NSBG || nSbg < 1) nSbg = NSBG+1;  // go to a null device
+			  nSbg -= 1; // convert from human to index
+
+		      if (!strcasecmp(kw, "amp")) {
+		    	  rtn = sb_ampPow(onoff, nSbg);
+		    	  sprintf(status, "{\"sbag\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+		      } else if (!strcasecmp(kw, "led")) {
+		    	  rtn = sb_ledOnOff(onoff, nSbg);
+		    	  sprintf(status, "{\"sbag\": {\"cmdOK\":%s}}\r\n", (!rtn ? "true" : "false"));
+		      } else {
+		    	  longHelp(status, usage, &Correlator::execSaddlebag);
+		      }
+		  } else {
+			  longHelp(status, usage, &Correlator::execJSaddlebag);
+		  }
+		} else {
+		  rtn = 0;
+	      int n, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9;
+	      int i;
+
+	      for (i=0; i<NSBG; i++) {  // read out ADCs and check PLL status
+	    	  rtn += sb_readADC(i);
+	    	  sbPar[i].pll = sb_readPLLmon(i);
+	      }
+
+	      // Assemble JSON return string
+	      n = sprintf(&outStr[0], "{\"sbag\": {\"cmdOK\":%s, ",
+	    		  (!rtn ? "true" : "false"));
+	      n0 = sprintf(&str0[0], "\"ps12v\":[%.1f", sbPar[0].adcv[0]);
+	      n1 = sprintf(&str1[0], "\"ps-8v\":[%.1f", sbPar[0].adcv[1]);
+	      n2 = sprintf(&str2[0], "\"fanspeed1\":[%.1f", sbPar[0].adcv[2]);
+	      n3 = sprintf(&str3[0], "\"fanspeed2\":[%.1f", sbPar[0].adcv[3]);
+	      n4 = sprintf(&str4[0], "\"temp1\":[%.1f", sbPar[0].adcv[4]);
+	      n5 = sprintf(&str5[0], "\"temp2\":[%.1f", sbPar[0].adcv[5]);
+	      n6 = sprintf(&str6[0], "\"temp3\":[%.1f", sbPar[0].adcv[6]);
+	      n7 = sprintf(&str7[0], "\"temp4\":[%.1f", sbPar[0].adcv[7]);
+	      n8 = sprintf(&str8[0], "\"pllLock\":[%.1f", (sbPar[0].pll==1 ? 1. : 0.));
+	      n9 = sprintf(&str9[0], "\"ampOn\":[%.1f", (sbPar[0].ampPwr==1 ? 1. : 0.));
+	      for (i=1; i<NSBG; i++) {
+	    	  n0 += sprintf(&str0[n0], ",%.1f", sbPar[i].adcv[0]);
+	    	  n1 += sprintf(&str1[n1], ",%.1f", sbPar[i].adcv[1]);
+	    	  n2 += sprintf(&str2[n2], ",%.1f", sbPar[i].adcv[2]);
+	    	  n3 += sprintf(&str3[n3], ",%.1f", sbPar[i].adcv[3]);
+	    	  n4 += sprintf(&str4[n4], ",%.1f", sbPar[i].adcv[4]);
+	    	  n5 += sprintf(&str5[n5], ",%.1f", sbPar[i].adcv[5]);
+	    	  n6 += sprintf(&str6[n6], ",%.1f", sbPar[i].adcv[6]);
+	    	  n7 += sprintf(&str7[n7], ",%.1f", sbPar[i].adcv[7]);
+	    	  n8 += sprintf(&str8[n8], ",%.1f", (sbPar[i].pll==1 ? 1. : 0.));
+	    	  n9 += sprintf(&str9[n9], ",%.1f", (sbPar[i].ampPwr==1 ? 1. : 0.));
+	      }
+    	  n0 += sprintf(&str0[n0], "]");
+    	  n1 += sprintf(&str1[n1], "]");
+    	  n2 += sprintf(&str2[n2], "]");
+    	  n3 += sprintf(&str3[n3], "]");
+    	  n4 += sprintf(&str4[n4], "]");
+    	  n5 += sprintf(&str5[n5], "]");
+    	  n6 += sprintf(&str6[n6], "]");
+    	  n7 += sprintf(&str7[n7], "]");
+    	  n8 += sprintf(&str8[n8], "]");
+    	  n9 += sprintf(&str9[n9], "]");
+
+    	  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str3, str4,
+    			  str5, str6, str7, str8, str9);
+    	  sprintf(status, "%s", outStr);
+		}
+	  } else {
+		  longHelp(status, usage, &Correlator::execJSaddlebag);
+	  }
+	}
 
 /*************************************************************************************/
 /**
@@ -1615,28 +2262,10 @@ void Correlator::execArgusLock(return_type status, argument_type arg)
 	  rtn = argus_readLNAbiasADCs("im");
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readLNAbiasADCs(im);\r\n", i2cBusBusy, rtn);
 
-	  i2cBusBusy = busy;
-	  rtn = argus_readAllCalSysADC();
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readAllCalSysADC();\r\n", i2cBusBusy, rtn);
-
-	  i2cBusBusy = busy;
-	  i2cBusBusy = busy;
-	  rtn = argus_readWIF();
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_readWIF()\r\n", i2cBusBusy, rtn);
-
-	  i2cBusBusy = busy;
-	  rtn = argus_setAllWIFswitches("a", 10);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setAllWIFswitches(a, 10)\r\n", i2cBusBusy, rtn);
-
 	  lnaPwrState = lnaps;
 	  i2cBusBusy = busy;
 	  rtn = argus_setLNAbias("d", 2, 1, .5, 0);
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setLNAbias(d, 2, 1, .5, 0)\r\n", i2cBusBusy, rtn);
-
-	  lnaPwrState = lnaps;
-	  i2cBusBusy = busy;
-	  rtn = argus_setLNAbias("g", 2, 1, .5, 0);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_setLNAbias(g, 2, 1, .5, 0)\r\n", i2cBusBusy, rtn);
 
 	  lnaPwrState = lnaps;
 	  i2cBusBusy = busy;
@@ -1652,11 +2281,6 @@ void Correlator::execArgusLock(return_type status, argument_type arg)
 	  i2cBusBusy = busy;
 	  rtn = argus_lnaPower(1);
 	  iprintf("i2cBusBusy = %u, rtn = %d for argus_lnaPower(1)\r\n", i2cBusBusy, rtn);
-
-	  lnaPwrState = lnaps;
-	  i2cBusBusy = busy;
-	  rtn = argus_cifPower(1);
-	  iprintf("i2cBusBusy = %u, rtn = %d for argus_cifPower(1)\r\n", i2cBusBusy, rtn);
 
 	  sprintf(status, "# I2C bus lock test results output to UART0.\r\n");
 

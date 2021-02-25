@@ -11,8 +11,10 @@ First bank A (lower on card, CHSel = F), then bank B (higher on card, CHSel = L)
 AH 2014.07.01
 */
 
+// set manual flag for bias or dcm2 system
+#define FOUNDLNABIASSYS 0  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20180108"
+#define VER "comap_20180519_d"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -36,16 +38,17 @@ AH 2014.07.01
 #define CMDDELAY 1        // pause before executing command, in units of 50 ms
 #define I2CBUSERRVAL -100 // value to return for I2C bus lock error
 #define FREEZEERRVAL -200 // value to return for system freeze violation error
+#define WRONGBOX -1000    // value to return if wrong box (bias/dcm2) is addressed
 
 // Hardware parameters -- must match structure definitions in argusHardwareStructs.h!
 #define NUM_ELEM(x) (sizeof(x) / sizeof(*(x)))
 #define NRX 20      // number of receivers
+#define JNRX 19     // number of receivers to read out in JSON commands, 1:JNRX (19)
 #define NRXPERBC 4  // number of receivers per bias card
 #define NSTAGES 2   // number of amplifier stages in each receiver
 #define NBCMP 2     // number of monitor point sets for each bias card
 #define NBIASC 5    // number of bias cards (should get from length of address vector, really)
 #define NMIX 0      // number of mixers in each receiver
-#define NWIFBOX 0   // number of warm IF chassis; set to zero if none
 
 // Software limits for bias settings
 #define VDGMAX 1.7    // Max drain-gate voltage [V]
@@ -73,15 +76,6 @@ AH 2014.07.01
 #define MAXVDSV MAXVCCV    // Min drain supply voltage
 #define MINAMPV 10.0       // Min amplifier supply voltage (absolute)
 #define MAXAMPV 15.5       // Max amplifier supply voltage (absolute)
-#define MINCIFV 1.6        // Min cold IF supply voltage
-#define MAXCIFV 2.         // Max cold IF supply voltage
-#define CIFNOMCURR 0.4     // nominal CIF current [A]
-#define CIFMAXCURRDEV 0.1  // Allowable CIF current deviation
-#define MINCSV 26.         // Minimum cal sys voltage (28V nom)
-#define MAXCSV 29.         // Maximum cal sys voltage (28V nom, 30V abs max)
-#define MINIFPWRDETV {1.1, 1.02, 0.94, 1.15, 1.15, 1.06, 1.00, 1.12, 0.65, 0.60, 0.62, 0.59, 0.56, 0.66, 0.69, 0.53}
-                           // Minimum IF totpwr detector voltages for operation (set to voltage with LO off + 0.1 V)
-#define MAXIFPWRDETV 3.    // Maximum valid IF totpwr detector voltage
 
 // Over-temperature limits
 #define MAXCOLDT 40.   // Maximum nom 20K temperature [K]
@@ -91,43 +85,20 @@ AH 2014.07.01
 //Warm IF limits
 #define MAXATTEN 31.5  // max attenuation, 5-bit, 1 dB/step, including 0
 
-//Vane definitions
-#define VANESTOP 0x01      // lock vane motion
-#define VANERUN 0x02       // run continuously
-#define VANEINBEAM 0x04    // vane blocks beam
-#define VANECLEAR 0x00     // vane clear of beam, stowed
-#define VANENMAX 2300      // max no ADC readouts before timeout; 2300 is about 5.5s timeout
-#define VANEDELTA 0.10     // delta in volts that means "close enough" to target
-#define VANEANGLEADC 0     // angle ADC channel
-#define VANECURRADC 1      // motor current ADC channel
-#define VANETEMPADC 2      // vane temperature ADC channel
-#define VANEVINOFFS 10.5   // vane input voltage offse
-#define VANECALPOSV 3.3    // nominal angle encoder voltage for vane in cal position
-#define VANEOBSPOSV 1.6    // nominal angle encoder voltage for vane in cal position
-#define VANEPOSERRLIM 0.2  // error limit on angle encoder voltage
-#define VANEPOSERR 0x0010  // vane position error flag
-
 // I2C bus and switch mapping
 #define I2CSWITCH_BP 0x77      // low bus nos. on micro, Argus warm elex chassis backplane
 #define I2CSWITCH_SP 0x73      // high bus nos. on micro  (unused hardware)
-#define I2CSSB {0x74, 0x75}    // addresses for I2C subsubbus switches
-#define I2CSWITCH_WIF {0x00, 0x00} // Warm IF switch addresses (jumper selectable)
-#define I2CADC_WIF {0x00, 0x00}    // Warm IF power mon ADC  (jumper selectable)
+#define I2CSSB_L 0x74          // high addresses for I2C subsubbus switches
+#define I2CSSB_H 0x75          // high addresses for I2C subsubbus switches
 
 //I2C mapping off warm electronics chassis backplane
 #define THERM_I2CADDR 0x10 // thermometry
 #define I2CSSB_I2CADDR 0x20 // I2C subbusses switches
 #define PWCTL_I2CADDR 0x40 //power control
-//#define BCARD_I2CADDR {0x80, 0x01, 0x02, 0x04, 0x08} // bias card addresses, 0..4
 #define BCARD_I2CADDR {0x08, 0x04, 0x02, 0x01, 0x80} // bias card addresses, 0..4
 #define ALLBCARD_I2CADDR 0x8f // all bias card addresses, off backplane
 #define I2CSWITCH_VMUB 0x00   // Vane and muBox switch addresses (sub-bus)
-#define MUBOX_I2CADDR 0x00    // muBox sub-bus from vane/muBox interface card in backplane
-#define VANE_I2CADDR 0x00     // vane sub bus from vane/muBox interface card in backplane
-#define CALSY_I2CADDR 0x00    // dummy for cal sys
 
-//I2C mapping for subbuses from I2CSSB card
-#define SADDLEBAG_I2CADDR {0x00, 0x00, 0x00, 0x00}
 
 /****************************************/
 // Parameter structure definitions
@@ -197,10 +168,15 @@ struct chRead2 { // read ADCs
 
 /***************************************************************************/
 /* DCM2 definitions */
+#define NO_DCM2ERR -1     // No DCM2 present
 #define DBMSCALE -45.5   // scale factor for power detector conversion to dBm
-#define DBMOFFSET 20     // offset value for power detector conversion to dBm
+#define DBMOFFSET 23     // offset value for power detector conversion to dBm (20 + output pad atten)
 #define ADCVREF 3.3      // reference voltage for 16-bit ADCs
 #define PLLLOCKTHRESH 0.5   // voltage threshold for 4 and 8 GHz PLL lock indication
+
+// I2C subbus and subsubbus switch addresses
+#define DCM2_SBADDR 0x77
+#define DCM2_SSBADDR 0x73
 
 // subbus switch setting for DCM2 main board peripherals
 #define DCM2PERIPH_SBADDR 0x80
@@ -229,7 +205,7 @@ struct chRead2 { // read ADCs
 #define SPI_MOSI_M 0x40
 #define SPI_CLK_M 0x80
 // BEX I2C address for downconverter cards
-#define BEX_ADDR 0x20
+#define BEX_ADDR 0x20       // 0x21 for lab testing with I2C interface, 0x20 for true DCM2 modules
 // BEX init values for downconverter cards
 #define BEXCONF SPI_MISO_M  // read SPI_MISO_M, write all others on BEX
 #define BEXINIT QLOG_CS | ILOG_CS | Q_ATTEN_LE | I_ATTEN_LE | BOARD_T_CS
@@ -241,6 +217,27 @@ struct dcm2params {
 	float powDetI[NRX]; // nominal power in dBm, I channel
 	float powDetQ[NRX]; // nominal power in dBm, Q channel
 	float bTemp[NRX];   // board temperature, C
+};
+
+/***************************************************************************/
+/* Saddlebag definitions */
+
+// I2C subbus and subsubbus switch addresses
+#define SB_SBADDR 0x77
+#define SB_SSBADDR 0x74
+
+//#define SADDLEBAG_SWADDR {0x08, 0x08, 0x08, 0x08, 0x00}  // for testing, on SSC3/SSD3
+#define SADDLEBAG_SWADDR {0x01, 0x02, 0x04, 0x08, 0x00}  //I2C switch addresses on I2C subbus card
+#define SBBEX_ADDR 0x21  // I2C bus address for saddlebag ADCs
+#define SBADC_ADDR 0x08  // I2C bus address for saddlebag bus expanders
+#define NSBG 4           // ones-base number of saddlebags, used in error checking
+
+// ADC order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
+struct saddlebagParams {
+	float adcv[8];
+	BYTE pll;
+	BYTE ampPwr;
+	char *ampStatus;
 };
 
 #endif
