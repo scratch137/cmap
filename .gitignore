@@ -1,6 +1,8 @@
 .gitold/
 CVS/
+Debug/
 Release/
 h
 html/
 *~
+
