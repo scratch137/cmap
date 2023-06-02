@@ -55,7 +55,7 @@ AH 2014.07.01
 #define VGMIN -0.5  // Min allowable gate voltage [V]  (was -0.351)
 #define VGMAX 0.5   // Max allowable gate voltage [V]  (was 0.351)
 #define VDMIN 0.0     // Min allowable drain voltage [V]
-#define VDMAX 1.2     // Max allowable drain voltage [V]  (was 1.01)
+#define VDMAX 1.21    // Max allowable drain voltage [V]  (was 1.01)
 #define VMMIN -.25    // Min allowable mixer voltage [V]
 #define VMMAX 5.0     // Max allowable mixer voltage [V]
 #define IDMIN 10.0    // Min operating drain current [mA]
