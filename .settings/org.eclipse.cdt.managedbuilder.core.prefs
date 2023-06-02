@@ -3,6 +3,10 @@ environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.debug.918387231/LUA
 environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.debug.918387231/LUA_DEV/operation=remove
 environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.debug.918387231/append=true
 environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.debug.918387231/appendContributed=true
+environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.rel.161978579/LUA_DEV/delimiter=;
+environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.rel.161978579/LUA_DEV/operation=remove
+environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.rel.161978579/append=true
+environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.rel.161978579/appendContributed=true
 environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.rel.2109251757/LUA_DEV/delimiter=;
 environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.rel.2109251757/LUA_DEV/operation=remove
 environment/buildEnvironmentInclude/nbeclipse.toolchain.nbde.rel.2109251757/append=true
