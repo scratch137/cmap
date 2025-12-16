@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20210630_b"
+#define VER "boardTests_20250611_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -51,22 +51,22 @@ AH 2014.07.01
 #define NMIX 0      // number of mixers in each receiver
 
 // Software limits for bias settings
-#define VDGMAX 1.7    // Max drain-gate voltage [V]
-#define VGMIN -0.351  // Min allowable gate voltage [V]
-#define VGMAX 0.351   // Max allowable gate voltage [V]
+#define VDGMAX 1000. //1.7    // Max drain-gate voltage [V]
+#define VGMIN -1000. //-0.351  // Min allowable gate voltage [V]
+#define VGMAX 1000. //0.351   // Max allowable gate voltage [V]
 #define VDMIN 0.0     // Min allowable drain voltage [V]
-#define VDMAX 1.01    // Max allowable drain voltage [V]
+#define VDMAX 1000. //1.01    // Max allowable drain voltage [V]
 #define VMMIN -.25    // Min allowable mixer voltage [V]
 #define VMMAX 5.0     // Max allowable mixer voltage [V]
-#define IDMIN 10.0    // Min operating drain current [mA]
-#define IDMAX 30.0    // Max operating drain current [mA]
+#define IDMIN -1000. //10.0    // Min operating drain current [mA]
+#define IDMAX 1000. //30.0    // Max operating drain current [mA]
 #define IMMIN 0.1     // Min operating mixer current [mA]
 #define IMMAX 5.0     // Max operating mixer current [mA]
 #define VDEVMAX 0.1   // Max allowable deviation from setpoint, error check [V]
 
 // Startup voltages for gates, drains, mixers
-#define VGSTART -0.2   // Gate
-#define VDSTART 0.0    // Drain
+#define VGSTART -0.2 // -0.2   // Gate
+#define VDSTART 0.0 // 0.0    // Drain
 #define VMSTART 0.0    // Mixer
 
 // Power supply limits
