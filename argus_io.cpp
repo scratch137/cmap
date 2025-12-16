@@ -38,6 +38,8 @@ int lnaPwrState = 0;
 unsigned char lnaPSlimitsBypass = BYPASS;  // bypass LNA power supply limits when = 1
 unsigned char lnaLimitsBypass = BYPASS;    // bypass soft limits on LNA bias when = 1
 float gvdiv;
+float vaneOffset;                          // Vane offset voltage for angle calculation
+float vaneV2Deg;                           // Vane volts to degrees
 unsigned char i2cBusBusy = 1;              // set to 1 when I2C bus is busy (clears in argus_init())
 unsigned int busLockCtr = 0;               // I2C successful bus lock request counter
 unsigned int busNoLockCtr = 0;             // I2C unsuccessful bus lock request counter
@@ -164,21 +166,17 @@ struct cryostatParams cryoPar = {
 float pwrCtrlPar[] = {99, 99, 99, 99, 99, 99, 99, 99, 99};
 
 
-/*struct calSysParams {
-	float adcv[8]; 		// includes angle [V], temperature [C], and motorMeanI[A]
-	float minAngle; 	// minimum vane angle [V]
-	float maxAngle; 	// maximum vane angle [V]
-	float meanCurr; 	// mean motor current [A]
-	float maxCurr;      // maximum motor current [A]
-	float varCurr;  	// motor current variance [A]
-	char state[15];     // system state
-};*/
-struct calSysParams calSysPar = {
-	{99., 99., 99., 99., 99., 99., 99., 99.}, 99., 99., 99., 99., 99., " "
-};
 
 /**************************/
 // DACs
+
+/* struct chSet {  // set DACs
+  char i2c[8];  // board-level i2c addr
+  char add[8];  // addr in device
+  float sc;     // scale for setting
+  float offset; // offset for setting
+  char bip;     // bipolar or unipolar, bipolar = 1
+}; */
 
 // drain voltage setups
 struct chSet vdSet = {
@@ -205,6 +203,14 @@ struct chSet voSet = {
 		0.001, 2.047, 1};  // offset in mV
 /**************************/
 //ADCs
+
+/* struct chRead { // read ADCs
+  char i2c[8];  // board-level i2c addr
+  char add[8];  // addr in device
+  float sc;     // scale for reading
+  float offset; // offset for reading
+  char bip;     // bipolar or unipolar, bipolar = 1
+}; */
 
 // drain voltage monitor points
 struct chRead vdRead = {
@@ -383,6 +389,8 @@ int argus_setLNAbias(char *term, int m, int n, float v, unsigned char busyOverri
 		}
 		v = v/gvdiv;  // convert from gate voltage to bias card output voltage
 		address = vgSet.i2c[rxPar[m].bcChan[n]];
+		if (m==16 && n==0) address = 0x32;  // override lookups to fix cross-wired connector for pixel 17
+		if (m==16 && n==1) address = 0x41;  // override lookups to fix cross-wired connector for pixel 17
 		buffer[0] = vgSet.add[rxPar[m].bcChan[n]];
 		dacw = v2dac(v, vgSet.sc, vgSet.offset, vgSet.bip);
 		baseAdd = 0;
@@ -581,6 +589,8 @@ int argus_readLNAbiasADCs(char *sw)
 			// loop over stages
 			for (m = 0 ;  m < mmax ; m++) {
 				address = chReadPtr->i2c[rxPar[n].bcChan[m]];    // chip i2c address on card
+				if (n==16 && m==0 && baseAddr==0) address = 0x09;  // override lookups to fix cross-wired connector for pixel 17
+				if (n==16 && m==1 && baseAddr==0) address = 0x18;  // override lookups to fix cross-wired connector for pixel 17
 				buffer[0] = chReadPtr->add[rxPar[n].bcChan[m]];  // internal address for channel
 				I2CStat = I2CSEND1;        // send command for conversion
 				I2CREAD2;   // read device buffer back
@@ -2584,15 +2594,17 @@ struct saddlebagParams {
 	float adcv[8];
 	BYTE pll;
 	BYTE ampPwr;
-	char *ampStatus;};
-	float v[8];
+	char *ampStatus;
 }; */
+// ADC order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
 struct saddlebagParams sbPar[] = {
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"},
 		  {{999., 999., 999., 999., 999., 999., 999., 999.}, 99, 99, "N/A"}
 };
+
+
 
 /*******************************************************************/
 /**
@@ -2892,6 +2904,280 @@ void init_saddlebags(void)
 }
 
 /****************************************************************************************/
+/*
+struct vaneParams {
+	float adcv[8];
+	float angleDeg;
+	BYTE vaneFlag;
+};
+with ADC order: Vin, NC, NC, NC, angleSens, temp_load, temp_outside, temp_shroud
+*/
+struct vaneParams vanePar = {
+		  {999., 999., 999., 999., 999., 999., 999., 999.}, 999., 99,
+};
+
+// Scale and offset for vane ADC channels
+// order: Vin, NC, NC, NC, angle, temp_load, temp_outside, temp_shroud
+const float offset[8] = {0, 0, 0, 0, 0., -50., -50., -50.};
+const float scale[8] = {10., -10., 1., 1., 1., 100., 100., 100.};
+
+#define vaneAngleChan 4  // ADC channel for angle readout
+#define VANEOBSCMD (BYTE)(~0x80 & ~0x20) // P5 low, LED on (low)
+#define VANECALCMD (BYTE)(~0x80 & ~0x40) // P6 low, LED on (low)
+#define VANEMANCMD (BYTE)(~0x80)         // All Px high except LED on (low)
+
+/**
+  \brief Vane drive relay control.
+
+  This function configures and loads the bus expander to control the vane relays.
+  Note: communication to relay BEX must be established and removed externally.
+
+  \par inp : Relay state (cal, obs, or man; last is default)
+
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+int vane_relayCtrl(char *inp)
+{
+	if (!foundLNAbiasSys) return WRONGBOX;
+
+	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
+		I2CStat = configBEX(VANEOBSCMD, SBBEX_ADDR);  // clear obs and led config bits for H/L
+		writeBEX(VANEOBSCMD, SBBEX_ADDR);             // set obs control and LED bits L
+	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
+		I2CStat = configBEX(VANECALCMD, SBBEX_ADDR);  // clear cal and led config bits for H/L
+		writeBEX(VANECALCMD, SBBEX_ADDR);             // set cal control and LED bits L
+	} else {
+		I2CStat = configBEX(VANEMANCMD, SBBEX_ADDR);  // set all config bits high for Z, except LED
+	}
+
+	return (I2CStat);
+}
+
+
+/**
+  \brief Read all channels of the vane ADC.
+
+  This function reads values from all channels of a LTC2309 ADC.
+
+  \par adcN : integer ADC channel to read (zero-base).  If >= 7, then all;
+                      if specific value, then that ADC channel
+
+  \return Zero on success, else NB I2C error code for latest bus error.
+*/
+int vane_readADC(void)
+{
+	if (!foundLNAbiasSys) return WRONGBOX;
+
+	short i;
+	unsigned short int rawu;
+
+	// get control of I2C bus
+	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, VANE_SWADDR);
+	if (I2CStatus) return (I2CStatus);
+
+	//Read all channels of ADC
+	for (i = 0 ;  i < 8 ; i++) {
+		address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
+		buffer[0] = (BYTE)pcRead.add[i];    // internal address for channel
+		I2CStatus = I2CSEND1;                 // send command for conversion
+		I2CREAD2;                           // read device buffer back
+		if (I2CStatus == 0) {
+			rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
+			vanePar.adcv[i] = rawu*scale[i]*4.096/65535 + offset[i];
+   			vanePar.vaneAngleDeg = (vanePar.adcv[vaneAngleChan] - vaneOffset) * vaneV2Deg; // vane angle, deg
+		} else {
+			vanePar.adcv[i] = 9999.;  // error condition
+   			vanePar.vaneAngleDeg = 9999.;
+		}
+	}
+
+	// release I2C bus
+	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
+
+	return (I2CStatus);
+}
+
+
+/**
+  \brief Get vane angle.
+
+  This function reads the cal vane angle.
+
+  Bus expander must be configured externally
+
+  \return NB error code for write to BEX.
+*/
+int vane_angle(void)
+{
+	unsigned short int rawu;
+
+	address = SBADC_ADDR;               // ADC device address on I2C bus (same hardware as saddlebags)
+	buffer[0] = (BYTE)pcRead.add[vaneAngleChan];    // internal address for channel
+	int I2CStatus = I2CSEND1;           // send command for conversion
+	I2CREAD2;                           // read device buffer back
+	if (I2CStatus == 0) {                 // convert if valid, else write error defaults
+		rawu =(unsigned short int)(((unsigned char)buffer[0]<<8) | (unsigned char)buffer[1]);
+		vanePar.adcv[vaneAngleChan] = rawu*scale[vaneAngleChan]*4.096/65535 + offset[vaneAngleChan];
+			vanePar.vaneAngleDeg = (vanePar.adcv[vaneAngleChan] - vaneOffset) * vaneV2Deg; // vane angle, deg
+	} else {
+		vanePar.adcv[vaneAngleChan] = 9999.;  // error condition
+		vanePar.vaneAngleDeg = 9999.;
+	}
+	return (I2CStatus);
+}
+
+/**
+  \brief Move vane in or out.
+
+  This function toggles bits on vane control I2C interface card to drive vane in and out of beam
+  (obs and cal positions).
+
+  Bus expander should be configured in an init file
+
+  \par inp  string: "obs" or "0" for vane out of beam, else vane is in beam
+
+  \return NB error code for write to BEX.
+*/
+int vane_obscal(char *inp)
+{
+	if (!foundLNAbiasSys) return WRONGBOX;
+
+	if (freezeSys) {freezeErrCtr += 1; return FREEZEERRVAL;}                    // check for freeze
+
+	int tStallCheck = (int)((float)TICKS_PER_SECOND * VANESTALLTIME);  // time between stall checks
+	int nmax = (int) VANETIMEOUT/VANESTALLTIME;  // number of stall checks to timeout
+	int n;  // loop counter
+	float lastAng = -1000.;   // last angle read, for stall comparison
+
+	// open communication channel
+	int I2CStatus = openI2Cssbus(SB_SBADDR, I2CSSB_I2CADDR, SB_SSBADDR, VANE_SWADDR);
+	if (I2CStatus) return (I2CStatus);
+
+	// ensure delay with motor stopped before further motion
+	I2CStatus = vane_relayCtrl("man");        // stop motor if running
+	OSTimeDly( TICKS_PER_SECOND * 3 / 2 );    // delay 1.5 sec before anything else
+
+	// move to obs or cal positions
+	if (!strcasecmp(inp, "obs") || !strcasecmp(inp, "0")) {
+		I2CStatus = vane_relayCtrl("obs");  // pin value low to drive to obs, all others but LED high
+    	if (!I2CStatus) {
+    		for (n=0; n<nmax; n++){
+    		    // read ADC to get angle
+    			vane_angle();
+     			// check vane position
+    			if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+    				// vane reaches obs position
+        			OSTimeDly(TICKS_PER_SECOND);  // 1 sec settling delay before checking position
+    				// check final position
+        			vane_angle();
+    				if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+    					vanePar.vaneFlag = 0;  // record position as obs
+    					break;
+    				} else {
+    					vanePar.vaneFlag = 6;  // record position as near obs
+    					break;
+    				}
+    			}
+    			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
+    				vanePar.vaneFlag = 2; // record position as stalled
+    				break;
+    			}
+    			lastAng = vanePar.vaneAngleDeg;  // update angle for stall check
+    			OSTimeDly(tStallCheck);  // wait for next angle check
+    		}
+			if (n == nmax) {  // timeout
+				vanePar.vaneFlag = 3; // timeout; unknown position
+			}
+    	} else {  // I2C bus error
+			vanePar.vaneFlag = 4;
+    	}
+	} else 	if (!strcasecmp(inp, "cal") || !strcasecmp(inp, "1")) {
+		I2CStatus = vane_relayCtrl("cal");  // pin value low to drive to obs, all others but LED high
+    	if (!I2CStatus) {
+    		for (n=0; n<nmax; n++){
+    		    // read ADC to get angle
+    			vane_angle();
+     			// check vane position
+    			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+    				// vane should be in cal position
+        			OSTimeDly(TICKS_PER_SECOND);  // 1 sec settling delay before checking final
+    				// check final position
+        			vane_angle();
+    	   			if (fabsf(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+    					vanePar.vaneFlag = 1;  // record position as cal
+    					break;
+    				} else {
+    					vanePar.vaneFlag = 7;  // record position as near cal
+    					break;
+    				}
+    			}
+    			if (fabsf(vanePar.vaneAngleDeg - lastAng) <= STALLERRANG) {
+    				vanePar.vaneFlag = 2; // record position as stalled
+    				break;
+    			}
+    			lastAng = vanePar.vaneAngleDeg;  // update angle for stall check
+    			OSTimeDly(tStallCheck);  // wait for next angle check
+    		}
+			if (n == nmax) {  // timeout
+				vanePar.vaneFlag = 3; // timeout; unknown position
+			}
+    	} else {  // I2C bus error
+			vanePar.vaneFlag = 4; // record command position as in beam, actual position unknown
+    	}
+	}
+
+	vane_relayCtrl("man");  // turn off motor
+	// clean up and return
+	closeI2Cssbus(SB_SBADDR, SB_SSBADDR);
+
+	return(I2CStatus);
+}
+
+
+/**
+  \brief Vane drive initialization.
+
+  This function initializes the vane control BEX.
+  - Sets all write bits on BEX high; others remain high-Z. [should it move vane to obs position?]
+  - Blinks LED or simply turns it on if it were off.
+
+  \return Nothing.
+*/
+
+void init_vane(void)
+{
+
+	// Open communication
+	address = SB_SBADDR;  // Select I2C subbus
+	buffer[0] = I2CSSB_I2CADDR;
+	I2CSEND1;
+	address = SB_SSBADDR;  // Select I2C subsubbus
+	buffer[0] = VANE_SWADDR;
+	I2CSEND1;
+
+	// Configure BEX on vane interface card
+	writeBEX(0xff, SBBEX_ADDR);   // prepare with all ports high; LED and motors off
+	configBEX(VANEMANCMD, SBBEX_ADDR);  // configure BEX by setting all bits to Z except LED
+	writeBEX(0xff, SBBEX_ADDR);   // prepare with all ports high; LED and motors off
+	// Turn on LED to show complete
+	OSTimeDly(10);                // wait to allow perceptible off time for blink
+	writeBEX(VANEMANCMD, SBBEX_ADDR);   // turn on LED, leave other port values high
+
+	// Close communication
+	address = SB_SSBADDR;  // Close subsubbus
+	buffer[0] = 0x00;
+	I2CSEND1;
+	address = SB_SBADDR;  // Close subbus
+	buffer[0] = 0x00;
+	I2CSEND1;
+
+	vanePar.vaneFlag = VANEFLAGNOPOS;  // code for unititialized
+
+	return;
+}
+
+
+/****************************************************************************************/
 /**
   \brief Set LNA and attenuator params from flash.
 
@@ -3042,6 +3328,8 @@ void argus_init(const flash_t *flash)
 	printf("argus_init: flash vgdiv %f\n", flash->gvdiv);
 	gvdiv = flash->gvdiv;  // gvdiv is initialized as a global variable
 	if (gvdiv < 0. || gvdiv > 1.) gvdiv = 1.e6;  // protect against uninitialized flash value
+	vaneOffset = flash->vaneVcal;   // vane offset (voltage in cal position, defines 0 deg)
+	vaneV2Deg = VANESWINGANGLE/(flash->vaneVobs - flash->vaneVcal); // vane conversion from volts to degrees
 
 	// start I2C interface
 	I2CInit( 0xaa, 0x1a );   // Initialize I2C and set NB device slave address and I2C clock
@@ -3090,6 +3378,7 @@ void argus_init(const flash_t *flash)
 	if (foundLNAbiasSys) {
 		init_bias();       // initialize front-end LNA bias system
 		init_saddlebags(); // initialize saddlebag interface boards
+		init_vane();       // initialize vane control interface board
 	} else {
 		init_dcm2();       // initialize dcm2 controls
 	}

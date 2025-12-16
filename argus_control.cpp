@@ -45,6 +45,30 @@ char *sbnames[] = {"+12V   [V]",
 				   "PLL lock  ",
                    "Amp on    "};
 
+// names for vane test points; names in JSaddlebag should match these
+char *vnames[] = {"Vin    [V]",
+                   "NC        ",
+                   "NC        ",
+                   "NC        ",
+		           "Angle     ",
+		           "T_load [C]",
+		           "T_outs [C]",
+		           "T_shrd [C]",
+				   "Vane pos. ",
+                   "          "};
+
+char *vanePos[] = {"OBS     ",       // number of entries should match 0..VANEFLAGNOPOS
+				 "CAL      ",  // 1
+				 "STALL    ",  // 2
+				 "TIMEOUT  ",  // 3
+				 "BUS ERROR",  // 4
+				 "MOVING   ",  // 5
+				 "NEAR OBS?",  // 6
+				 "NEAR CAL?",  // 7
+				 "RES      ",  // 8
+				 "RES      ",  // 9
+				 "??????   "}; // 10
+
 // decimal points for display in exexArgusMonPts
 int d1 = 1, d2 = 2;
 
@@ -1220,7 +1244,7 @@ void Correlator::execArgusPwrCtrl(return_type status, argument_type arg)
 	      			  d2, rxPar[16].LNAmonPts[2], d2, rxPar[16].LNAmonPts[3], d2, rxPar[17].LNAmonPts[2], d2, rxPar[17].LNAmonPts[3],
 	      			  d2, rxPar[18].LNAmonPts[2], d2, rxPar[18].LNAmonPts[3], d2, rxPar[19].LNAmonPts[2], d2, rxPar[19].LNAmonPts[3],
 	      			  d1, rxPar[16].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[17].LNAmonPts[4], d1, rxPar[17].LNAmonPts[5],
-	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
+	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[18].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
  		  } else {
  	    		rtn = argus_readPwrADCs();
 		   		sprintf(status, "%sLNA power state %s.\r\nSupplies: +15V: %5.2f V; "
@@ -1351,6 +1375,61 @@ void Correlator::execJCOMAPlna(return_type status, argument_type arg)
     }
   } else {
     longHelp(status, usage, &Correlator::execJCOMAPlna);
+  }
+}
+
+/**
+  \brief COMAP LNA test values JSON returns.
+
+  Return JSON string with test values.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJCOMAPlnaTestRet(return_type status, argument_type arg)
+{
+  static const char *usage =
+  "\r\n"
+  "  No argument returns test data for LNA monitor points.\r\n"
+		  ;
+
+  if (!arg.help) {
+	  if (!arg.str){
+
+		  int i, n0, n1, n2, n3, n4, n5;
+		  int n = sprintf(outStr, "{\"lna\": {\"cmdOK\":%s, \"LNAon\": [%.1f], "
+				  "\"powSupp\": [%.1f,%.1f,%.1f], \"Tchassis\": [%.2f], ",
+				  "true", 1., 15.1, -15.2, 5.3, 27.4);
+
+		  n0 = sprintf(str0, "\"vg1\":[%.3f", 100.1);
+		  n1 = sprintf(str1, "\"vd1\":[%.3f", 200.2);
+		  n2 = sprintf(str2, "\"id1\":[%.3f", 300.3);
+		  n3 = sprintf(str3, "\"vg2\":[%.3f", 400.4);
+		  n4 = sprintf(str4, "\"vd2\":[%.3f", 500.5);
+		  n5 = sprintf(str5, "\"id2\":[%.3f", 600.6);
+		  for (i=1; i<JNRX; i++){
+			  n0 += sprintf(&str0[n0], ",%.3f", 100.1+(float)i);
+			  n1 += sprintf(&str1[n1], ",%.3f", 200.2+(float)i);
+			  n2 += sprintf(&str2[n2], ",%.3f", 300.3+(float)i);
+			  n3 += sprintf(&str3[n3], ",%.3f", 400.4+(float)i);
+			  n4 += sprintf(&str4[n4], ",%.3f", 500.5+(float)i);
+			  n5 += sprintf(&str5[n5], ",%.3f", 600.6+(float)i);
+		  }
+		  n0 += sprintf(&str0[n0], "]");
+		  n1 += sprintf(&str1[n1], "]");
+		  n2 += sprintf(&str2[n2], "]");
+		  n3 += sprintf(&str3[n3], "]");
+		  n4 += sprintf(&str4[n4], "]");
+		  n5 += sprintf(&str5[n5], "]");
+
+		  n += sprintf(&outStr[n], "%s, %s, %s, %s, %s, %s}}\r\n", str0, str1, str2, str3, str4, str5);
+		  sprintf(status, outStr);
+	  } else {
+		  longHelp(status, usage, &Correlator::execJCOMAPlnaTestRet);
+	  }
+  } else {
+    longHelp(status, usage, &Correlator::execJCOMAPlnaTestRet);
   }
 }
 
@@ -1515,7 +1594,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
 	    	      			  d2, rxPar[16].LNAmonPts[2], d2, rxPar[16].LNAmonPts[3], d2, rxPar[17].LNAmonPts[2], d2, rxPar[17].LNAmonPts[3],
 	    	      			  d2, rxPar[18].LNAmonPts[2], d2, rxPar[18].LNAmonPts[3], d2, rxPar[19].LNAmonPts[2], d2, rxPar[19].LNAmonPts[3],
 	    	      			  d1, rxPar[16].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[17].LNAmonPts[4], d1, rxPar[17].LNAmonPts[5],
-	    	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
+	    	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[18].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
 	     		  } else {
 	     			  	  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
 	     		  }
@@ -1785,7 +1864,7 @@ void Correlator::execArgusMonPts(return_type status, argument_type arg)
     	      			  d2, rxPar[16].LNAmonPts[2], d2, rxPar[16].LNAmonPts[3], d2, rxPar[17].LNAmonPts[2], d2, rxPar[17].LNAmonPts[3],
     	      			  d2, rxPar[18].LNAmonPts[2], d2, rxPar[18].LNAmonPts[3], d2, rxPar[19].LNAmonPts[2], d2, rxPar[19].LNAmonPts[3],
     	      			  d1, rxPar[16].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[17].LNAmonPts[4], d1, rxPar[17].LNAmonPts[5],
-    	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[16].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
+    	      			  d1, rxPar[18].LNAmonPts[4], d1, rxPar[18].LNAmonPts[5], d1, rxPar[19].LNAmonPts[4], d1, rxPar[19].LNAmonPts[5]);
      		  } else {
     			  sprintf(status, "%sNo report: LNA power is not on.\r\n", statusERR);
     		  }
@@ -2249,6 +2328,156 @@ void Correlator::execJSaddlebag(return_type status, argument_type arg)
 		  longHelp(status, usage, &Correlator::execJSaddlebag);
 	  }
 	}
+
+/*************************************************************************************/
+/**
+  \brief Vane control.
+
+  This method controls the vane control card and readouts.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execVane(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[Command]\r\n"
+      "  Vane commands:\r\n"
+      "    OBS moves ambient vane out of the beam.\r\n"
+	  "    CAL moves ambient vane into calibration position.\r\n"
+      "    MAN switches off both relays for manual control.\r\n"
+	  "  No argument returns monitor point data.\r\n"
+			  ;
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  int narg = sscanf(arg.str, "%3s", kw);
+
+	  if (narg == 1) {
+	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
+	    	  rtn = vane_obscal(kw);
+	    	  vane_readADC();
+	          sprintf(status, "%sVane position is %s    (status %d):\r\n"
+	        		  "  V_supp =   %5.3f [V]\r\n"
+	        		  "  Angle =    %5.1f [deg], or %5.3f [V]\r\n"
+	        		  "  T_vane =   %5.3f [C]\r\n"
+	        		  "  T_amb =    %5.3f [C]\r\n"
+	        		  "  T_shroud = %5.3f [C]\r\n\r\n",
+	        	  	  (!rtn ? statusOK : statusERR), vanePos[vanePar.vaneFlag], rtn,
+	        	  	 vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
+	        	  	 vanePar.adcv[6],  vanePar.adcv[7]);
+	      } else {
+	    	  longHelp(status, usage, &Correlator::execVane);
+	      }
+	  } else {
+		  longHelp(status, usage, &Correlator::execVane);
+	  }
+	} else {
+	  rtn = vane_readADC();
+	  // check vane position for bus error or uninitialized
+	  if (rtn) {
+		  vanePar.vaneFlag = 4;
+	  } else if (vanePar.vaneFlag >= 2 && vanePar.vaneFlag <= 4) {
+		  // no change for stall, timeout, or bus error
+	  } else if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+		  vanePar.vaneFlag = 1; // record command position as cal, in beam
+	  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+		  vanePar.vaneFlag = 0; // record command position as obs, out of beam
+	  } else vanePar.vaneFlag = VANEFLAGNOPOS;
+
+	  // echo to terminal
+	  sprintf(status, "%sVane position is %s    (status %d):\r\n"
+			  "  V_supp =   %5.3f [V]\r\n"
+			  "  Angle =    %5.1f [deg], or %5.3f [V]\r\n"
+			  "  T_vane =   %5.3f [C]\r\n"
+			  "  T_amb =    %5.3f [C]\r\n"
+			  "  T_shroud = %5.3f [C]\r\n\r\n",
+			  (!rtn ? statusOK : statusERR), vanePos[vanePar.vaneFlag], rtn,
+			  vanePar.adcv[0],  vanePar.vaneAngleDeg,  vanePar.adcv[4], vanePar.adcv[5],
+			  vanePar.adcv[6],  vanePar.adcv[7]);
+	}
+  } else {
+	  longHelp(status, usage, &Correlator::execVane);
+  }
+}
+
+/*************************************************************************************/
+/**
+  \brief JSON vane control.
+
+  This method controls the vane control card and readouts, JSON return strings.
+
+  \param status Storage buffer for return status (should contain at least
+                ControlService::maxLine characters).
+  \param arg    Argument list: LEVEL
+*/
+void Correlator::execJVane(return_type status, argument_type arg)
+{
+	  static const char *usage =
+	  "[Command]\r\n"
+      "  Vane commands with JSON returns:\r\n"
+      "    OBS moves ambient vane out of the beam.\r\n"
+	  "    CAL moves ambient vane into calibration position.\r\n"
+      "    MAN switches off both relays for manual control.\r\n"
+	  "  No argument returns monitor point data.\r\n"
+			  ;
+
+  int rtn = 0;
+
+  if (!arg.help) {
+	  if (arg.str) {
+	  // Command called with one or more arguments.
+	  char kw[10] = {0};
+	  int narg = sscanf(arg.str, "%3s", kw);
+
+	  if (narg == 1) {
+	      if (!strcasecmp(kw, "obs") || !strcasecmp(kw, "cal") || !strcasecmp(kw, "man")) {
+	    	  // send back "moving" information, then move the vane
+			  rtn = vane_readADC();
+			  if (rtn) {
+				  vanePar.vaneFlag = 4;
+			  } else {
+				  vanePar.vaneFlag = 5;
+			  }
+			  sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
+	    		  "\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0]}}\r\n",
+	    		  (!rtn ? "true" : "false"),
+	    		  vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
+	    		  vanePar.vaneFlag);
+	    	  vane_obscal(kw);
+	      } else {
+	    	  longHelp(status, usage, &Correlator::execJVane);
+	      }
+	  } else {
+		  longHelp(status, usage, &Correlator::execJVane);
+	  }
+	} else {
+		  rtn = vane_readADC();
+		  // check vane position for bus error or uninitialized
+		  if (rtn) {
+			  vanePar.vaneFlag = 4;
+		  } else if (vanePar.vaneFlag >= 2 && vanePar.vaneFlag <= 4) {
+			  // no change for stall, timeout, or bus error
+		  } else if (fabs(vanePar.vaneAngleDeg) < VANECALERRANGLE) {
+			  vanePar.vaneFlag = 1; // record command position as cal, in beam
+		  } else if (fabsf(vanePar.vaneAngleDeg - VANESWINGANGLE) < VANEOBSERRANGLE) {
+			  vanePar.vaneFlag = 0; // record command position as obs, out of beam
+		  } else vanePar.vaneFlag = VANEFLAGNOPOS;
+	}
+	sprintf(status, "{\"vane\": {\"cmdOK\":%s, \"powSupp\":[%.3f], \"angle\":[%.1f], \"Tvane\":[%.3f], "
+			"\"Tamb\":[%.3f], \"Tshroud\":[%.3f], \"position\": [%d.0]}}\r\n",
+			(!rtn ? "true" : "false"),
+			vanePar.adcv[0], vanePar.vaneAngleDeg, vanePar.adcv[5], vanePar.adcv[6], vanePar.adcv[7],
+			vanePar.vaneFlag);
+  } else {
+	  longHelp(status, usage, &Correlator::execJVane);
+  }
+}
 
 /*************************************************************************************/
 /**

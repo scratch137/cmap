@@ -12,7 +12,7 @@ AH 2014.07.01
 */
 
 // set manual flag for bias or dcm2 system
-#define FOUNDLNABIASSYS 0  // 1 for bias, 0 for DCM2
+#define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
 #define VER "comap_20190816_d"
 
@@ -52,10 +52,10 @@ AH 2014.07.01
 
 // Software limits for bias settings
 #define VDGMAX 1.7    // Max drain-gate voltage [V]
-#define VGMIN -0.3    // Min allowable gate voltage [V]
-#define VGMAX 0.3     // Max allowable gate voltage [V]
+#define VGMIN -0.5  // Min allowable gate voltage [V]  (was -0.351)
+#define VGMAX 0.5   // Max allowable gate voltage [V]  (was 0.351)
 #define VDMIN 0.0     // Min allowable drain voltage [V]
-#define VDMAX 1.8     // Max allowable drain voltage [V]
+#define VDMAX 1.21    // Max allowable drain voltage [V]  (was 1.01)
 #define VMMIN -.25    // Min allowable mixer voltage [V]
 #define VMMAX 5.0     // Max allowable mixer voltage [V]
 #define IDMIN 10.0    // Min operating drain current [mA]
@@ -227,17 +227,39 @@ struct dcm2params {
 #define SB_SSBADDR 0x74
 
 //#define SADDLEBAG_SWADDR {0x08, 0x08, 0x08, 0x08, 0x00}  // for testing, on SSC3/SSD3
+//#define SADDLEBAG_SWADDR {0x00, 0x00, 0x00, 0x00, 0x00}  // for testing, no connection
 #define SADDLEBAG_SWADDR {0x01, 0x02, 0x04, 0x08, 0x00}  //I2C switch addresses on I2C subbus card
 #define SBBEX_ADDR 0x21  // I2C bus address for saddlebag ADCs
 #define SBADC_ADDR 0x08  // I2C bus address for saddlebag bus expanders
 #define NSBG 4           // ones-base number of saddlebags, used in error checking
 
-// ADC order: +12V, -8V, fan 1, fan 2, temp 1, temp 2, temp 3, temp 4
 struct saddlebagParams {
 	float adcv[8];
 	BYTE pll;
 	BYTE ampPwr;
 	char *ampStatus;
+};
+
+/***************************************************************************/
+/* Vane definitions */
+// Use many definitions from saddlebags since interface hardware is identical
+
+//#define VANE_SWADDR 0x08 // for testing, on SSC3/SSD3; may also want to disable init_saddlebags() in argus_init
+//#define VANE_SWADDR 0x00 // for testing, no connection
+#define VANE_SWADDR 0x10 // I2C switch address on I2C subbus card, SSC4/SSD4
+
+#define VANESWINGANGLE 180.  // vane swing angle from cal (0 deg) to stow, in degrees
+#define VANECALERRANGLE 1.   // maximum absolute error for vane to arrive at cal position
+#define VANEOBSERRANGLE 2.   // maximum absolute error for vane to arrive at obs (stow) position
+#define STALLERRANG 5.       // minimum absolute angle vane must move to avoid stall designation
+#define VANETIMEOUT 10.      // seconds for vane movement; declare timeout if longer
+#define VANESTALLTIME 0.5    // seconds; if movement in this time < STALLERRANG, declare stall
+#define VANEFLAGNOPOS 10     // highest integer value for vanePar.vaneFlag returns from vanePos[]; unclear position
+
+struct vaneParams {
+	float adcv[8];
+	float vaneAngleDeg;
+	BYTE vaneFlag;
 };
 
 #endif
