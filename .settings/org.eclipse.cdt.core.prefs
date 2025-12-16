@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+environment/project/nbeclipse.toolchain.nbde.rel.161978579/PATH/delimiter=;
+environment/project/nbeclipse.toolchain.nbde.rel.161978579/PATH/operation=prepend
+environment/project/nbeclipse.toolchain.nbde.rel.161978579/PATH/value=C\:\\nburn\\gcc-m68k\\bin;C\:\\nburn\\pcbin;C\:\\nburn\\gcc-m68k\\msys\\1.0\\bin
+environment/project/nbeclipse.toolchain.nbde.rel.161978579/append=true
+environment/project/nbeclipse.toolchain.nbde.rel.161978579/appendContributed=true
