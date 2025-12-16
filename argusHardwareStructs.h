@@ -14,7 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-#define VER "comap_20190816_d"
+#define VER "boardTests_20250611_b"
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
@@ -58,15 +58,15 @@ AH 2014.07.01
 #define VDMAX 1.21    // Max allowable drain voltage [V]  (was 1.01)
 #define VMMIN -.25    // Min allowable mixer voltage [V]
 #define VMMAX 5.0     // Max allowable mixer voltage [V]
-#define IDMIN 10.0    // Min operating drain current [mA]
-#define IDMAX 30.0    // Max operating drain current [mA]
+#define IDMIN -1000. //10.0    // Min operating drain current [mA]
+#define IDMAX 1000. //30.0    // Max operating drain current [mA]
 #define IMMIN 0.1     // Min operating mixer current [mA]
 #define IMMAX 5.0     // Max operating mixer current [mA]
 #define VDEVMAX 0.1   // Max allowable deviation from setpoint, error check [V]
 
 // Startup voltages for gates, drains, mixers
-#define VGSTART -0.2   // Gate
-#define VDSTART 0.0    // Drain
+#define VGSTART -0.2 // -0.2   // Gate
+#define VDSTART 0.0 // 0.0    // Drain
 #define VMSTART 0.0    // Mixer
 
 // Power supply limits

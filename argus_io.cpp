@@ -159,7 +159,7 @@ struct biasCardParams bcPar[] = {
   float auxInputs[2];     // aux inputs
 }; */
 struct cryostatParams cryoPar = {
-	  {99, 99, 99, 99, 99, 99}, {99, 99},
+	  {99, 99, 99, 99, 99, 99}, {99, 99}
 };
 
 // vds, -15V, +15, vcc, cal sys, cold if in, cold if out, cold if curr, chassis temp
@@ -188,7 +188,9 @@ struct chSet vdSet = {
 struct chSet vgSet = {
 		{0x41, 0x41, 0x41, 0x41, 0x32, 0x32, 0x32, 0x32},
 		{0x31, 0x37, 0x33, 0x36, 0x31, 0x37, 0x33, 0x36},
-		0.1470, 0.0, 1};
+	    0.1470, 0.0, 1}; // original, for voltage mode
+		//0.0022244, -796.9, 1};  // for current mode tests
+		//0.005, 0.0, 1};  // for tests with 3904
 
 // mixer voltage setups
 struct chSet vmSet = {
