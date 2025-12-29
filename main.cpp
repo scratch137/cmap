@@ -149,7 +149,8 @@ void initCommandShell()
       ::zpecShell["jtime"]     = &Correlator::execjUpTime;
       ::zpecShell["p"]         = &Correlator::execCOMAPpow;
       ::zpecShell["jp"]        = &Correlator::execJCOMAPpow;
-      ::zpecShell["jlogp"]     = &Correlator::execJCOMAPlogp;
+      ::zpecShell["vane"]      = &Correlator::execVane;
+      ::zpecShell["jvane"]      = &Correlator::execJVane;
       break;
 
     default:

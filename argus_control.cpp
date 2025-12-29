@@ -2045,16 +2045,16 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       n0 = sprintf(&str0[0], "\"Astatus\":[%.1f", (float)dcm2Apar.status[0]);
       n1 = sprintf(&str1[0], "\"AattenI\":[%.1f", (float)dcm2Apar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"AattenQ\":[%.1f", (float)dcm2Apar.attenQ[0]/2.);
-      n3 = sprintf(&str3[0], "\"ApowI\":[%.5f", dcm2Apar.powDetI[0]);
-      n4 = sprintf(&str4[0], "\"ApowQ\":[%.5f", dcm2Apar.powDetQ[0]);
-      n5 = sprintf(&str5[0], "\"Atemp\":[%.5f", dcm2Apar.bTemp[0]);
+      n3 = sprintf(&str3[0], "\"ApowI\":[%.3f", dcm2Apar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"ApowQ\":[%.3f", dcm2Apar.powDetQ[0]);
+      n5 = sprintf(&str5[0], "\"Atemp\":[%.2f", dcm2Apar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
     	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Apar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Apar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Apar.attenQ[i]/2.);
-    	  n3 += sprintf(&str3[n3], ",%.5f", dcm2Apar.powDetI[i]);
-    	  n4 += sprintf(&str4[n4], ",%.5f", dcm2Apar.powDetQ[i]);
-    	  n5 += sprintf(&str5[n5], ",%.5f", dcm2Apar.bTemp[i]);
+    	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Apar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.3f", dcm2Apar.powDetQ[i]);
+    	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Apar.bTemp[i]);
       }
 	  n0 += sprintf(&str0[n0], "]");
 	  n1 += sprintf(&str1[n1], "]");
@@ -2068,16 +2068,16 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
       n0 = sprintf(&str0[0], "\"Bstatus\":[%.1f", (float)dcm2Bpar.status[0]);
       n1 = sprintf(&str1[0], "\"BattenI\":[%.1f", (float)dcm2Bpar.attenI[0]/2.);
       n2 = sprintf(&str2[0], "\"BattenQ\":[%.1f", (float)dcm2Bpar.attenQ[0]/2.);
-      n3 = sprintf(&str3[0], "\"BpowI\":[%.5f", dcm2Bpar.powDetI[0]);
-      n4 = sprintf(&str4[0], "\"BpowQ\":[%.5f", dcm2Bpar.powDetQ[0]);
-      n5 = sprintf(&str5[0], "\"Btemp\":[%.5f", dcm2Bpar.bTemp[0]);
+      n3 = sprintf(&str3[0], "\"BpowI\":[%.3f", dcm2Bpar.powDetI[0]);
+      n4 = sprintf(&str4[0], "\"BpowQ\":[%.3f", dcm2Bpar.powDetQ[0]);
+      n5 = sprintf(&str5[0], "\"Btemp\":[%.2f", dcm2Bpar.bTemp[0]);
       for (i=1; i<JNRX; i++) {
     	  n0 += sprintf(&str0[n0], ",%.1f", (float)dcm2Bpar.status[i]);
     	  n1 += sprintf(&str1[n1], ",%.1f", (float)dcm2Bpar.attenI[i]/2.);
     	  n2 += sprintf(&str2[n2], ",%.1f", (float)dcm2Bpar.attenQ[i]/2.);
-    	  n3 += sprintf(&str3[n3], ",%.5f", dcm2Bpar.powDetI[i]);
-    	  n4 += sprintf(&str4[n4], ",%.5f", dcm2Bpar.powDetQ[i]);
-    	  n5 += sprintf(&str5[n5], ",%.5f", dcm2Bpar.bTemp[i]);
+    	  n3 += sprintf(&str3[n3], ",%.3f", dcm2Bpar.powDetI[i]);
+    	  n4 += sprintf(&str4[n4], ",%.3f", dcm2Bpar.powDetQ[i]);
+    	  n5 += sprintf(&str5[n5], ",%.2f", dcm2Bpar.bTemp[i]);
       }
 	  n0 += sprintf(&str0[n0], "]");
 	  n1 += sprintf(&str1[n1], "]");
@@ -2091,52 +2091,6 @@ void Correlator::execJDCM2(return_type status, argument_type arg)
 	}
   } else {
 	  longHelp(status, usage, &Correlator::execJDCM2);
-  }
-}
-
-/**
-  \brief Read single DCM2 power detector, JSON return.
-
-  \param status Storage buffer for return status (should contain at least
-                ControlService::maxLine characters).
-  \param arg    Argument list: LEVEL
-*/
-void Correlator::execJCOMAPlogp(return_type status, argument_type arg)
-{
-  static const char *usage =
-  "[M AB IQ]\r\n"
-  "  Read single DCM2 power detector.\r\n"
-  "  M is the Mth receiver to set.\r\n"
-  "  AB is either A or B IF bank.\r\n"
-  "  IQ is either I or Q.\r\n"
-		  ;
-
-  if (!arg.help) {
-    int m;
-    char ab[4], iq[4];
-
-   if (arg.str) {
-      // Command called with one or more arguments.
-      int narg = sscanf(arg.str, "%d%1s%1s", &m, ab, iq);
-      if (narg < 3) {
-        // Too few arguments; return help string.
-        longHelp(status, usage, &Correlator::execJCOMAPlogp);
-      } else {
-        // Execute the command.
-    	if (m > 0 && m <= NRX){
-    		// convert from user's 1-base to code's 0-base
-    		float logp = dcm2_readOneModTotPwr(m-1, ab, iq);
-   			sprintf(status, "{\"dcm2logp\": {\"cmdOK\":%s, \"logp\":[%f]}}\r\n", (logp<0 ? "true" : "false"), logp);
-    	} else {
-   			sprintf(status, "{\"dcm2logp\": {\"cmdOK\":false}}\r\n");
-    	}
-     }
-  } else {
-      // Command called without arguments
-      longHelp(status, usage, &Correlator::execJCOMAPlogp);
-     }
-  } else {
-    longHelp(status, usage, &Correlator::execJCOMAPlogp);
   }
 }
 
