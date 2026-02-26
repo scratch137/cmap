@@ -14,11 +14,7 @@ AH 2014.07.01
 // set manual flag for bias or dcm2 system
 #define FOUNDLNABIASSYS 1  // 1 for bias, 0 for DCM2
 // Version label
-<<<<<<< HEAD
 #define VER "comap_20230602_b"
-=======
-#define VER "comap_20210630_b"
->>>>>>> parent of c609194 (lab work)
 
 // Run with hardware or standalone by commenting/uncommenting #define SIMULATE
 //#define SIMULATE
